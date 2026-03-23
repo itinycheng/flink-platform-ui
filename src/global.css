@@ -1,0 +1,56 @@
+/* Scrollbar — always thin, color visible on hover */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+*:hover {
+  scrollbar-color: var(--ant-color-border) transparent;
+}
+
+/* ProLayout — unify all layout split borders to the lighter secondary color */
+#pro-layout-wrapper .ant-pro-layout .ant-layout-header,
+#pro-layout-wrapper .ant-pro-layout .ant-layout-sider {
+  border-color: var(--ant-color-border-secondary) !important;
+}
+
+/* Job page content tabs */
+.job-tabs-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.job-tabs-wrapper .ant-tabs-content-holder {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.job-tabs-wrapper.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  border-top: 2px solid transparent !important;
+  transition: none !important;
+}
+
+.job-tabs-wrapper.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab:first-child {
+  border-left: none !important;
+}
+
+.job-tabs-wrapper.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
+  border-top-color: #168eff !important;
+  border-bottom-color: transparent !important;
+}
+
+/* Job page Tree panel */
+.job-tree-wrapper .ant-tree-node-content-wrapper:hover .job-tree-more,
+.job-tree-wrapper .ant-tree-treenode-selected .job-tree-more {
+  opacity: 1 !important;
+}
+
+.job-tree-wrapper .ant-tree-node-content-wrapper {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.job-tree-wrapper .ant-tree-title {
+  flex: 1;
+  min-width: 0;
+}
