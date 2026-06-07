@@ -20,10 +20,7 @@ export interface AuthGuardProps {
  * If not provided, the guard will look up the permission from the route configuration
  * based on the current pathname.
  */
-export default function AuthGuard({
-  children,
-  requiredPermission,
-}: AuthGuardProps) {
+export default function AuthGuard({ children, requiredPermission }: AuthGuardProps) {
   const location = useLocation();
   const { token, user } = useAuthStore();
 

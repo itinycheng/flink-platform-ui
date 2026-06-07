@@ -1,4 +1,4 @@
-import request from "./request";
+import { http } from "@/utils/request";
 import type { User } from "@/types/auth";
 
 export interface LoginRequest {
@@ -12,9 +12,9 @@ export interface LoginResponse {
 }
 
 export function login(data: LoginRequest): Promise<LoginResponse> {
-  return request.post<LoginResponse>("/auth/login", data).then((res) => res.data);
+  return http.post<LoginResponse>("/auth/login", data);
 }
 
 export function logout(): Promise<void> {
-  return request.post("/auth/logout").then(() => undefined);
+  return http.post<void>("/auth/logout");
 }

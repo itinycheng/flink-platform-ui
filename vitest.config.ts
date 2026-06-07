@@ -6,8 +6,11 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
-      "@ant-design/pro-components": path.resolve(__dirname, "./node_modules/@ant-design/pro-components/es/index.js"),
+      "@": path.resolve(import.meta.dirname, "./src"),
+      "@ant-design/pro-components": path.resolve(
+        import.meta.dirname,
+        "./node_modules/@ant-design/pro-components/es/index.js",
+      ),
     },
   },
   test: {

@@ -282,10 +282,10 @@ async function getResponse(event, client, requestId, requestInterceptedAt) {
 /**
  * @param {Client} client
  * @param {any} message
- * @param {Array<Transferable>} transferrables
+ * @param {Array<Transferable>} transferases
  * @returns {Promise<any>}
  */
-function sendToClient(client, message, transferrables = []) {
+function sendToClient(client, message, transferases = []) {
   return new Promise((resolve, reject) => {
     const channel = new MessageChannel()
 
@@ -299,7 +299,7 @@ function sendToClient(client, message, transferrables = []) {
 
     client.postMessage(message, [
       channel.port2,
-      ...transferrables.filter(Boolean),
+      ...transferases.filter(Boolean),
     ])
   })
 }

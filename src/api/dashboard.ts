@@ -1,4 +1,4 @@
-import request from "./request";
+import { http } from "@/utils/request";
 
 export interface DashboardStats {
   totalTasks: number;
@@ -15,11 +15,9 @@ export interface TrendDataPoint {
 }
 
 export function getStats(): Promise<DashboardStats> {
-  return request.get<DashboardStats>("/dashboard/stats").then((res) => res.data);
+  return http.get<DashboardStats>("/dashboard/stats");
 }
 
 export function getTrend(range: string): Promise<TrendDataPoint[]> {
-  return request
-    .get<TrendDataPoint[]>("/dashboard/trend", { params: { range } })
-    .then((res) => res.data);
+  return http.get<TrendDataPoint[]>("/dashboard/trend", { params: { range } });
 }

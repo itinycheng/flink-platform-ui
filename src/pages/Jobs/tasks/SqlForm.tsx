@@ -26,7 +26,7 @@ export default function SqlForm({ value, onChange }: SqlFormProps) {
   return (
     <Row gutter={16}>
       <Col span={12}>
-        <Form.Item label="数据源" required rules={[{ required: true, message: "请选择数据源" }]}>
+        <Form.Item label="数据源xxx" required rules={[{ required: true, message: "请选择数据源" }]}>
           <Select
             placeholder="请选择数据源"
             options={DATASOURCE_OPTIONS}

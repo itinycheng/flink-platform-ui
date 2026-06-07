@@ -30,7 +30,7 @@ export interface WorkflowState {
   fetchTree: () => Promise<void>;
   fetchGroupChildren: (groupId: string) => Promise<void>;
   searchTree: (keyword: string, types: string[]) => Promise<void>;
-  selectNode: (node: JobTreeNode | null) => void;
+  selectNode: (node: JobTreeNode | null) => Promise<void>;
   setFormData: (data: WorkflowFormData | null) => void;
   addNode: (node: JobTreeNode) => void;
   updateNodeName: (nodeId: string, newName: string) => void;
@@ -68,6 +68,20 @@ export function countNodes(tree: JobTreeNode[]): number {
     }
   }
   return count;
+}
+
+function removeNodeFromTree(treeData: JobTreeNode[], nodeId: string, isGroup: boolean): JobTreeNode[] {
+  if (isGroup) return treeData.filter((g) => g.id !== nodeId);
+  return treeData.map((group) =>
+    group.children ? { ...group, children: group.children.filter((child) => child.id !== nodeId) } : group,
+  );
+}
+
+function collectRemovedIds(treeData: JobTreeNode[], nodeId: string, isGroup: boolean): Set<string> {
+  const removedIds = new Set<string>([nodeId]);
+  if (!isGroup) return removedIds;
+  treeData.find((g) => g.id === nodeId)?.children?.forEach((child) => removedIds.add(child.id));
+  return removedIds;
 }
 
 export const useJobStore = create<WorkflowState>((set, get) => ({
@@ -131,17 +145,17 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     }
   },
 
-  selectNode: (node) => {
+  selectNode: async (node) => {
     set({ selectedNode: node, formData: null });
-    if (node && node.type !== "group") {
-      get().openTab(node);
-      getWorkflowDetail(node.id)
-        .then((data) => {
-          if (get().selectedNode?.id === node.id) {
-            set({ formData: data });
-          }
-        })
-        .catch(() => {});
+    if (!node || node.type === "group") return;
+    get().openTab(node);
+    try {
+      const data = await getWorkflowDetail(node.id);
+      if (get().selectedNode?.id === node.id) {
+        set({ formData: data });
+      }
+    } catch (err) {
+      console.error("[jobStore] getWorkflowDetail failed", err);
     }
   },
 
@@ -189,34 +203,12 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   removeNode: (nodeId) => {
     const { treeData, selectedNode, openTabs, activeTabKey } = get();
     const isGroup = treeData.some((g) => g.id === nodeId);
-    let newTree: JobTreeNode[];
-    if (isGroup) {
-      newTree = treeData.filter((g) => g.id !== nodeId);
-    } else {
-      newTree = treeData.map((group) => {
-        if (group.children) {
-          return {
-            ...group,
-            children: group.children.filter((child) => child.id !== nodeId),
-          };
-        }
-        return group;
-      });
-    }
-
-    // Collect IDs to remove from tabs
-    const removedIds = new Set<string>();
-    removedIds.add(nodeId);
-    if (isGroup) {
-      const removedGroup = treeData.find((g) => g.id === nodeId);
-      removedGroup?.children?.forEach((child) => removedIds.add(child.id));
-    }
+    const newTree = removeNodeFromTree(treeData, nodeId, isGroup);
+    const removedIds = collectRemovedIds(treeData, nodeId, isGroup);
 
     const newTabs = openTabs.filter((tab) => !removedIds.has(tab.key));
-    let newActiveKey = activeTabKey;
-    if (activeTabKey && removedIds.has(activeTabKey)) {
-      newActiveKey = newTabs[newTabs.length - 1]?.key ?? null;
-    }
+    const newActiveKey =
+      activeTabKey && removedIds.has(activeTabKey) ? (newTabs[newTabs.length - 1]?.key ?? null) : activeTabKey;
 
     let newSelected = selectedNode;
     if (selectedNode && removedIds.has(selectedNode.id)) {

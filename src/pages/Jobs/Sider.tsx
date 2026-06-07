@@ -9,7 +9,7 @@ import {
   FolderAddOutlined,
 } from "@ant-design/icons";
 import { Button, Divider, Flex, Input, Tag, Tooltip, Typography } from "antd";
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 function generateId(prefix: string): string {
@@ -34,15 +34,16 @@ const PANELS: { key: PanelKey; icon: React.ReactNode; tooltip: string }[] = [
 ];
 
 const ICON_BAR_WIDTH = 45;
+const ICON_SIZE = 45;
 
 const iconStyle: React.CSSProperties = {
-  width: ICON_BAR_WIDTH,
-  height: ICON_BAR_WIDTH,
+  width: ICON_SIZE,
+  height: ICON_SIZE,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   cursor: "pointer",
-  fontSize: 16,
+  fontSize: 18,
   borderRadius: 2,
   transition: "all 0.15s",
 };
@@ -60,11 +61,78 @@ const iconInactiveStyle: React.CSSProperties = {
 };
 
 export default function SiderPanel() {
+  const [activePanel, setActivePanel] = useState<PanelKey | null>("tree");
+
+  const handlePanelClick = useCallback((key: PanelKey) => {
+    setActivePanel((prev) => (prev === key ? null : key));
+  }, []);
+
+  return (
+    <Flex style={{ height: "100%", overflow: "hidden" }}>
+      <ActivityBar activePanel={activePanel} onPanelClick={handlePanelClick} />
+      {activePanel && <PanelContent activePanel={activePanel} />}
+    </Flex>
+  );
+}
+
+function ActivityBar({
+  activePanel,
+  onPanelClick,
+}: {
+  activePanel: PanelKey | null;
+  onPanelClick: (key: PanelKey) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Flex
+      vertical
+      align="center"
+      style={{
+        width: ICON_BAR_WIDTH,
+        flexShrink: 0,
+        paddingTop: 4,
+        gap: 2,
+        background: "var(--ant-color-bg-layout)",
+        borderRight: "1px solid var(--ant-color-border-secondary)",
+      }}
+    >
+      {PANELS.map((panel) => (
+        <Tooltip key={panel.key} title={t(panel.tooltip)} placement="right">
+          <div
+            style={activePanel === panel.key ? iconActiveStyle : iconInactiveStyle}
+            onClick={() => onPanelClick(panel.key)}
+          >
+            {panel.icon}
+          </div>
+        </Tooltip>
+      ))}
+    </Flex>
+  );
+}
+
+function PanelContent({ activePanel }: { activePanel: PanelKey }) {
+  return (
+    <Flex
+      vertical
+      style={{
+        width: 240,
+        flexShrink: 0,
+        overflow: "hidden",
+        borderRight: "1px solid var(--ant-color-border-secondary)",
+      }}
+    >
+      {activePanel === "tree" && <TreePanel />}
+      {activePanel === "search" && <SearchPanel />}
+      {activePanel === "errors" && <ErrorsPanel />}
+      {activePanel === "trash" && <TrashPanel />}
+    </Flex>
+  );
+}
+
+/** Tree panel — job tree with add group button */
+function TreePanel() {
   const { t } = useTranslation();
   const addNode = useJobStore((s) => s.addNode);
-  const [activePanel, setActivePanel] = useState<PanelKey | null>("tree");
-  const [searchKeyword, setSearchKeyword] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string[]>([]);
 
   const handleAddGroup = () => {
     const newGroup: JobTreeNode = {
@@ -77,79 +145,13 @@ export default function SiderPanel() {
     addNode(newGroup);
   };
 
-  const toggleTypeFilter = useCallback((value: string) => {
-    setTypeFilter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
-  }, []);
-
-  const handlePanelClick = useCallback((key: PanelKey) => {
-    setActivePanel((prev) => (prev === key ? null : key));
-  }, []);
-
-  return (
-    <Flex style={{ height: "100%", overflow: "hidden" }}>
-      {/* Activity Bar */}
-      <Flex
-        vertical
-        align="center"
-        style={{
-          width: ICON_BAR_WIDTH,
-          flexShrink: 0,
-          paddingTop: 4,
-          gap: 2,
-          background: "var(--ant-color-bg-layout)",
-          borderRight: "1px solid var(--ant-color-border-secondary)",
-        }}
-      >
-        {PANELS.map((panel) => (
-          <Tooltip key={panel.key} title={t(panel.tooltip)} placement="right">
-            <div
-              style={activePanel === panel.key ? iconActiveStyle : iconInactiveStyle}
-              onClick={() => handlePanelClick(panel.key)}
-            >
-              {panel.icon}
-            </div>
-          </Tooltip>
-        ))}
-      </Flex>
-
-      {/* Panel Content — hidden when collapsed */}
-      {activePanel && (
-        <Flex
-          vertical
-          style={{
-            width: 240,
-            flexShrink: 0,
-            overflow: "hidden",
-            borderRight: "1px solid var(--ant-color-border-secondary)",
-          }}
-        >
-          {activePanel === "tree" && <TreePanel onAddGroup={handleAddGroup} />}
-          {activePanel === "search" && (
-            <SearchPanel
-              searchKeyword={searchKeyword}
-              typeFilter={typeFilter}
-              onSearchChange={setSearchKeyword}
-              onToggleType={toggleTypeFilter}
-            />
-          )}
-          {activePanel === "errors" && <ErrorsPanel />}
-          {activePanel === "trash" && <TrashPanel />}
-        </Flex>
-      )}
-    </Flex>
-  );
-}
-
-/** Tree panel — job tree with add group button */
-function TreePanel({ onAddGroup }: { onAddGroup: () => void }) {
-  const { t } = useTranslation();
   return (
     <Flex vertical style={{ height: "100%", padding: "4px 4px 0" }}>
       <Typography.Text strong style={{ fontSize: 14, paddingInline: 4, flexShrink: 0 }}>
         {t("sider.jobs")}
       </Typography.Text>
       <Flex gap={4} style={{ flexShrink: 0, padding: "6px 4px" }}>
-        <Button type="dashed" size="small" icon={<FolderAddOutlined />} onClick={onAddGroup} block>
+        <Button type="dashed" size="small" icon={<FolderAddOutlined />} onClick={handleAddGroup} block>
           {t("workflow.addGroup")}
         </Button>
       </Flex>
@@ -162,18 +164,15 @@ function TreePanel({ onAddGroup }: { onAddGroup: () => void }) {
 }
 
 /** Search panel — keyword + type filter + results */
-function SearchPanel({
-  searchKeyword,
-  typeFilter,
-  onSearchChange,
-  onToggleType,
-}: {
-  searchKeyword: string;
-  typeFilter: string[];
-  onSearchChange: (v: string) => void;
-  onToggleType: (v: string) => void;
-}) {
+function SearchPanel() {
   const { t } = useTranslation();
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string[]>([]);
+
+  const toggleTypeFilter = useCallback((value: string) => {
+    setTypeFilter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+  }, []);
+
   return (
     <Flex vertical style={{ height: "100%", padding: "4px 4px 0" }}>
       <Flex vertical style={{ flexShrink: 0, paddingInline: 4, gap: 8 }}>
@@ -186,7 +185,7 @@ function SearchPanel({
           allowClear
           size="small"
           value={searchKeyword}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => setSearchKeyword(e.target.value)}
           autoFocus
         />
         <Flex wrap gap={4}>
@@ -194,7 +193,7 @@ function SearchPanel({
             <Tag
               key={item.value}
               color={typeFilter.includes(item.value) ? "blue" : undefined}
-              onClick={() => onToggleType(item.value)}
+              onClick={() => toggleTypeFilter(item.value)}
               style={{ cursor: "pointer", margin: 0 }}
             >
               {item.label}
@@ -237,7 +236,7 @@ function TrashPanel() {
   const { t } = useTranslation();
   return (
     <Flex vertical align="center" justify="center" style={{ height: "100%", padding: 16 }}>
-      <DeleteOutlined style={{ fontSize: 24, color: "var(--ant-color-text-quaternary)" }} />
+      <DeleteOutlined style={{ fontSize: 20, color: "var(--ant-color-text-quaternary)" }} />
       <Typography.Text type="secondary" style={{ marginTop: 8, fontSize: 12 }}>
         {t("sider.trashEmpty")}
       </Typography.Text>

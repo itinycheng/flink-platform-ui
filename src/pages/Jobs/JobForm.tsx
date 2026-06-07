@@ -1,148 +1,50 @@
-import { useCallback, useEffect, useMemo } from "react";
-import { ConfigProvider, Form, message } from "antd";
-import { ProForm, ProFormText, ProFormSelect, ProFormSwitch, ProFormTextArea } from "@ant-design/pro-components";
+import { useState } from "react";
+import { Button, Flex, message, Typography } from "antd";
+import { SaveOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
-import { validateCron } from "@/utils/cron";
-import { useJobStore } from "@/stores/jobStore";
-import { getTaskTypeOptions, getTaskTypeDefinition } from "@/pages/Jobs/tasks/registry";
-import type { WorkflowFormData, TaskParams } from "@/types/job";
+import { getTaskTypeDefinition } from "@/pages/Jobs/tasks/registry";
+import type { TaskParams } from "@/types/job";
 
-const formTheme = {
-  components: {
-    Input: { activeBorderColor: "#168eff", hoverBorderColor: "#168eff80" },
-    Select: { activeBorderColor: "#168eff", hoverBorderColor: "#168eff80" },
-  },
-};
-
-export default function JobForm() {
-  const [form] = Form.useForm<WorkflowFormData>();
-  const { formData, setFormData, saveWorkflow, operationLoading } = useJobStore();
-  const [messageApi, contextHolder] = message.useMessage();
+export default function JobForm({ taskType }: { taskType?: string }) {
   const { t } = useTranslation();
+  const [messageApi, contextHolder] = message.useMessage();
 
-  const taskTypeOptions = useMemo(() => getTaskTypeOptions(), []);
+  const type = taskType?.toLowerCase();
+  const def = type ? getTaskTypeDefinition(type) : null;
+  const TaskParamsForm = def?.formComponent;
 
-  useEffect(() => {
-    if (formData) {
-      form.setFieldsValue(formData);
-    } else {
-      form.resetFields();
-    }
-  }, [formData, form]);
-
-  const cronValidator = useCallback(
-    (_rule: unknown, value: string) => {
-      if (!value || !value.trim()) {
-        return Promise.reject(new Error(t("workflowForm.cronRequired")));
-      }
-      const result = validateCron(value);
-      if (!result.valid) {
-        return Promise.reject(new Error(result.error));
-      }
-      return Promise.resolve();
-    },
-    [t],
-  );
-
-  const handleTaskTypeChange = useCallback(
-    (newType: string) => {
-      const definition = getTaskTypeDefinition(newType);
-      if (definition) {
-        form.setFieldsValue({ taskParams: definition.defaultParams });
-      }
-    },
-    [form],
-  );
-
-  const taskType = Form.useWatch("taskType", form);
-  const TaskParamsForm = useMemo(() => {
-    if (!taskType) return null;
-    const definition = getTaskTypeDefinition(taskType);
-    return definition?.formComponent ?? null;
-  }, [taskType]);
-
-  const handleFinish = useCallback(
-    async (values: WorkflowFormData) => {
-      try {
-        const data: WorkflowFormData = { ...formData, ...values };
-        await saveWorkflow(data);
-        setFormData(data);
-        void messageApi.success(t("workflowForm.saveSuccess"));
-      } catch {
-        void messageApi.error(t("workflowForm.saveFailed"));
-      }
-    },
-    [formData, saveWorkflow, setFormData, messageApi, t],
-  );
+  const [params, setParams] = useState<TaskParams | undefined>(def?.defaultParams);
 
   return (
-    <ConfigProvider theme={formTheme}>
+    <div
+      style={{ height: "100%", display: "flex", flexDirection: "column", background: "var(--ant-color-bg-container)" }}
+    >
       {contextHolder}
-      <div style={{ height: "100%", overflow: "auto", padding: 16, background: "#fff" }}>
-        <ProForm<WorkflowFormData>
-          form={form}
-          grid
-          rowProps={{ gutter: 16 }}
-          layout="vertical"
-          onFinish={handleFinish}
-          loading={operationLoading}
-          initialValues={{ enabled: true, taskType: undefined, taskParams: {} }}
-          submitter={{ searchConfig: { submitText: t("common.save") }, resetButtonProps: false }}
+      <Flex
+        justify="flex-end"
+        style={{
+          padding: "6px 12px",
+          borderBottom: "1px solid var(--ant-color-border-secondary)",
+          background: "var(--ant-color-bg-layout)",
+          flexShrink: 0,
+        }}
+      >
+        <Button
+          type="primary"
+          size="small"
+          icon={<SaveOutlined />}
+          onClick={() => void messageApi.success(t("dag.flowSaved"))}
         >
-          <ProFormText
-            colProps={{ span: 8 }}
-            name="name"
-            label={t("workflowForm.workflowName")}
-            placeholder={t("workflowForm.workflowNamePlaceholder")}
-            rules={[{ required: true, message: t("workflowForm.workflowNameRequired") }]}
-          />
-          <ProFormText
-            colProps={{ span: 8 }}
-            name="cronExpression"
-            label={t("workflowForm.cronExpression")}
-            placeholder={t("workflowForm.cronPlaceholder")}
-            rules={[{ required: true, validator: cronValidator }]}
-          />
-          <ProFormSelect
-            colProps={{ span: 5 }}
-            name="taskType"
-            label={t("workflowForm.taskType")}
-            placeholder={t("workflowForm.taskTypePlaceholder")}
-            options={taskTypeOptions}
-            rules={[{ required: true, message: t("workflowForm.taskTypeRequired") }]}
-            fieldProps={{ onChange: handleTaskTypeChange }}
-          />
-          <ProFormSwitch colProps={{ span: 3 }} name="enabled" label={t("workflowForm.enable")} />
-
-          {TaskParamsForm && (
-            <Form.Item label={t("workflowForm.taskParams")} style={{ gridColumn: "span 24" }}>
-              <Form.Item name="taskParams" noStyle>
-                <TaskParamsFormWrapper Component={TaskParamsForm} />
-              </Form.Item>
-            </Form.Item>
-          )}
-
-          <ProFormTextArea
-            colProps={{ span: 24 }}
-            name="description"
-            label={t("workflowForm.description")}
-            placeholder={t("workflowForm.descriptionPlaceholder")}
-            fieldProps={{ rows: 2 }}
-          />
-        </ProForm>
+          {t("common.save")}
+        </Button>
+      </Flex>
+      <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
+        {TaskParamsForm ? (
+          <TaskParamsForm value={params} onChange={setParams} />
+        ) : (
+          <Typography.Text type="secondary">{t("dag.noFormForType")}</Typography.Text>
+        )}
       </div>
-    </ConfigProvider>
+    </div>
   );
-}
-
-function TaskParamsFormWrapper({
-  Component,
-  value,
-  onChange,
-}: {
-  Component: React.ComponentType<{ value?: TaskParams; onChange?: (v: TaskParams) => void }>;
-  value?: TaskParams;
-  onChange?: (v: TaskParams) => void;
-}) {
-  return <Component value={value} onChange={onChange} />;
 }

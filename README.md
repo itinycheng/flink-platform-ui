@@ -1,4 +1,4 @@
-# Fin UI
+# DTail UI
 
 Task scheduling platform frontend built with React 19 + TypeScript + Vite.
 

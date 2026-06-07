@@ -70,11 +70,7 @@ export default function MetricsPanel() {
             type="error"
             title={error}
             action={
-              <Button
-                data-testid="metrics-retry-button"
-                icon={<ReloadOutlined />}
-                onClick={() => void loadMetrics()}
-              >
+              <Button data-testid="metrics-retry-button" icon={<ReloadOutlined />} onClick={() => void loadMetrics()}>
                 重试
               </Button>
             }

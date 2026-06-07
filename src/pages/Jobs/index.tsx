@@ -1,10 +1,9 @@
 import { ConfigProvider, Flex, Tabs, Typography, type ThemeConfig } from "antd";
 import { InboxOutlined, CloseOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
-import DAGEditor from "./DAGEditor";
-import JobForm from "./JobForm";
 import { useJobStore, findNodeById } from "@/stores/jobStore";
 import SiderPanel from "@/pages/Jobs/Sider";
+import JobTabWrapper from "@/pages/Jobs/JobTabWrapper";
 import flinkIcon from "@/assets/flink.svg";
 import sparkIcon from "@/assets/spark.svg";
 import sqlIcon from "@/assets/sql.svg";
@@ -76,7 +75,7 @@ export default function JobsPage() {
         />
       </span>
     ),
-    children: tab.node.type === "workflow" ? <DAGEditor embedded /> : <JobForm />,
+    children: <JobTabWrapper node={tab.node} />,
   }));
 
   return (

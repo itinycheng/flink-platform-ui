@@ -10,7 +10,8 @@
     "module": "ESNext",
     "types": [
       "vite/client",
-      "node"
+      "node",
+      "@testing-library/jest-dom"
     ],
     "skipLibCheck": true,
     /* Bundler mode */
@@ -22,13 +23,6 @@
     "jsx": "react-jsx",
     /* Strict type checking */
     "strict": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
     /* Additional checks */
     "noUnusedLocals": true,
     "noUnusedParameters": true,

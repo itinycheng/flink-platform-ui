@@ -29,13 +29,7 @@ export interface LoadingProps {
  *
  * Requirements: 9.1
  */
-export default function Loading({
-  loading = true,
-  tip,
-  size = "large",
-  fullPage = false,
-  children,
-}: LoadingProps) {
+export default function Loading({ loading = true, tip, size = "large", fullPage = false, children }: LoadingProps) {
   if (children) {
     return (
       <div data-testid="loading-wrapper">
@@ -46,14 +40,7 @@ export default function Loading({
     );
   }
 
-  const spinner = (
-    <Spin
-      spinning={loading}
-      tip={tip}
-      size={size}
-      data-testid="loading-spinner"
-    />
-  );
+  const spinner = <Spin spinning={loading} tip={tip} size={size} data-testid="loading-spinner" />;
 
   if (fullPage) {
     return (

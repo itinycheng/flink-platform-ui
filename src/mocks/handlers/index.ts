@@ -1,9 +1,9 @@
-import type { RequestHandler } from 'msw'
-import { authHandlers } from './auth'
-import { dashboardHandlers } from './dashboard'
-import { workflowHandlers } from './job'
-import { manageHandlers } from './manage'
-import { monitorHandlers } from './monitor'
+import type { RequestHandler } from "msw";
+import { authHandlers } from "./auth";
+import { dashboardHandlers } from "./dashboard";
+import { workflowHandlers } from "./job";
+import { manageHandlers } from "./manage";
+import { monitorHandlers } from "./monitor";
 
 export const handlers: RequestHandler[] = [
   ...authHandlers,
@@ -11,4 +11,4 @@ export const handlers: RequestHandler[] = [
   ...workflowHandlers,
   ...manageHandlers,
   ...monitorHandlers,
-]
+];

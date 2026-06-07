@@ -19,4 +19,4 @@ async function bootstrap() {
   );
 }
 
-bootstrap();
+bootstrap().catch((err) => console.error("[bootstrap] failed", err));

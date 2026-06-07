@@ -9,7 +9,7 @@ function generateWorkflowTree(): JobTreeNode[] {
   return groups.map((groupName, gi) => {
     const groupId = `g-${faker.string.nanoid(6)}`;
     const childCount = faker.number.int({ min: 2, max: 4 });
-    const children: JobTreeNode[] = Array.from({ length: childCount }, (_, ci) => {
+    const children: JobTreeNode[] = Array.from({ length: childCount }, () => {
       const jobType = faker.helpers.arrayElement(["SQL", "SHELL", "SPARK", "FLINK", "workflow"]);
       return {
         id: jobType === "workflow" ? `wf-${faker.string.nanoid(6)}` : `task-${faker.string.nanoid(6)}`,

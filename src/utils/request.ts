@@ -1,4 +1,4 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import axios, { type AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
 import { message } from "antd";
 
 const request = axios.create({
@@ -57,4 +57,15 @@ request.interceptors.response.use(
   },
 );
 
-export default request;
+/**
+ * Thin wrapper around axios that returns `response.data` directly.
+ * Use this in api/*.ts to avoid repeating `.then((r) => r.data)`.
+ */
+export const http = {
+  get: <T>(url: string, config?: AxiosRequestConfig) => request.get<T>(url, config).then((r) => r.data),
+  post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+    request.post<T>(url, data, config).then((r) => r.data),
+  put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
+    request.put<T>(url, data, config).then((r) => r.data),
+  delete: <T = void>(url: string, config?: AxiosRequestConfig) => request.delete<T>(url, config).then((r) => r.data),
+};

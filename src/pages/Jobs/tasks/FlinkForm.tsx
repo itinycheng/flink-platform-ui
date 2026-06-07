@@ -8,6 +8,28 @@ interface FlinkFormProps {
   onChange?: (v: TaskParams) => void;
 }
 
+function parseConfText(text: string): Record<string, string> | undefined {
+  if (!text.trim()) return undefined;
+  const conf: Record<string, string> = {};
+  for (const line of text.split("\n")) {
+    const eqIndex = line.indexOf("=");
+    if (eqIndex > 0) {
+      const key = line.substring(0, eqIndex).trim();
+      const val = line.substring(eqIndex + 1).trim();
+      if (key) conf[key] = val;
+    }
+  }
+  return Object.keys(conf).length > 0 ? conf : undefined;
+}
+
+function confToText(conf?: Record<string, string>): string {
+  return conf
+    ? Object.entries(conf)
+        .map(([k, v]) => `${k}=${v}`)
+        .join("\n")
+    : "";
+}
+
 export default function FlinkForm({ value, onChange }: FlinkFormProps) {
   const params = (value ?? { jobName: "", jarPath: "" }) as FlinkTaskParams;
 
@@ -16,28 +38,12 @@ export default function FlinkForm({ value, onChange }: FlinkFormProps) {
   };
 
   const handleConfChange = (text: string) => {
-    if (!text.trim()) {
+    const conf = parseConfText(text);
+    if (conf) handleChange("flinkConf", conf);
+    else {
       const { flinkConf: _conf, ...rest } = params;
       onChange?.(rest as TaskParams);
-      return;
     }
-    const conf: Record<string, string> = {};
-    for (const line of text.split("\n")) {
-      const eqIndex = line.indexOf("=");
-      if (eqIndex > 0) {
-        const key = line.substring(0, eqIndex).trim();
-        const val = line.substring(eqIndex + 1).trim();
-        if (key) conf[key] = val;
-      }
-    }
-    handleChange("flinkConf", Object.keys(conf).length > 0 ? conf : undefined);
-  };
-
-  const confToText = (conf?: Record<string, string>): string => {
-    if (!conf) return "";
-    return Object.entries(conf)
-      .map(([k, v]) => `${k}=${v}`)
-      .join("\n");
   };
 
   return (

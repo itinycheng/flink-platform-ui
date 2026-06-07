@@ -2,8 +2,6 @@ export type JobStatus = "success" | "failed" | "running" | "scheduling" | "stopp
 
 export type JobType = "SQL" | "SHELL" | "JDBC" | "FLINK" | "SPARK" | (string & {});
 
-
-
 export interface JobTreeNode {
   id: string;
   name: string;

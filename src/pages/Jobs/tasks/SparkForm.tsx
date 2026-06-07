@@ -8,6 +8,38 @@ interface SparkFormProps {
   onChange?: (v: TaskParams) => void;
 }
 
+function parseConfText(text: string): Record<string, string> | undefined {
+  if (!text.trim()) return undefined;
+  const conf: Record<string, string> = {};
+  for (const line of text.split("\n")) {
+    const eqIndex = line.indexOf("=");
+    if (eqIndex > 0) {
+      const key = line.substring(0, eqIndex).trim();
+      const val = line.substring(eqIndex + 1).trim();
+      if (key) conf[key] = val;
+    }
+  }
+  return Object.keys(conf).length > 0 ? conf : undefined;
+}
+
+function confToText(conf?: Record<string, string>): string {
+  return conf
+    ? Object.entries(conf)
+        .map(([k, v]) => `${k}=${v}`)
+        .join("\n")
+    : "";
+}
+
+function parseArgsText(text: string): string[] | undefined {
+  const args = text
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return args.length > 0 ? args : undefined;
+}
+
+const argsToText = (args?: string[]): string => (args ? args.join("\n") : "");
+
 export default function SparkForm({ value, onChange }: SparkFormProps) {
   const params = (value ?? { mainClass: "", jarPath: "" }) as SparkTaskParams;
 
@@ -16,44 +48,22 @@ export default function SparkForm({ value, onChange }: SparkFormProps) {
   };
 
   const handleSparkConfChange = (text: string) => {
-    if (!text.trim()) {
+    const conf = parseConfText(text);
+    if (conf) handleChange("sparkConf", conf);
+    else {
       const { sparkConf: _conf, ...rest } = params;
       onChange?.(rest as TaskParams);
-      return;
     }
-    const conf: Record<string, string> = {};
-    for (const line of text.split("\n")) {
-      const eqIndex = line.indexOf("=");
-      if (eqIndex > 0) {
-        const key = line.substring(0, eqIndex).trim();
-        const val = line.substring(eqIndex + 1).trim();
-        if (key) conf[key] = val;
-      }
-    }
-    handleChange("sparkConf", Object.keys(conf).length > 0 ? conf : undefined);
-  };
-
-  const confToText = (conf?: Record<string, string>): string => {
-    if (!conf) return "";
-    return Object.entries(conf)
-      .map(([k, v]) => `${k}=${v}`)
-      .join("\n");
   };
 
   const handleArgsChange = (text: string) => {
-    if (!text.trim()) {
+    const args = parseArgsText(text);
+    if (args) handleChange("args", args);
+    else {
       const { args: _args, ...rest } = params;
       onChange?.(rest as TaskParams);
-      return;
     }
-    const args = text
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    handleChange("args", args.length > 0 ? args : undefined);
   };
-
-  const argsToText = (args?: string[]): string => (args ? args.join("\n") : "");
 
   return (
     <Row gutter={16}>
