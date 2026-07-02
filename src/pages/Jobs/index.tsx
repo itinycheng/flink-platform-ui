@@ -4,11 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useJobStore, findNodeById } from "@/stores/jobStore";
 import SiderPanel from "@/pages/Jobs/Sider";
 import JobTabWrapper from "@/pages/Jobs/JobTabWrapper";
-import flinkIcon from "@/assets/flink.svg";
-import sparkIcon from "@/assets/spark.svg";
-import sqlIcon from "@/assets/sql.svg";
-import shellIcon from "@/assets/command.svg";
-import flowIcon from "@/assets/flow.svg";
+import { TaskIcon } from "@/pages/Jobs/TaskIcon";
+import React from "react";
 
 const tabTheme: ThemeConfig = {
   components: {
@@ -24,17 +21,8 @@ const tabTheme: ThemeConfig = {
   },
 };
 
-const TAB_ICON_MAP: Record<string, string> = {
-  SQL: sqlIcon,
-  SHELL: shellIcon,
-  FLINK: flinkIcon,
-  SPARK: sparkIcon,
-  workflow: flowIcon,
-};
-
 function getTabIcon(jobType: string): React.ReactNode {
-  const src = TAB_ICON_MAP[jobType] ?? flowIcon;
-  return <img src={src} alt={jobType} width={16} height={16} style={{ verticalAlign: "middle", marginRight: 4 }} />;
+  return <TaskIcon type={jobType} size={16} style={{ marginRight: 4 }} />;
 }
 
 export default function JobsPage() {

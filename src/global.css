@@ -13,6 +13,12 @@
   border-color: var(--ant-color-border-secondary) !important;
 }
 
+/* ProLayout — square the header menu items to match the app's flat design
+   (global borderRadius is 0); ProLayout otherwise forces its own 4px. */
+#pro-layout-wrapper .ant-pro-base-menu-horizontal-menu-item {
+  border-radius: 0 !important;
+}
+
 /* Job page content tabs */
 .job-tabs-wrapper {
   display: flex;
@@ -37,6 +43,45 @@
 .job-tabs-wrapper.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab-active {
   border-top-color: #168eff !important;
   border-bottom-color: transparent !important;
+}
+
+/* DAG editor (React Flow) node/edge selection & hover — colors derive from the
+   theme primary token so they track it automatically. color-mix supplies the
+   translucent glow that used to be a hardcoded rgba(). */
+.react-flow__node.selected,
+.react-flow__node:focus {
+  box-shadow:
+    0 0 0 2.5px var(--ant-color-primary),
+    0 2px 8px color-mix(in srgb, var(--ant-color-primary) 25%, transparent);
+  border-color: var(--ant-color-primary) !important;
+}
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:focus .react-flow__edge-path {
+  stroke: var(--ant-color-primary) !important;
+  stroke-width: 3 !important;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--ant-color-primary) 40%, transparent));
+}
+.react-flow__edge.selected .react-flow__edge-interaction,
+.react-flow__edge:focus .react-flow__edge-interaction {
+  stroke: var(--ant-color-primary);
+  stroke-opacity: 0.1;
+}
+.react-flow__node:hover:not(.selected) {
+  box-shadow:
+    0 0 0 1.5px var(--ant-color-primary-hover, #69b1ff),
+    0 1px 4px color-mix(in srgb, var(--ant-color-primary) 15%, transparent);
+  transition: box-shadow 0.2s ease;
+}
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 2.5 !important;
+  filter: drop-shadow(0 0 2px color-mix(in srgb, var(--ant-color-primary) 30%, transparent));
+  transition:
+    stroke-width 0.2s ease,
+    filter 0.2s ease;
+}
+.react-flow__node:hover .react-flow__handle,
+.react-flow__node.selected .react-flow__handle {
+  opacity: 1 !important;
 }
 
 /* Job page Tree panel */

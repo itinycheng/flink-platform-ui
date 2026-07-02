@@ -8,14 +8,13 @@ import {
   type EdgeProps,
   type NodeProps,
 } from "@xyflow/react";
-import flowIcon from "@/assets/flow.svg";
 import {
   EDGE_STATUS_COLORS,
   EDGE_STATUS_LABELS,
-  TASK_TYPE_ICON_MAP,
   handleStyle,
   type EdgeStatus,
 } from "./DAGEditor.constants";
+import { TaskIcon } from "./TaskIcon";
 
 export function StatusEdge(props: EdgeProps) {
   const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style, markerEnd, data } = props;
@@ -61,7 +60,6 @@ export function TaskNode({ data, selected }: NodeProps) {
   const desc = data.description as string | undefined;
   const priority = data.priority as string | undefined;
   const taskType = data.taskType as string | undefined;
-  const iconSrc = TASK_TYPE_ICON_MAP[taskType ?? ""] ?? flowIcon;
 
   return (
     <div
@@ -82,7 +80,7 @@ export function TaskNode({ data, selected }: NodeProps) {
     >
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <Handle type="target" position={Position.Left} id="left-in" style={handleStyle} />
-      <img src={iconSrc} alt={taskType ?? "task"} width={20} height={20} style={{ flexShrink: 0 }} />
+      <TaskIcon type={taskType} size={20} />
       {data.label as string}
       <Handle type="source" position={Position.Bottom} style={handleStyle} />
       <Handle type="source" position={Position.Right} id="right-out" style={handleStyle} />

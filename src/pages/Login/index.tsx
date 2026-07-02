@@ -22,7 +22,7 @@ export default function Login() {
     try {
       await login(values.username, values.password);
       message.success(t("login.loginSuccess"));
-      navigate("/dashboard", { replace: true });
+      await navigate("/dashboard", { replace: true });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("login.loginFailed");
       message.error(errorMessage);

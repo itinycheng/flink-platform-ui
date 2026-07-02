@@ -50,7 +50,7 @@ export function useParamCrud() {
       setModalOpen(false);
       form.resetFields();
       setEditingParam(null);
-      actionRef.current?.reload();
+      void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
       message.error(editingParam ? "参数更新失败，请重试" : "参数创建失败，请重试");
@@ -69,7 +69,7 @@ export function useParamCrud() {
     try {
       await deleteParam(id);
       message.success("参数已删除");
-      actionRef.current?.reload();
+      void actionRef.current?.reload();
     } catch {
       message.error("删除失败，请重试");
     }

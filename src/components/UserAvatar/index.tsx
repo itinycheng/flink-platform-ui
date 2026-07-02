@@ -29,7 +29,7 @@ export default function UserAvatar() {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    void navigate("/login");
   };
 
   const items: MenuProps["items"] = [

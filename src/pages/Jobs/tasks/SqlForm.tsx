@@ -1,7 +1,6 @@
-import { Col, Form, Input, InputNumber, Row, Select } from "antd";
+import { Col, Form, InputNumber, Row, Select } from "antd";
 import type { SqlTaskParams, TaskParams } from "@/types/job";
-
-const { TextArea } = Input;
+import CodeEditor from "@/components/CodeEditor";
 
 interface SqlFormProps {
   value?: TaskParams;
@@ -49,11 +48,11 @@ export default function SqlForm({ value, onChange }: SqlFormProps) {
       </Col>
       <Col span={24}>
         <Form.Item label="SQL 语句" required rules={[{ required: true, message: "请输入 SQL 语句" }]}>
-          <TextArea
-            rows={6}
+          <CodeEditor
+            language="sql"
             placeholder="请输入 SQL 语句"
             value={params.sql}
-            onChange={(e) => handleChange("sql", e.target.value)}
+            onChange={(v) => handleChange("sql", v)}
           />
         </Form.Item>
       </Col>

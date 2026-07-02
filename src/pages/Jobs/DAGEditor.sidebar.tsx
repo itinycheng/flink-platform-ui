@@ -1,12 +1,13 @@
 import { Flex, Tooltip } from "antd";
 import { SyncOutlined, ApiOutlined, CloudOutlined, ScheduleOutlined } from "@ant-design/icons";
-import flinkIcon from "@/assets/flink.svg";
-import sparkIcon from "@/assets/spark.svg";
-import sqlIcon from "@/assets/sql.svg";
-import shellIcon from "@/assets/command.svg";
-import dependIcon from "@/assets/depend.svg";
 import { SIDEBAR_ICON_SIZE } from "./DAGEditor.constants";
+import { TaskIcon, getTaskIcon } from "./TaskIcon";
 import React from "react";
+
+/** SVG task icon for the palette, colored via the shared registry. */
+function paletteIcon(type: string): React.ReactNode {
+  return <TaskIcon type={type} size={SIDEBAR_ICON_SIZE} />;
+}
 
 interface SidebarTaskType {
   type: string;
@@ -16,26 +17,10 @@ interface SidebarTaskType {
 }
 
 const SIDEBAR_TASK_TYPES: SidebarTaskType[] = [
-  {
-    type: "sql",
-    label: "SQL",
-    icon: <img src={sqlIcon} alt="SQL" width={SIDEBAR_ICON_SIZE} height={SIDEBAR_ICON_SIZE} />,
-  },
-  {
-    type: "shell",
-    label: "Shell",
-    icon: <img src={shellIcon} alt="Shell" width={SIDEBAR_ICON_SIZE} height={SIDEBAR_ICON_SIZE} />,
-  },
-  {
-    type: "spark",
-    label: "Spark",
-    icon: <img src={sparkIcon} alt="Spark" width={SIDEBAR_ICON_SIZE} height={SIDEBAR_ICON_SIZE} />,
-  },
-  {
-    type: "flink",
-    label: "Flink",
-    icon: <img src={flinkIcon} alt="Flink" width={SIDEBAR_ICON_SIZE} height={SIDEBAR_ICON_SIZE} />,
-  },
+  { type: "sql", label: "SQL", icon: paletteIcon("sql"), color: getTaskIcon("sql").color },
+  { type: "shell", label: "Shell", icon: paletteIcon("shell"), color: getTaskIcon("shell").color },
+  { type: "spark", label: "Spark", icon: paletteIcon("spark"), color: getTaskIcon("spark").color },
+  { type: "flink", label: "Flink", icon: paletteIcon("flink"), color: getTaskIcon("flink").color },
   { type: "sync", label: "Sync", icon: <SyncOutlined style={{ fontSize: SIDEBAR_ICON_SIZE }} />, color: "#faad14" },
   { type: "http", label: "HTTP", icon: <ApiOutlined style={{ fontSize: SIDEBAR_ICON_SIZE }} />, color: "#13c2c2" },
   {
@@ -50,11 +35,7 @@ const SIDEBAR_TASK_TYPES: SidebarTaskType[] = [
     icon: <ScheduleOutlined style={{ fontSize: SIDEBAR_ICON_SIZE }} />,
     color: "#fa8c16",
   },
-  {
-    type: "depend",
-    label: "Depend",
-    icon: <img src={dependIcon} alt="Depend" width={SIDEBAR_ICON_SIZE} height={SIDEBAR_ICON_SIZE} />,
-  },
+  { type: "depend", label: "Depend", icon: paletteIcon("depend"), color: getTaskIcon("depend").color },
 ];
 
 export function TaskSidebar() {

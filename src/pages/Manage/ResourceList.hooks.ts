@@ -12,7 +12,7 @@ export function useResourceActions() {
     try {
       await uploadResource(file, (percent) => setUploadProgress(percent));
       message.success(`文件 "${file.name}" 上传成功`);
-      actionRef.current?.reload();
+      void actionRef.current?.reload();
     } catch {
       message.error("文件上传失败，请重试");
     } finally {
@@ -24,7 +24,7 @@ export function useResourceActions() {
     try {
       await deleteResource(id);
       message.success("资源已删除");
-      actionRef.current?.reload();
+      void actionRef.current?.reload();
     } catch {
       message.error("删除失败，请重试");
     }

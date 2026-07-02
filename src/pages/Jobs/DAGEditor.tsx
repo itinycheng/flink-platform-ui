@@ -1,18 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Flex, message } from "antd";
-import {
-  addEdge,
-  useNodesState,
-  useEdgesState,
-  type Connection,
-  type ReactFlowInstance,
-  MarkerType,
-} from "@xyflow/react";
+import { useNodesState, useEdgesState, type Connection, type ReactFlowInstance } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTranslation } from "react-i18next";
 import { useJobStore } from "@/stores/jobStore";
-import { type DAGEditorProps, getInitialEdges, getInitialNodes } from "./DAGEditor.constants";
+import { appendStatusEdge, type DAGEditorProps, getInitialEdges, getInitialNodes } from "./DAGEditor.constants";
 import { useBottomPanel, useContextMenu, useDragAndDrop, useNodeEditModal } from "./DAGEditor.hooks";
 import { TaskSidebar } from "./DAGEditor.sidebar";
 import { BottomPanel } from "./DAGEditor.panels";
@@ -46,21 +39,7 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
   const bottom = useBottomPanel({ flowRef });
   const dnd = useDragAndDrop({ reactFlowInstance, workflowId, setNodes });
 
-  const onConnect = useCallback(
-    (params: Connection) =>
-      setEdges((eds) =>
-        addEdge(
-          {
-            ...params,
-            type: "status",
-            markerEnd: { type: MarkerType.ArrowClosed, color: "var(--ant-color-text-quaternary, #999)" },
-            data: { status: "default" },
-          },
-          eds,
-        ),
-      ),
-    [setEdges],
-  );
+  const onConnect = useCallback((params: Connection) => setEdges((eds) => appendStatusEdge(params, eds)), [setEdges]);
   const handleSave = useCallback(() => void messageApi.success(t("dag.flowSaved")), [messageApi, t]);
 
   return (

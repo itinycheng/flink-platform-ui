@@ -1,9 +1,5 @@
 import type React from "react";
-import { type Node, type Edge, MarkerType } from "@xyflow/react";
-import flinkIcon from "@/assets/flink.svg";
-import sparkIcon from "@/assets/spark.svg";
-import sqlIcon from "@/assets/sql.svg";
-import shellIcon from "@/assets/command.svg";
+import { addEdge, type Connection, type Node, type Edge, MarkerType } from "@xyflow/react";
 
 export interface DAGEditorProps {
   embedded?: boolean;
@@ -32,54 +28,10 @@ export const handleStyle: React.CSSProperties = {
   transition: "opacity 0.2s ease",
 };
 
-export const TASK_TYPE_ICON_MAP: Record<string, string> = {
-  sql: sqlIcon,
-  shell: shellIcon,
-  spark: sparkIcon,
-  flink: flinkIcon,
-};
-
 export const SIDEBAR_ICON_SIZE = 24;
 
-const SELECTION_CSS_ID = "dag-selection-styles";
-if (typeof document !== "undefined" && !document.getElementById(SELECTION_CSS_ID)) {
-  const style = document.createElement("style");
-  style.id = SELECTION_CSS_ID;
-  style.textContent = `
-    .react-flow__node.selected,
-    .react-flow__node:focus {
-      box-shadow: 0 0 0 2.5px var(--ant-color-primary), 0 2px 8px rgba(22,119,255,0.25);
-      border-color: var(--ant-color-primary) !important;
-    }
-    .react-flow__edge.selected .react-flow__edge-path,
-    .react-flow__edge:focus .react-flow__edge-path {
-      stroke: var(--ant-color-primary) !important;
-      stroke-width: 3 !important;
-      filter: drop-shadow(0 0 3px rgba(22,119,255,0.4));
-    }
-    .react-flow__edge.selected .react-flow__edge-interaction,
-    .react-flow__edge:focus .react-flow__edge-interaction {
-      stroke: var(--ant-color-primary);
-      stroke-opacity: 0.1;
-    }
-    .react-flow__node:hover:not(.selected) {
-      box-shadow: 0 0 0 1.5px var(--ant-color-primary-hover, #69b1ff), 0 1px 4px rgba(22,119,255,0.15);
-      transition: box-shadow 0.2s ease;
-    }
-    .react-flow__edge:hover .react-flow__edge-path {
-      stroke-width: 2.5 !important;
-      filter: drop-shadow(0 0 2px rgba(22,119,255,0.3));
-      transition: stroke-width 0.2s ease, filter 0.2s ease;
-    }
-    .react-flow__node:hover .react-flow__handle {
-      opacity: 1 !important;
-    }
-    .react-flow__node.selected .react-flow__handle {
-      opacity: 1 !important;
-    }
-  `;
-  document.head.appendChild(style);
-}
+// DAG node/edge selection & hover styling lives in src/global.css
+// (.react-flow__* rules) — it's static CSS, so it doesn't belong in JS.
 
 export function getInitialNodes(workflowId: string, t: (key: string) => string): Node[] {
   return [
@@ -145,6 +97,19 @@ export function getInitialEdges(workflowId: string): Edge[] {
       data: { status: "default" },
     },
   ];
+}
+
+/** Append a new "status" edge for a user-drawn connection. */
+export function appendStatusEdge(params: Connection, eds: Edge[]): Edge[] {
+  return addEdge(
+    {
+      ...params,
+      type: "status",
+      markerEnd: { type: MarkerType.ArrowClosed, color: "var(--ant-color-text-quaternary, #999)" },
+      data: { status: "default" },
+    },
+    eds,
+  );
 }
 
 export function getEdgeStyle(status: EdgeStatus) {

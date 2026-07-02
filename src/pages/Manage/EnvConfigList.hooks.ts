@@ -32,7 +32,7 @@ export function useEnvConfigEdit() {
       setModalOpen(false);
       form.resetFields();
       setEditingConfig(null);
-      actionRef.current?.reload();
+      void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
       message.error("配置更新失败，请重试");

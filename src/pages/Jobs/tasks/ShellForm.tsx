@@ -1,5 +1,6 @@
 import { Col, Form, Input, Row } from "antd";
 import type { ShellTaskParams, TaskParams } from "@/types/job";
+import CodeEditor from "@/components/CodeEditor";
 
 const { TextArea } = Input;
 
@@ -44,11 +45,11 @@ export default function ShellForm({ value, onChange }: ShellFormProps) {
     <Row gutter={16}>
       <Col span={12}>
         <Form.Item label="脚本内容" required rules={[{ required: true, message: "请输入脚本内容" }]}>
-          <TextArea
-            rows={6}
+          <CodeEditor
+            language="shell"
             placeholder="请输入 Shell 脚本内容"
             value={params.script}
-            onChange={(e) => handleChange("script", e.target.value)}
+            onChange={(v) => handleChange("script", v)}
           />
         </Form.Item>
       </Col>

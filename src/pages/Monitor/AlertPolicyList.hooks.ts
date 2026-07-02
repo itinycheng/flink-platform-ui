@@ -31,7 +31,7 @@ export function useAlertPolicyCrud() {
         message.success("策略创建成功");
       }
       setModalOpen(false);
-      actionRef.current?.reload();
+      void actionRef.current?.reload();
     } catch {
       message.error(editingPolicy ? "策略更新失败，请重试" : "策略创建失败，请重试");
     } finally {
@@ -48,7 +48,7 @@ export function useAlertPolicyCrud() {
     try {
       await updateAlert(record.id, { enabled: checked });
       message.success(checked ? "策略已启用" : "策略已禁用");
-      actionRef.current?.reload();
+      void actionRef.current?.reload();
     } catch {
       message.error("操作失败，请重试");
     }

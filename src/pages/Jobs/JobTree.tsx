@@ -4,37 +4,13 @@ import { DeleteOutlined, DownOutlined, EllipsisOutlined, PlusOutlined, PlayCircl
 import type { MenuProps, TreeDataNode } from "antd";
 import type { MessageInstance } from "antd/es/message/interface";
 import { useTranslation } from "react-i18next";
-import flinkIcon from "@/assets/flink.svg";
-import sparkIcon from "@/assets/spark.svg";
-import sqlIcon from "@/assets/sql.svg";
-import hiveIcon from "@/assets/hive.svg";
-import shellIcon from "@/assets/command.svg";
-import flowIcon from "@/assets/flow.svg";
 import { useJobStore } from "@/stores/jobStore";
 import type { JobTreeNode } from "@/types/job";
+import { TaskIcon } from "./TaskIcon";
 
 // ---------- constants & icons ----------
 
 const ICON_SIZE = 18;
-
-const JOB_TYPE_ICONS: Record<string, string> = {
-  SQL: sqlIcon,
-  HIVE: hiveIcon,
-  SHELL: shellIcon,
-  FLINK: flinkIcon,
-  SPARK: sparkIcon,
-  workflow: flowIcon,
-};
-
-// CSS filter values used to colorize black SVG icons.
-const JOB_TYPE_FILTERS: Record<string, string> = {
-  SQL: "invert(37%) sepia(98%) saturate(1000%) hue-rotate(200deg) brightness(100%)",
-  HIVE: "invert(70%) sepia(80%) saturate(500%) hue-rotate(5deg) brightness(100%)",
-  SHELL: "invert(55%) sepia(60%) saturate(600%) hue-rotate(90deg) brightness(95%)",
-  FLINK: "invert(30%) sepia(90%) saturate(1200%) hue-rotate(310deg) brightness(90%)",
-  SPARK: "invert(40%) sepia(90%) saturate(1000%) hue-rotate(0deg) brightness(100%)",
-  workflow: "invert(30%) sepia(80%) saturate(800%) hue-rotate(240deg) brightness(90%)",
-};
 
 const moreButtonStyle: React.CSSProperties = {
   fontSize: 14,
@@ -46,11 +22,7 @@ const moreButtonStyle: React.CSSProperties = {
 };
 
 function getNodeIcon(node: { type: string }): React.ReactNode {
-  const src = JOB_TYPE_ICONS[node.type] ?? flowIcon;
-  const filter = JOB_TYPE_FILTERS[node.type];
-  return (
-    <img src={src} alt={node.type} width={ICON_SIZE} height={ICON_SIZE} style={{ verticalAlign: "middle", filter }} />
-  );
+  return <TaskIcon type={node.type} size={ICON_SIZE} />;
 }
 
 // ---------- utils ----------
@@ -209,7 +181,7 @@ function useJobTreeData({ searchKeyword, typeFilter }: { searchKeyword: string; 
       const node = findNode(treeData, nodeId);
       if (!node) return;
       if (node.type !== "group") {
-        selectNode(node);
+        void selectNode(node);
         return;
       }
       const isExpanding = !expandedKeys.includes(nodeId);
@@ -294,31 +266,17 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
   return { getMenuItems, handleMenuAction };
 }
 
-// ---------- component ----------
+// ---------- hooks: tree data mapping ----------
 
-interface JobTreeProps {
-  searchKeyword?: string;
-  typeFilter?: string[];
-}
-
-const EMPTY_TYPE_FILTER: string[] = [];
-
-export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FILTER }: JobTreeProps) {
+function useBuiltTreeData(
+  getMenuItems: (node: JobTreeNode) => MenuProps["items"],
+  handleMenuAction: (key: string, node: JobTreeNode) => void,
+): TreeDataNode[] {
   const treeData = useJobStore((s) => s.treeData);
-  const selectedNode = useJobStore((s) => s.selectedNode);
-  const treeLoading = useJobStore((s) => s.treeLoading);
   const loadingGroups = useJobStore((s) => s.loadingGroups);
   const loadedGroups = useJobStore((s) => s.loadedGroups);
 
-  const [messageApi, contextHolder] = message.useMessage();
-
-  const { expandedKeys, contextMenu, setContextMenu, handleSelect, handleRightClick, handleExpand } = useJobTreeData({
-    searchKeyword,
-    typeFilter,
-  });
-  const { getMenuItems, handleMenuAction } = useJobTreeActions({ messageApi });
-
-  const builtTreeData = useMemo<TreeDataNode[]>(
+  return useMemo<TreeDataNode[]>(
     () =>
       (treeData ?? []).map((group) => {
         const isLoading = loadingGroups.has(group.id);
@@ -356,6 +314,29 @@ export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FI
       }),
     [treeData, loadingGroups, loadedGroups, getMenuItems, handleMenuAction],
   );
+}
+
+// ---------- component ----------
+
+interface JobTreeProps {
+  searchKeyword?: string;
+  typeFilter?: string[];
+}
+
+const EMPTY_TYPE_FILTER: string[] = [];
+
+export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FILTER }: JobTreeProps) {
+  const selectedNode = useJobStore((s) => s.selectedNode);
+  const treeLoading = useJobStore((s) => s.treeLoading);
+
+  const [messageApi, contextHolder] = message.useMessage();
+
+  const { expandedKeys, contextMenu, setContextMenu, handleSelect, handleRightClick, handleExpand } = useJobTreeData({
+    searchKeyword,
+    typeFilter,
+  });
+  const { getMenuItems, handleMenuAction } = useJobTreeActions({ messageApi });
+  const builtTreeData = useBuiltTreeData(getMenuItems, handleMenuAction);
 
   return (
     <>

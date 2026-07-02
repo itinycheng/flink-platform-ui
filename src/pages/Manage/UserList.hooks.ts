@@ -40,7 +40,7 @@ export function useUserCrud() {
       }
       setModalOpen(false);
       form.resetFields();
-      actionRef.current?.reload();
+      void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
       message.error(editingUser ? "用户更新失败，请重试" : "用户创建失败，请重试");
@@ -60,7 +60,7 @@ export function useUserCrud() {
     try {
       await updateUser(record.id, { status: newStatus });
       message.success(newStatus === "disabled" ? "用户已禁用" : "用户已启用");
-      actionRef.current?.reload();
+      void actionRef.current?.reload();
     } catch {
       message.error("操作失败，请重试");
     }

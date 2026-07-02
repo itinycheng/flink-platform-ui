@@ -11,13 +11,14 @@ node_modules
 dist
 dist-ssr
 *.local
+*.tsbuildinfo
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
 
-.idea
+.idea/*
 .DS_Store
 *.suo
 *.ntvs*
@@ -29,4 +30,10 @@ dist-ssr
 .claude/*
 
 !.idea/dictionaries/project.xml
+# Share ESLint integration + inspection profile so the team's editor
+# warnings match `npm run lint` (see eslint.config.js).
+!.idea/jsLinters/
+!.idea/jsLinters/eslint.xml
+!.idea/inspectionProfiles/
+!.idea/inspectionProfiles/Project_Default.xml
 /docs/superpowers/
