@@ -1,4 +1,5 @@
 import { Col, Form, Input, Row } from "antd";
+import { useTranslation } from "react-i18next";
 import type { SparkTaskParams, TaskParams } from "@/types/job";
 
 const { TextArea } = Input;
@@ -41,6 +42,7 @@ function parseArgsText(text: string): string[] | undefined {
 const argsToText = (args?: string[]): string => (args ? args.join("\n") : "");
 
 export default function SparkForm({ value, onChange }: SparkFormProps) {
+  const { t } = useTranslation();
   const params = (value ?? { mainClass: "", jarPath: "" }) as SparkTaskParams;
 
   const handleChange = (field: keyof SparkTaskParams, fieldValue: unknown) => {
@@ -68,25 +70,33 @@ export default function SparkForm({ value, onChange }: SparkFormProps) {
   return (
     <Row gutter={16}>
       <Col span={12}>
-        <Form.Item label="主类名" required rules={[{ required: true, message: "请输入 Spark 主类名" }]}>
+        <Form.Item
+          label={t("taskForm.mainClass")}
+          required
+          rules={[{ required: true, message: t("taskForm.sparkMainClassRequired") }]}
+        >
           <Input
-            placeholder="例如：com.example.SparkJob"
+            placeholder={t("taskForm.mainClassPlaceholder")}
             value={params.mainClass}
             onChange={(e) => handleChange("mainClass", e.target.value)}
           />
         </Form.Item>
       </Col>
       <Col span={12}>
-        <Form.Item label="JAR 路径" required rules={[{ required: true, message: "请输入 JAR 文件路径" }]}>
+        <Form.Item
+          label={t("taskForm.jarPath")}
+          required
+          rules={[{ required: true, message: t("taskForm.jarPathRequired") }]}
+        >
           <Input
-            placeholder="例如：hdfs:///jars/spark-job.jar"
+            placeholder={t("taskForm.sparkJarPathPlaceholder")}
             value={params.jarPath}
             onChange={(e) => handleChange("jarPath", e.target.value)}
           />
         </Form.Item>
       </Col>
       <Col span={12}>
-        <Form.Item label="Spark 配置" tooltip="每行一个，格式：key=value">
+        <Form.Item label={t("taskForm.sparkConf")} tooltip={t("taskForm.confTooltip")}>
           <TextArea
             rows={4}
             placeholder={"spark.executor.memory=4g\nspark.executor.cores=2"}
@@ -96,7 +106,7 @@ export default function SparkForm({ value, onChange }: SparkFormProps) {
         </Form.Item>
       </Col>
       <Col span={12}>
-        <Form.Item label="运行参数" tooltip="每行一个参数">
+        <Form.Item label={t("taskForm.runArgs")} tooltip={t("taskForm.runArgsTooltip")}>
           <TextArea
             rows={4}
             placeholder={"--input /data/input\n--output /data/output"}

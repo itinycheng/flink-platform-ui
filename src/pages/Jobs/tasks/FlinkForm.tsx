@@ -1,4 +1,5 @@
 import { Col, Form, Input, InputNumber, Row } from "antd";
+import { useTranslation } from "react-i18next";
 import type { FlinkTaskParams, TaskParams } from "@/types/job";
 
 const { TextArea } = Input;
@@ -31,6 +32,7 @@ function confToText(conf?: Record<string, string>): string {
 }
 
 export default function FlinkForm({ value, onChange }: FlinkFormProps) {
+  const { t } = useTranslation();
   const params = (value ?? { jobName: "", jarPath: "" }) as FlinkTaskParams;
 
   const handleChange = (field: keyof FlinkTaskParams, fieldValue: unknown) => {
@@ -49,38 +51,46 @@ export default function FlinkForm({ value, onChange }: FlinkFormProps) {
   return (
     <Row gutter={16}>
       <Col span={12}>
-        <Form.Item label="Job 名称" required rules={[{ required: true, message: "请输入 Flink Job 名称" }]}>
+        <Form.Item
+          label={t("taskForm.flinkJobName")}
+          required
+          rules={[{ required: true, message: t("taskForm.flinkJobNameRequired") }]}
+        >
           <Input
-            placeholder="例如：flink-etl-job"
+            placeholder={t("taskForm.flinkJobNamePlaceholder")}
             value={params.jobName}
             onChange={(e) => handleChange("jobName", e.target.value)}
           />
         </Form.Item>
       </Col>
       <Col span={12}>
-        <Form.Item label="JAR 路径" required rules={[{ required: true, message: "请输入 JAR 文件路径" }]}>
+        <Form.Item
+          label={t("taskForm.jarPath")}
+          required
+          rules={[{ required: true, message: t("taskForm.jarPathRequired") }]}
+        >
           <Input
-            placeholder="例如：hdfs:///jars/flink-job.jar"
+            placeholder={t("taskForm.flinkJarPathPlaceholder")}
             value={params.jarPath}
             onChange={(e) => handleChange("jarPath", e.target.value)}
           />
         </Form.Item>
       </Col>
       <Col span={12}>
-        <Form.Item label="Entry Class">
+        <Form.Item label={t("taskForm.entryClass")}>
           <Input
-            placeholder="例如：com.example.FlinkJob"
+            placeholder={t("taskForm.entryClassPlaceholder")}
             value={params.entryClass}
             onChange={(e) => handleChange("entryClass", e.target.value || undefined)}
           />
         </Form.Item>
       </Col>
       <Col span={12}>
-        <Form.Item label="并行度">
+        <Form.Item label={t("taskForm.parallelism")}>
           <InputNumber
             min={1}
             max={1024}
-            placeholder="默认由集群决定"
+            placeholder={t("taskForm.parallelismPlaceholder")}
             style={{ width: "100%" }}
             value={params.parallelism}
             onChange={(v) => handleChange("parallelism", v ?? undefined)}
@@ -88,7 +98,7 @@ export default function FlinkForm({ value, onChange }: FlinkFormProps) {
         </Form.Item>
       </Col>
       <Col span={24}>
-        <Form.Item label="Flink 配置" tooltip="每行一个，格式：key=value">
+        <Form.Item label={t("taskForm.flinkConf")} tooltip={t("taskForm.confTooltip")}>
           <TextArea
             rows={4}
             placeholder={"execution.checkpointing.interval=60s\nstate.backend=rocksdb"}

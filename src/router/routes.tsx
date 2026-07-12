@@ -11,12 +11,24 @@ export const routeConfigs: RouteConfig[] = [
     permission: "dashboard:view",
   },
   {
+    path: "/studio",
+    permission: "workflow:view",
+  },
+  {
     path: "/jobs",
+    permission: "workflow:view",
+  },
+  {
+    path: "/reactive",
     permission: "workflow:view",
   },
   {
     path: "/manage",
     permission: "manage:view",
+  },
+  {
+    path: "/runs",
+    permission: "workflow:view",
   },
   {
     path: "/monitor",

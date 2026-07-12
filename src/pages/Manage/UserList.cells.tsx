@@ -1,6 +1,9 @@
-import { Button, Popconfirm, Tag } from "antd";
+import { Tag } from "antd";
+import { CheckCircleOutlined, EditOutlined, StopOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
+import RowActions from "@/components/RowActions";
 import type { ManagedUser } from "@/types/manage";
-import { STATUS_CONFIG } from "./UserList.constants";
+import { statusColor } from "@/utils/statusColor";
 
 interface UserRoleTagsProps {
   roles: string[];
@@ -23,8 +26,9 @@ interface UserStatusTagProps {
 }
 
 export function UserStatusTag({ status }: UserStatusTagProps) {
-  const config = STATUS_CONFIG[status];
-  return <Tag color={config.color}>{config.text}</Tag>;
+  const { t } = useTranslation();
+  const text = status === "active" ? t("common.enabled") : t("common.disabled");
+  return <Tag color={statusColor(status)}>{text}</Tag>;
 }
 
 interface UserActionsCellProps {
@@ -34,23 +38,28 @@ interface UserActionsCellProps {
 }
 
 export function UserActionsCell({ record, onEdit, onToggleStatus }: UserActionsCellProps) {
+  const { t } = useTranslation();
   const isActive = record.status === "active";
   return (
-    <>
-      <Button type="link" onClick={() => onEdit(record)} data-testid={`edit-btn-${record.id}`}>
-        编辑
-      </Button>
-      <Popconfirm
-        title={isActive ? "确认禁用" : "确认启用"}
-        description={isActive ? `确定要禁用用户 "${record.username}" 吗？` : `确定要启用用户 "${record.username}" 吗？`}
-        onConfirm={() => onToggleStatus(record)}
-        okText="确定"
-        cancelText="取消"
-      >
-        <Button type="link" danger={isActive} data-testid={`toggle-status-btn-${record.id}`}>
-          {isActive ? "禁用" : "启用"}
-        </Button>
-      </Popconfirm>
-    </>
+    <RowActions
+      actions={[
+        {
+          key: "edit",
+          tooltip: t("common.edit"),
+          icon: <EditOutlined />,
+          onClick: () => onEdit(record),
+        },
+        {
+          key: "toggle",
+          tooltip: isActive ? t("user2.disable") : t("user2.enable"),
+          icon: isActive ? <StopOutlined /> : <CheckCircleOutlined />,
+          danger: isActive,
+          confirm: isActive
+            ? t("user2.disableConfirmDesc", { name: record.username })
+            : t("user2.enableConfirmDesc", { name: record.username }),
+          onClick: () => onToggleStatus(record),
+        },
+      ]}
+    />
   );
 }

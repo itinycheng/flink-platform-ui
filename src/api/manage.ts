@@ -1,5 +1,15 @@
 import { http } from "@/utils/request";
-import type { ResourceFile, ManagedUser, EnvConfig, CustomParam } from "@/types/manage";
+import type {
+  ResourceFile,
+  ManagedUser,
+  CustomParam,
+  DataSource,
+  TestConnectionResult,
+  Catalog,
+  Worker,
+  Tag,
+  SysConfig,
+} from "@/types/manage";
 import type { PaginatedResponse, PaginationParams } from "@/types/common";
 
 // ---- Resource Management ----
@@ -39,16 +49,6 @@ export function updateUser(id: string, data: Partial<Omit<ManagedUser, "id" | "c
   return http.put<ManagedUser>(`/users/${id}`, data);
 }
 
-// ---- Environment Configuration ----
-
-export function getEnvConfigs(params?: PaginationParams): Promise<PaginatedResponse<EnvConfig>> {
-  return http.get<PaginatedResponse<EnvConfig>>("/env-configs", { params });
-}
-
-export function updateEnvConfig(id: string, data: Partial<Omit<EnvConfig, "id">>): Promise<EnvConfig> {
-  return http.put<EnvConfig>(`/env-configs/${id}`, data);
-}
-
 // ---- Custom Parameters ----
 
 export function getParams(params?: PaginationParams): Promise<PaginatedResponse<CustomParam>> {
@@ -65,4 +65,117 @@ export function updateParam(id: string, data: Partial<Omit<CustomParam, "id">>):
 
 export function deleteParam(id: string): Promise<void> {
   return http.delete(`/params/${id}`);
+}
+
+// ---- Data Sources ----
+
+export function getDataSources(params?: PaginationParams): Promise<PaginatedResponse<DataSource>> {
+  return http.get<PaginatedResponse<DataSource>>("/datasources", { params });
+}
+
+export function createDataSource(
+  data: Omit<DataSource, "id" | "createdAt" | "updatedAt">,
+): Promise<DataSource> {
+  return http.post<DataSource>("/datasources", data);
+}
+
+export function updateDataSource(
+  id: string,
+  data: Partial<Omit<DataSource, "id" | "createdAt" | "updatedAt">>,
+): Promise<DataSource> {
+  return http.put<DataSource>(`/datasources/${id}`, data);
+}
+
+export function deleteDataSource(id: string): Promise<void> {
+  return http.delete(`/datasources/${id}`);
+}
+
+export function testDataSourceConnection(id: string): Promise<TestConnectionResult> {
+  return http.post<TestConnectionResult>(`/datasources/${id}/test`);
+}
+
+// ---- Catalogs ----
+
+export function getCatalogs(params?: PaginationParams): Promise<PaginatedResponse<Catalog>> {
+  return http.get<PaginatedResponse<Catalog>>("/catalogs", { params });
+}
+
+export function createCatalog(data: Omit<Catalog, "id" | "createdAt" | "updatedAt">): Promise<Catalog> {
+  return http.post<Catalog>("/catalogs", data);
+}
+
+export function updateCatalog(
+  id: string,
+  data: Partial<Omit<Catalog, "id" | "createdAt" | "updatedAt">>,
+): Promise<Catalog> {
+  return http.put<Catalog>(`/catalogs/${id}`, data);
+}
+
+export function deleteCatalog(id: string): Promise<void> {
+  return http.delete(`/catalogs/${id}`);
+}
+
+// ---- Workers ----
+
+export function getWorkers(params?: PaginationParams): Promise<PaginatedResponse<Worker>> {
+  return http.get<PaginatedResponse<Worker>>("/workers", { params });
+}
+
+export function createWorker(data: Omit<Worker, "id" | "createdAt" | "updatedAt">): Promise<Worker> {
+  return http.post<Worker>("/workers", data);
+}
+
+export function updateWorker(
+  id: string,
+  data: Partial<Omit<Worker, "id" | "createdAt" | "updatedAt">>,
+): Promise<Worker> {
+  return http.put<Worker>(`/workers/${id}`, data);
+}
+
+export function deleteWorker(id: string): Promise<void> {
+  return http.delete(`/workers/${id}`);
+}
+
+// ---- Tags ----
+
+export function getTags(params?: PaginationParams): Promise<PaginatedResponse<Tag>> {
+  return http.get<PaginatedResponse<Tag>>("/tags", { params });
+}
+
+export function createTag(data: Omit<Tag, "id" | "createdAt" | "updatedAt">): Promise<Tag> {
+  return http.post<Tag>("/tags", data);
+}
+
+export function updateTag(id: string, data: Partial<Omit<Tag, "id" | "createdAt" | "updatedAt">>): Promise<Tag> {
+  return http.put<Tag>(`/tags/${id}`, data);
+}
+
+export function deleteTag(id: string): Promise<void> {
+  return http.delete(`/tags/${id}`);
+}
+
+// ---- System Configs ----
+
+export function getSysConfigs(params?: PaginationParams): Promise<PaginatedResponse<SysConfig>> {
+  return http.get<PaginatedResponse<SysConfig>>("/sys-configs", { params });
+}
+
+export function createSysConfig(data: Omit<SysConfig, "id" | "createdAt" | "updatedAt">): Promise<SysConfig> {
+  return http.post<SysConfig>("/sys-configs", data);
+}
+
+export function updateSysConfig(
+  id: string,
+  data: Partial<Omit<SysConfig, "id" | "createdAt" | "updatedAt">>,
+): Promise<SysConfig> {
+  return http.put<SysConfig>(`/sys-configs/${id}`, data);
+}
+
+export function deleteSysConfig(id: string): Promise<void> {
+  return http.delete(`/sys-configs/${id}`);
+}
+
+/** Physically purge a soft-deleted config. */
+export function purgeSysConfig(id: string): Promise<void> {
+  return http.delete(`/sys-configs/${id}/purge`);
 }

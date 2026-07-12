@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Modal, Form } from "antd";
+import { useTranslation } from "react-i18next";
 import type { AlertPolicy } from "@/types/monitor";
 import { AlertPolicyFormFields } from "./AlertPolicyForm.fields";
 
@@ -12,6 +13,7 @@ export interface AlertPolicyFormProps {
 }
 
 export default function AlertPolicyForm({ open, editingPolicy, confirmLoading, onOk, onCancel }: AlertPolicyFormProps) {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function AlertPolicyForm({ open, editingPolicy, confirmLoading, o
 
   return (
     <Modal
-      title={editingPolicy ? "编辑策略" : "新增策略"}
+      title={editingPolicy ? t("monitor.editPolicy") : t("monitor.addPolicy")}
       open={open}
       onOk={handleOk}
       onCancel={handleCancel}

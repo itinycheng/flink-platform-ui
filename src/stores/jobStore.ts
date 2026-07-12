@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { JobTreeNode, WorkflowFormData } from "@/types/job";
+import type { JobTreeNode, WorkflowFormData, WorkflowLifecycleStatus } from "@/types/job";
 import {
   getJobGroups,
   getJobsByGroup,
@@ -8,6 +8,11 @@ import {
   createWorkflow,
   updateWorkflow,
   deleteWorkflow,
+  runJobOnce,
+  setJobStatus,
+  copyJob,
+  updateJobTags,
+  updateJobAlertRules,
 } from "@/api/job";
 
 export interface OpenTab {
@@ -34,7 +39,13 @@ export interface WorkflowState {
   setFormData: (data: WorkflowFormData | null) => void;
   addNode: (node: JobTreeNode) => void;
   updateNodeName: (nodeId: string, newName: string) => void;
+  patchNode: (nodeId: string, patch: Partial<JobTreeNode>) => void;
   removeNode: (nodeId: string) => void;
+  runOnce: (nodeId: string) => Promise<string>;
+  setLifecycleStatus: (nodeId: string, status: WorkflowLifecycleStatus) => Promise<void>;
+  copyDefinition: (nodeId: string) => Promise<void>;
+  setNodeTags: (nodeId: string, tags: string[]) => Promise<void>;
+  setNodeAlertRules: (nodeId: string, alertRuleIds: string[]) => Promise<void>;
   saveWorkflow: (data: WorkflowFormData) => Promise<void>;
   deleteWorkflow: (nodeId: string) => Promise<void>;
   openTab: (node: JobTreeNode) => void;
@@ -100,7 +111,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     set({ treeLoading: true });
     try {
       const groups = await getJobGroups();
-      set({ treeData: groups ?? [], loadedGroups: new Set(), searchExpandedKeys: null });
+      set({ treeData: Array.isArray(groups) ? groups : [], loadedGroups: new Set(), searchExpandedKeys: null });
     } finally {
       set({ treeLoading: false });
     }
@@ -116,8 +127,9 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
 
     try {
       const children = await getJobsByGroup(groupId);
+      const safeChildren = Array.isArray(children) ? children : [];
       const { treeData, loadingGroups: currentLoading, loadedGroups: currentLoaded } = get();
-      const newTree = treeData.map((group) => (group.id === groupId ? { ...group, children: children ?? [] } : group));
+      const newTree = treeData.map((group) => (group.id === groupId ? { ...group, children: safeChildren } : group));
       const newLoadingSet = new Set(currentLoading);
       newLoadingSet.delete(groupId);
       const newLoadedSet = new Set(currentLoaded);
@@ -135,10 +147,11 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     set({ treeLoading: true });
     try {
       const results = await searchJobs({ keyword, types });
+      const list = Array.isArray(results) ? results : [];
       set({
-        treeData: results ?? [],
-        loadedGroups: new Set(results.map((g) => g.id)),
-        searchExpandedKeys: results.map((g) => g.id),
+        treeData: list,
+        loadedGroups: new Set(list.map((g) => g.id)),
+        searchExpandedKeys: list.map((g) => g.id),
       });
     } finally {
       set({ treeLoading: false });
@@ -198,6 +211,49 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
       return group;
     });
     set({ treeData: newTree });
+  },
+
+  patchNode: (nodeId, patch) => {
+    const { treeData } = get();
+    set({
+      treeData: treeData.map((group) =>
+        group.id === nodeId
+          ? { ...group, ...patch }
+          : group.children
+            ? {
+                ...group,
+                children: group.children.map((c) => (c.id === nodeId ? { ...c, ...patch } : c)),
+              }
+            : group,
+      ),
+    });
+  },
+
+  runOnce: async (nodeId) => {
+    const { flowRunId } = await runJobOnce(nodeId);
+    // Reflect the triggered run immediately in the node's last-run indicator.
+    get().patchNode(nodeId, { status: "running" });
+    return flowRunId;
+  },
+
+  setLifecycleStatus: async (nodeId, status) => {
+    await setJobStatus(nodeId, status);
+    get().patchNode(nodeId, { lifecycleStatus: status });
+  },
+
+  copyDefinition: async (nodeId) => {
+    const copy = await copyJob(nodeId);
+    get().addNode(copy);
+  },
+
+  setNodeTags: async (nodeId, tags) => {
+    await updateJobTags(nodeId, tags);
+    get().patchNode(nodeId, { tags });
+  },
+
+  setNodeAlertRules: async (nodeId, alertRuleIds) => {
+    await updateJobAlertRules(nodeId, alertRuleIds);
+    get().patchNode(nodeId, { alertRuleIds });
   },
 
   removeNode: (nodeId) => {

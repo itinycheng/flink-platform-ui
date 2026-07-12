@@ -1,5 +1,6 @@
 import { Modal, Form, Input, Select, type FormInstance } from "antd";
-import { ROLE_OPTIONS } from "./UserList.constants";
+import { useTranslation } from "react-i18next";
+import { getRoleOptions } from "./UserList.constants";
 
 interface UserFormModalProps {
   open: boolean;
@@ -11,9 +12,10 @@ interface UserFormModalProps {
 }
 
 export function UserFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }: UserFormModalProps) {
+  const { t } = useTranslation();
   return (
     <Modal
-      title={isEdit ? "编辑用户" : "新增用户"}
+      title={isEdit ? t("user2.editTitle") : t("user2.addTitle")}
       open={open}
       onOk={onOk}
       onCancel={onCancel}
@@ -22,21 +24,21 @@ export function UserFormModal({ open, isEdit, form, confirmLoading, onOk, onCanc
       data-testid="user-modal"
     >
       <Form form={form} layout="vertical" data-testid="user-form">
-        <Form.Item name="username" label="用户名" rules={[{ required: true, message: "请输入用户名" }]}>
-          <Input placeholder="请输入用户名" data-testid="input-username" />
+        <Form.Item name="username" label={t("user2.usernameLabel")} rules={[{ required: true, message: t("user2.usernamePlaceholder") }]}>
+          <Input placeholder={t("user2.usernamePlaceholder")} data-testid="input-username" />
         </Form.Item>
         <Form.Item
           name="email"
-          label="邮箱"
+          label={t("user2.emailLabel")}
           rules={[
-            { required: true, message: "请输入邮箱" },
-            { type: "email", message: "请输入有效的邮箱地址" },
+            { required: true, message: t("user2.emailPlaceholder") },
+            { type: "email", message: t("user2.emailInvalid") },
           ]}
         >
-          <Input placeholder="请输入邮箱" data-testid="input-email" />
+          <Input placeholder={t("user2.emailPlaceholder")} data-testid="input-email" />
         </Form.Item>
-        <Form.Item name="roles" label="角色" rules={[{ required: true, message: "请选择角色" }]}>
-          <Select mode="multiple" placeholder="请选择角色" options={ROLE_OPTIONS} data-testid="select-roles" />
+        <Form.Item name="roles" label={t("user2.rolesLabel")} rules={[{ required: true, message: t("user2.rolesPlaceholder") }]}>
+          <Select mode="multiple" placeholder={t("user2.rolesPlaceholder")} options={getRoleOptions(t)} data-testid="select-roles" />
         </Form.Item>
       </Form>
     </Modal>

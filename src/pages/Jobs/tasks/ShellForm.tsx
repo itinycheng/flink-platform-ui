@@ -1,4 +1,5 @@
 import { Col, Form, Input, Row } from "antd";
+import { useTranslation } from "react-i18next";
 import type { ShellTaskParams, TaskParams } from "@/types/job";
 import CodeEditor from "@/components/CodeEditor";
 
@@ -10,6 +11,7 @@ interface ShellFormProps {
 }
 
 export default function ShellForm({ value, onChange }: ShellFormProps) {
+  const { t } = useTranslation();
   const params = (value ?? { script: "" }) as ShellTaskParams;
 
   const handleChange = (field: keyof ShellTaskParams, fieldValue: unknown) => {
@@ -44,17 +46,21 @@ export default function ShellForm({ value, onChange }: ShellFormProps) {
   return (
     <Row gutter={16}>
       <Col span={12}>
-        <Form.Item label="脚本内容" required rules={[{ required: true, message: "请输入脚本内容" }]}>
+        <Form.Item
+          label={t("taskForm.scriptContent")}
+          required
+          rules={[{ required: true, message: t("taskForm.scriptRequired") }]}
+        >
           <CodeEditor
             language="shell"
-            placeholder="请输入 Shell 脚本内容"
+            placeholder={t("taskForm.scriptPlaceholder")}
             value={params.script}
             onChange={(v) => handleChange("script", v)}
           />
         </Form.Item>
       </Col>
       <Col span={12}>
-        <Form.Item label="环境变量" tooltip="每行一个，格式：KEY=VALUE">
+        <Form.Item label={t("taskForm.envVars")} tooltip={t("taskForm.envVarsTooltip")}>
           <TextArea
             rows={6}
             placeholder={"KEY1=VALUE1\nKEY2=VALUE2"}
@@ -64,9 +70,9 @@ export default function ShellForm({ value, onChange }: ShellFormProps) {
         </Form.Item>
       </Col>
       <Col span={12}>
-        <Form.Item label="工作目录">
+        <Form.Item label={t("taskForm.workingDir")}>
           <Input
-            placeholder="例如：/home/user/scripts"
+            placeholder={t("taskForm.workingDirPlaceholder")}
             value={params.workingDir}
             onChange={(e) => handleChange("workingDir", e.target.value || undefined)}
           />

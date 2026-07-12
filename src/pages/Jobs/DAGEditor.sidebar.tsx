@@ -36,6 +36,8 @@ const SIDEBAR_TASK_TYPES: SidebarTaskType[] = [
     color: "#fa8c16",
   },
   { type: "depend", label: "Depend", icon: paletteIcon("depend"), color: getTaskIcon("depend").color },
+  { type: "condition", label: "Condition", icon: paletteIcon("condition"), color: getTaskIcon("condition").color },
+  { type: "subflow", label: "SubFlow", icon: paletteIcon("subflow"), color: getTaskIcon("subflow").color },
 ];
 
 export function TaskSidebar() {

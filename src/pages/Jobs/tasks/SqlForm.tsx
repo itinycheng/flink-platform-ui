@@ -1,4 +1,5 @@
 import { Col, Form, InputNumber, Row, Select } from "antd";
+import { useTranslation } from "react-i18next";
 import type { SqlTaskParams, TaskParams } from "@/types/job";
 import CodeEditor from "@/components/CodeEditor";
 
@@ -16,6 +17,7 @@ const DATASOURCE_OPTIONS = [
 ];
 
 export default function SqlForm({ value, onChange }: SqlFormProps) {
+  const { t } = useTranslation();
   const params = (value ?? { datasource: "", sql: "" }) as SqlTaskParams;
 
   const handleChange = (field: keyof SqlTaskParams, fieldValue: unknown) => {
@@ -25,9 +27,13 @@ export default function SqlForm({ value, onChange }: SqlFormProps) {
   return (
     <Row gutter={16}>
       <Col span={12}>
-        <Form.Item label="数据源xxx" required rules={[{ required: true, message: "请选择数据源" }]}>
+        <Form.Item
+          label={t("taskForm.datasource")}
+          required
+          rules={[{ required: true, message: t("taskForm.datasourceRequired") }]}
+        >
           <Select
-            placeholder="请选择数据源"
+            placeholder={t("taskForm.datasourcePlaceholder")}
             options={DATASOURCE_OPTIONS}
             value={params.datasource || undefined}
             onChange={(v: string) => handleChange("datasource", v)}
@@ -35,11 +41,11 @@ export default function SqlForm({ value, onChange }: SqlFormProps) {
         </Form.Item>
       </Col>
       <Col span={12}>
-        <Form.Item label="超时时间（秒）">
+        <Form.Item label={t("taskForm.timeout")}>
           <InputNumber
             min={1}
             max={86400}
-            placeholder="默认不限制"
+            placeholder={t("taskForm.timeoutPlaceholder")}
             style={{ width: "100%" }}
             value={params.timeout}
             onChange={(v) => handleChange("timeout", v ?? undefined)}
@@ -47,10 +53,14 @@ export default function SqlForm({ value, onChange }: SqlFormProps) {
         </Form.Item>
       </Col>
       <Col span={24}>
-        <Form.Item label="SQL 语句" required rules={[{ required: true, message: "请输入 SQL 语句" }]}>
+        <Form.Item
+          label={t("taskForm.sql")}
+          required
+          rules={[{ required: true, message: t("taskForm.sqlRequired") }]}
+        >
           <CodeEditor
             language="sql"
-            placeholder="请输入 SQL 语句"
+            placeholder={t("taskForm.sqlPlaceholder")}
             value={params.sql}
             onChange={(v) => handleChange("sql", v)}
           />

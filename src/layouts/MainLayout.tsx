@@ -10,34 +10,65 @@ import {
   FolderOutlined,
   TeamOutlined,
   ToolOutlined,
+  DatabaseOutlined,
+  TableOutlined,
+  ClusterOutlined,
+  TagsOutlined,
+  ControlOutlined,
+  HistoryOutlined,
+  PartitionOutlined,
+  BellOutlined,
+  ConsoleSqlOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import UserAvatar from "@/components/UserAvatar";
 import LangSwitcher from "@/components/LangSwitcher";
+import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
 
-const layoutRoutes: ProLayoutProps["route"] = {
-  path: "/",
-  routes: [
-    { path: "/dashboard", name: "Dashboard", icon: <DashboardOutlined /> },
-    {
-      path: "/jobs",
-      name: "Jobs",
-      icon: <ScheduleOutlined />,
-      routes: [{ path: "/jobs/list", name: "_jobs", icon: <ScheduleOutlined /> }],
-    },
-    {
-      path: "/manage",
-      name: "Manage",
-      icon: <SettingOutlined />,
-      routes: [
-        { path: "/manage/resources", name: "Resources", icon: <FolderOutlined /> },
-        { path: "/manage/users", name: "Users", icon: <TeamOutlined /> },
-        { path: "/manage/configs", name: "Env Config", icon: <SettingOutlined /> },
-        { path: "/manage/params", name: "Custom Params", icon: <ToolOutlined /> },
-      ],
-    },
-    { path: "/monitor", name: "Monitor", icon: <MonitorOutlined /> },
-  ],
-};
+type TFunc = (key: string) => string;
+
+function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
+  return {
+    path: "/",
+    routes: [
+      { path: "/dashboard", name: t("menu.dashboard"), icon: <DashboardOutlined /> },
+      {
+        path: "/studio",
+        name: t("menu.studio"),
+        icon: <PartitionOutlined />,
+        routes: [{ path: "/studio/list", name: "_jobs", icon: <PartitionOutlined /> }],
+      },
+      { path: "/reactive", name: t("menu.query"), icon: <ConsoleSqlOutlined /> },
+      {
+        path: "/runs",
+        name: t("menu.runs"),
+        icon: <HistoryOutlined />,
+        routes: [
+          { path: "/runs/flows", name: t("menu.flowInstances"), icon: <ScheduleOutlined /> },
+          { path: "/runs/jobs", name: t("menu.jobRuns"), icon: <HistoryOutlined /> },
+        ],
+      },
+      {
+        path: "/manage",
+        name: t("menu.manage"),
+        icon: <SettingOutlined />,
+        routes: [
+          { path: "/manage/resources", name: t("menu.resources"), icon: <FolderOutlined /> },
+          { path: "/manage/datasources", name: t("menu.dataSources"), icon: <DatabaseOutlined /> },
+          { path: "/manage/catalogs", name: t("menu.catalogs"), icon: <TableOutlined /> },
+          { path: "/manage/workers", name: t("menu.workers"), icon: <ClusterOutlined /> },
+          { path: "/manage/tags", name: t("menu.tags"), icon: <TagsOutlined /> },
+          { path: "/manage/users", name: t("menu.users"), icon: <TeamOutlined /> },
+          { path: "/manage/sys-configs", name: t("menu.systemConfig"), icon: <ControlOutlined /> },
+          { path: "/manage/alert-rules", name: t("menu.alertRules"), icon: <BellOutlined /> },
+          { path: "/manage/workspaces", name: t("menu.workspaces"), icon: <AppstoreOutlined /> },
+          { path: "/manage/params", name: t("menu.customParams"), icon: <ToolOutlined /> },
+        ],
+      },
+      { path: "/monitor", name: t("menu.monitor"), icon: <MonitorOutlined /> },
+    ],
+  };
+}
 
 const layoutToken: ProLayoutProps["token"] = {
   header: {
@@ -93,14 +124,16 @@ function renderHeaderTitle(title: string) {
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t } = useTranslation();
-  const isJobsPage = location.pathname.startsWith("/jobs");
+  const { t, i18n } = useTranslation();
+  const isJobsPage = location.pathname.startsWith("/studio");
   const isDashboard = location.pathname === "/dashboard" || location.pathname === "/";
   const title = t("app.title", { appName: __APP_NAME__ });
+  const layoutRoutes = buildLayoutRoutes(t);
 
   return (
     <div id="pro-layout-wrapper" style={{ height: "100vh" }}>
       <ProLayout
+        key={i18n.language}
         title={title}
         headerTitleRender={() => renderHeaderTitle(title)}
         layout="mix"
@@ -112,7 +145,11 @@ export default function MainLayout() {
         menuItemRender={(item, dom) => (
           <a onClick={() => item.path && item.name !== "_jobs" && navigate(item.path)}>{dom}</a>
         )}
-        actionsRender={() => [<LangSwitcher key="lang" aria-hidden />, <UserAvatar key="avatar" />]}
+        actionsRender={() => [
+          <WorkspaceSwitcher key="workspace" />,
+          <LangSwitcher key="lang" aria-hidden />,
+          <UserAvatar key="avatar" />,
+        ]}
         footerRender={
           isDashboard
             ? () => (

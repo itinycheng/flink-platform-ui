@@ -2,49 +2,51 @@ import { useMemo } from "react";
 import { Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ProColumns } from "@ant-design/pro-components";
+import { useTranslation } from "react-i18next";
 import type { AlertPolicy } from "@/types/monitor";
 import { getAlerts } from "@/api/monitor";
 import AlertPolicyForm from "./AlertPolicyForm";
-import { NOTIFY_METHOD_LABEL } from "./AlertPolicyList.constants";
+import { getNotifyMethodLabels } from "./AlertPolicyList.constants";
 import { AlertEditButton, AlertEnabledSwitch } from "./AlertPolicyList.cells";
 import { useAlertPolicyCrud } from "./AlertPolicyList.hooks";
 
 export default function AlertPolicyList() {
+  const { t } = useTranslation();
   const crud = useAlertPolicyCrud();
 
-  const columns = useMemo<ProColumns<AlertPolicy>[]>(
-    () => [
-      { title: "策略名称", dataIndex: "name", key: "name", ellipsis: true },
-      { title: "监控对象", dataIndex: "target", key: "target", ellipsis: true },
-      { title: "告警条件", key: "condition", render: (_, r) => `${r.condition} ${r.threshold}` },
+  const columns = useMemo<ProColumns<AlertPolicy>[]>(() => {
+    const notifyLabels = getNotifyMethodLabels(t);
+    return [
+      { title: t("monitor.policyName"), dataIndex: "name", key: "name", ellipsis: true },
+      { title: t("monitor.target"), dataIndex: "target", key: "target", ellipsis: true },
+      { title: t("monitor.condition"), key: "condition", render: (_, r) => `${r.condition} ${r.threshold}` },
       {
-        title: "通知方式",
+        title: t("monitor.notifyMethod"),
         dataIndex: "notifyMethod",
         key: "notifyMethod",
         width: 120,
-        render: (_, r) => NOTIFY_METHOD_LABEL[r.notifyMethod],
+        render: (_, r) => notifyLabels[r.notifyMethod],
       },
       {
-        title: "启用状态",
+        title: t("monitor.enabledStatus"),
         dataIndex: "enabled",
         key: "enabled",
         width: 100,
         render: (_, r) => <AlertEnabledSwitch record={r} onToggle={crud.handleToggleEnabled} />,
       },
       {
-        title: "操作",
+        title: t("common.operation"),
         key: "action",
         width: 100,
         render: (_, r) => <AlertEditButton record={r} onEdit={crud.handleEdit} />,
       },
-    ],
-    [crud.handleToggleEnabled, crud.handleEdit],
-  );
+    ];
+  }, [t, crud.handleToggleEnabled, crud.handleEdit]);
 
   return (
     <>
       <ProTable<AlertPolicy>
-        headerTitle="告警策略列表"
+        headerTitle={t("monitor.policyListTitle")}
         actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
@@ -57,7 +59,7 @@ export default function AlertPolicyList() {
             onClick={crud.handleAdd}
             data-testid="add-policy-button"
           >
-            新增策略
+            {t("monitor.addPolicy")}
           </Button>,
         ]}
         request={async (params) => {

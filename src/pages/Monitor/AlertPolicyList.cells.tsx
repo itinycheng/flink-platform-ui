@@ -1,4 +1,5 @@
 import { Button, Switch } from "antd";
+import { useTranslation } from "react-i18next";
 import type { AlertPolicy } from "@/types/monitor";
 
 interface AlertEnabledSwitchProps {
@@ -22,9 +23,10 @@ interface AlertEditButtonProps {
 }
 
 export function AlertEditButton({ record, onEdit }: AlertEditButtonProps) {
+  const { t } = useTranslation();
   return (
     <Button type="link" onClick={() => onEdit(record)} data-testid={`edit-btn-${record.id}`}>
-      编辑
+      {t("common.edit")}
     </Button>
   );
 }

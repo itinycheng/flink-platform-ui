@@ -1,14 +1,18 @@
+import { useState } from "react";
 import { Form, Input, InputNumber, Select, Switch } from "antd";
 import { useTranslation } from "react-i18next";
+import CronPreview from "./CronPreview";
 
 export default function SchedulePanel() {
   const { t } = useTranslation();
+  const [cron, setCron] = useState("");
 
   return (
     <Form layout="vertical" size="small" style={{ padding: "0 4px" }}>
       <Form.Item label={t("sidePanel.cronExpression")}>
-        <Input placeholder="0 0 * * *" />
+        <Input placeholder="0 0 * * *" value={cron} onChange={(e) => setCron(e.target.value)} />
       </Form.Item>
+      <CronPreview expression={cron} />
       <Form.Item label={t("sidePanel.timezone")}>
         <Select
           placeholder={t("sidePanel.timezonePlaceholder")}

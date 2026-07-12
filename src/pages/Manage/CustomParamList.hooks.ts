@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Form, message } from "antd";
+import { useTranslation } from "react-i18next";
 import type { ActionType } from "@ant-design/pro-components";
 import type { CustomParam } from "@/types/manage";
 import { createParam, deleteParam, updateParam } from "@/api/manage";
@@ -13,6 +14,7 @@ function isFormValidationError(error: unknown): boolean {
 }
 
 export function useParamCrud() {
+  const { t } = useTranslation();
   const actionRef = useRef<ActionType>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingParam, setEditingParam] = useState<CustomParam | null>(null);
@@ -42,10 +44,10 @@ export function useParamCrud() {
       setConfirmLoading(true);
       if (editingParam) {
         await updateParam(editingParam.id, values);
-        message.success("参数更新成功");
+        message.success(t("common.updateSuccess"));
       } else {
         await createParam(values);
-        message.success("参数创建成功");
+        message.success(t("common.createSuccess"));
       }
       setModalOpen(false);
       form.resetFields();
@@ -53,7 +55,7 @@ export function useParamCrud() {
       void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
-      message.error(editingParam ? "参数更新失败，请重试" : "参数创建失败，请重试");
+      message.error(editingParam ? t("common.updateFailed") : t("common.createFailed"));
     } finally {
       setConfirmLoading(false);
     }
@@ -68,10 +70,10 @@ export function useParamCrud() {
   const handleDelete = async (id: string) => {
     try {
       await deleteParam(id);
-      message.success("参数已删除");
+      message.success(t("common.deleteSuccess"));
       void actionRef.current?.reload();
     } catch {
-      message.error("删除失败，请重试");
+      message.error(t("common.deleteFailed"));
     }
   };
 

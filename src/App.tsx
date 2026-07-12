@@ -2,10 +2,12 @@ import { ConfigProvider, App as AntApp } from "antd";
 import type { ThemeConfig } from "antd";
 import enUS from "antd/locale/en_US";
 import zhCN from "antd/locale/zh_CN";
+import { useTranslation } from "react-i18next";
+import { ProConfigProvider, enUSIntl, zhCNIntl } from "@ant-design/pro-components";
 import AppRouter from "./router";
-import { useLangStore } from "@/stores/langStore";
 
-const locales = { en: enUS, zh: zhCN };
+const antLocales = { en: enUS, zh: zhCN };
+const proIntls = { en: enUSIntl, zh: zhCNIntl };
 const themeConfig: ThemeConfig = {
   cssVar: { prefix: "ant" },
   token: {
@@ -41,13 +43,16 @@ const themeConfig: ThemeConfig = {
 };
 
 function App() {
-  const lang = useLangStore((s) => s.lang);
+  const { i18n } = useTranslation();
+  const lang: "en" | "zh" = i18n.language === "zh" ? "zh" : "en";
 
   return (
-    <ConfigProvider locale={locales[lang]} theme={themeConfig}>
-      <AntApp>
-        <AppRouter />
-      </AntApp>
+    <ConfigProvider locale={antLocales[lang]} theme={themeConfig}>
+      <ProConfigProvider intl={proIntls[lang]}>
+        <AntApp>
+          <AppRouter />
+        </AntApp>
+      </ProConfigProvider>
     </ConfigProvider>
   );
 }

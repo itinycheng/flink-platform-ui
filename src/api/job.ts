@@ -1,5 +1,5 @@
 import { http } from "@/utils/request";
-import type { JobTreeNode, WorkflowFormData, WorkflowRunRecord } from "@/types/job";
+import type { JobTreeNode, WorkflowFormData, WorkflowRunRecord, WorkflowLifecycleStatus } from "@/types/job";
 
 /** 获取所有分组（不含子节点） */
 export function getJobGroups(): Promise<JobTreeNode[]> {
@@ -38,4 +38,29 @@ export function deleteWorkflow(id: string): Promise<void> {
 
 export function getWorkflowRuns(id: string): Promise<WorkflowRunRecord[]> {
   return http.get<WorkflowRunRecord[]>(`/workflows/${id}/runs`);
+}
+
+// ---- Definition lifecycle (Task & Workflow nodes) ----
+
+/** Trigger a single immediate run of a definition. */
+export function runJobOnce(id: string): Promise<{ flowRunId: string }> {
+  return http.post<{ flowRunId: string }>(`/jobs/${id}/run-once`);
+}
+
+/** Transition lifecycle status (online/offline, start/stop scheduling). */
+export function setJobStatus(id: string, status: WorkflowLifecycleStatus): Promise<JobTreeNode> {
+  return http.put<JobTreeNode>(`/jobs/${id}/status`, { status });
+}
+
+/** Duplicate a definition into the same group. */
+export function copyJob(id: string): Promise<JobTreeNode> {
+  return http.post<JobTreeNode>(`/jobs/${id}/copy`);
+}
+
+export function updateJobTags(id: string, tags: string[]): Promise<JobTreeNode> {
+  return http.put<JobTreeNode>(`/jobs/${id}/tags`, { tags });
+}
+
+export function updateJobAlertRules(id: string, alertRuleIds: string[]): Promise<JobTreeNode> {
+  return http.put<JobTreeNode>(`/jobs/${id}/alert-rules`, { alertRuleIds });
 }

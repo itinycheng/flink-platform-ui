@@ -1,7 +1,17 @@
 import type { AlertPolicy } from "@/types/monitor";
 
-export const NOTIFY_METHOD_LABEL: Record<AlertPolicy["notifyMethod"], string> = {
-  email: "邮件",
-  webhook: "Webhook",
-  sms: "短信",
-};
+export function getNotifyMethodOptions(t: (k: string) => string) {
+  return [
+    { label: t("monitor.notifyEmail"), value: "email" },
+    { label: t("monitor.notifyWebhook"), value: "webhook" },
+    { label: t("monitor.notifySms"), value: "sms" },
+  ];
+}
+
+export function getNotifyMethodLabels(t: (k: string) => string): Record<AlertPolicy["notifyMethod"], string> {
+  return {
+    email: t("monitor.notifyEmail"),
+    webhook: t("monitor.notifyWebhook"),
+    sms: t("monitor.notifySms"),
+  };
+}

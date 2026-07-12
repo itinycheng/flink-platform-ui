@@ -1,8 +1,9 @@
-import { Avatar, Dropdown, Flex, Tag, Space, Typography, type MenuProps } from "antd";
+import { Avatar, ConfigProvider, Dropdown, Flex, Tag, Space, Typography, type MenuProps } from "antd";
 import { UserOutlined, LogoutOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/authStore";
 import { useNavigate } from "react-router-dom";
+import { compactMenuTheme } from "@/theme";
 
 const PERMISSION_KEYS: Record<string, string> = {
   "dashboard:view": "user.dashboardView",
@@ -88,11 +89,13 @@ export default function UserAvatar() {
   ];
 
   return (
-    <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
-      <Flex align="center" gap="middle">
-        <Avatar icon={<UserOutlined />} />
-        <Typography.Text>{user.username}</Typography.Text>
-      </Flex>
-    </Dropdown>
+    <ConfigProvider theme={compactMenuTheme}>
+      <Dropdown menu={{ items }} trigger={["click"]} placement="bottomRight">
+        <Flex align="center" gap="middle">
+          <Avatar icon={<UserOutlined />} />
+          <Typography.Text>{user.username}</Typography.Text>
+        </Flex>
+      </Dropdown>
+    </ConfigProvider>
   );
 }

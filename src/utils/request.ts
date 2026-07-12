@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
 import { message } from "antd";
+import i18n from "@/i18n";
 
 const request = axios.create({
   baseURL: "/api",
@@ -12,6 +13,11 @@ request.interceptors.request.use(
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    // Multi-tenant isolation: scope every request to the active workspace.
+    const workspaceId = localStorage.getItem("workspaceId");
+    if (workspaceId) {
+      config.headers["X-Workspace-Id"] = workspaceId;
     }
     return config;
   },
@@ -35,22 +41,22 @@ request.interceptors.response.use(
         localStorage.removeItem("user");
         // Avoid redirect loop if already on login page
         if (window.location.pathname !== "/login") {
-          message.error("认证已过期，请重新登录");
+          message.error(i18n.t("http.authExpired"));
           window.location.href = "/login";
         }
       } else if (status === 403) {
-        message.error("没有权限访问该资源");
+        message.error(i18n.t("http.forbidden"));
       } else if (status === 404) {
-        message.error("请求的资源不存在");
+        message.error(i18n.t("http.notFound"));
       } else if (status === 500) {
-        message.error("服务器内部错误");
+        message.error(i18n.t("http.serverError"));
       } else {
-        message.error(`请求失败 (${status})`);
+        message.error(i18n.t("http.requestFailed", { status }));
       }
     } else if (error.code === "ECONNABORTED") {
-      message.error("请求超时，请稍后重试");
+      message.error(i18n.t("http.timeout"));
     } else {
-      message.error("网络错误，请检查网络连接");
+      message.error(i18n.t("http.networkError"));
     }
 
     return Promise.reject(error);

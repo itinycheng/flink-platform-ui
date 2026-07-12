@@ -8,6 +8,7 @@ import shellIcon from "@/assets/command.svg";
 import hiveIcon from "@/assets/hive.svg";
 import flowIcon from "@/assets/flow.svg";
 import dependIcon from "@/assets/depend.svg";
+import joinIcon from "@/assets/join.svg";
 import React from "react";
 
 /**
@@ -29,6 +30,8 @@ export const TASK_ICON_REGISTRY: Record<string, TaskIconDef> = {
   hive: { color: "#e8a317", src: hiveIcon },
   workflow: { color: "#7b4fe0", src: flowIcon },
   depend: { color: "#13a8a8", src: dependIcon },
+  condition: { color: "#d48806", src: joinIcon },
+  subflow: { color: "#7b4fe0", src: flowIcon },
 };
 
 const FALLBACK: TaskIconDef = { color: "#7b4fe0", src: flowIcon };

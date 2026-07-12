@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Button } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ProColumns } from "@ant-design/pro-components";
+import { useTranslation } from "react-i18next";
 import type { ManagedUser } from "@/types/manage";
 import { getUsers } from "@/api/manage";
 import { useUserCrud } from "./UserList.hooks";
@@ -9,29 +10,30 @@ import { UserFormModal } from "./UserList.modal";
 import { UserActionsCell, UserRoleTags, UserStatusTag } from "./UserList.cells";
 
 export default function UserList() {
+  const { t } = useTranslation();
   const crud = useUserCrud();
 
   const columns = useMemo<ProColumns<ManagedUser>[]>(
     () => [
-      { title: "用户名", dataIndex: "username", key: "username", ellipsis: true },
-      { title: "邮箱", dataIndex: "email", key: "email", ellipsis: true },
+      { title: t("user2.usernameLabel"), dataIndex: "username", key: "username", ellipsis: true },
+      { title: t("user2.emailLabel"), dataIndex: "email", key: "email", ellipsis: true },
       {
-        title: "角色",
+        title: t("user2.rolesLabel"),
         dataIndex: "roles",
         key: "roles",
         width: 200,
         render: (_, r) => <UserRoleTags roles={r.roles} />,
       },
       {
-        title: "状态",
+        title: t("common.status"),
         dataIndex: "status",
         key: "status",
         width: 100,
         render: (_, r) => <UserStatusTag status={r.status} />,
       },
-      { title: "创建时间", dataIndex: "createdAt", key: "createdAt", width: 200, valueType: "dateTime", sorter: true },
+      { title: t("common.createdAt"), dataIndex: "createdAt", key: "createdAt", width: 200, valueType: "dateTime", sorter: true },
       {
-        title: "操作",
+        title: t("common.operation"),
         key: "action",
         width: 180,
         render: (_, record) => (
@@ -39,13 +41,13 @@ export default function UserList() {
         ),
       },
     ],
-    [crud.handleEdit, crud.handleToggleStatus],
+    [t, crud.handleEdit, crud.handleToggleStatus],
   );
 
   return (
     <div data-testid="user-list">
       <ProTable<ManagedUser>
-        headerTitle="用户列表"
+        headerTitle={t("user2.title")}
         actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
@@ -58,7 +60,7 @@ export default function UserList() {
             onClick={crud.handleAdd}
             data-testid="add-user-button"
           >
-            新增用户
+            {t("user2.addButton")}
           </Button>,
         ]}
         request={async (params) => {

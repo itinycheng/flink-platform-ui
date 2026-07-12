@@ -1,5 +1,6 @@
-import { Button, Popconfirm } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
+import RowActions from "@/components/RowActions";
 import type { ResourceFile } from "@/types/manage";
 
 interface ResourceDeleteCellProps {
@@ -8,17 +9,19 @@ interface ResourceDeleteCellProps {
 }
 
 export function ResourceDeleteCell({ record, onDelete }: ResourceDeleteCellProps) {
+  const { t } = useTranslation();
   return (
-    <Popconfirm
-      title="确认删除"
-      description={`确定要删除文件 "${record.name}" 吗？`}
-      onConfirm={() => onDelete(record.id)}
-      okText="确定"
-      cancelText="取消"
-    >
-      <Button type="link" danger icon={<DeleteOutlined />} data-testid={`delete-btn-${record.id}`}>
-        删除
-      </Button>
-    </Popconfirm>
+    <RowActions
+      actions={[
+        {
+          key: "delete",
+          tooltip: t("common.delete"),
+          icon: <DeleteOutlined />,
+          danger: true,
+          confirm: t("resource.deleteConfirmDesc", { name: record.name }),
+          onClick: () => onDelete(record.id),
+        },
+      ]}
+    />
   );
 }

@@ -1,4 +1,4 @@
-import { Dropdown } from "antd";
+import { ConfigProvider, Dropdown } from "antd";
 import type { MessageInstance } from "antd/es/message/interface";
 import {
   ReactFlow,
@@ -16,6 +16,7 @@ import {
   type OnEdgesChange,
 } from "@xyflow/react";
 import type { MenuProps } from "antd";
+import { compactMenuTheme } from "@/theme";
 import { StatusEdge, TaskNode } from "./DAGEditor.nodes";
 import { DAGToolbar } from "./DAGEditor.panels";
 import React from "react";
@@ -97,16 +98,18 @@ export function DAGCanvas({
         </Panel>
       </ReactFlow>
       {contextMenu && (
-        <Dropdown
-          open
-          menu={{
-            items: contextMenu.type === "node" ? nodeMenuItems : edgeMenuItems,
-            onClick: ({ key }) => onMenuClick(key),
-          }}
-          styles={{ root: { position: "fixed" } }}
-        >
-          <div style={{ position: "absolute", left: contextMenu.x, top: contextMenu.y, width: 1, height: 1 }} />
-        </Dropdown>
+        <ConfigProvider theme={compactMenuTheme}>
+          <Dropdown
+            open
+            menu={{
+              items: contextMenu.type === "node" ? nodeMenuItems : edgeMenuItems,
+              onClick: ({ key }) => onMenuClick(key),
+            }}
+            styles={{ root: { position: "fixed" } }}
+          >
+            <div style={{ position: "absolute", left: contextMenu.x, top: contextMenu.y, width: 1, height: 1 }} />
+          </Dropdown>
+        </ConfigProvider>
       )}
     </div>
   );

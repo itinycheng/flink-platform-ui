@@ -16,18 +16,93 @@ export interface ManagedUser {
   createdAt: string;
 }
 
-export interface EnvConfig {
-  id: string;
-  env: string;
-  key: string;
-  value: string;
-  description?: string;
-}
-
 export interface CustomParam {
   id: string;
   name: string;
   value: string;
   type: "string" | "number" | "boolean" | "json";
   description?: string;
+}
+
+// ---- Data Source ----
+
+export type DataSourceType = "MySQL" | "PostgreSQL" | "Oracle" | "Hive" | "Kafka" | "Flink";
+
+export interface DataSource {
+  id: string;
+  name: string;
+  type: DataSourceType;
+  /** Connection parameters serialized as a JSON string. */
+  params: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TestConnectionResult {
+  success: boolean;
+  message: string;
+}
+
+// ---- Catalog (Flink SQL Catalog) ----
+
+export type CatalogType = "hive" | "jdbc" | "paimon" | "iceberg";
+
+export interface Catalog {
+  id: string;
+  name: string;
+  type: CatalogType;
+  /** DDL used to register the catalog. */
+  createSql: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---- Worker Node ----
+
+export type WorkerRole = "master" | "worker" | "all";
+export type WorkerStatus = "online" | "offline";
+
+export interface Worker {
+  id: string;
+  name: string;
+  ip: string;
+  port: number;
+  role: WorkerRole;
+  status: WorkerStatus;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---- Tag ----
+
+export type TagStatus = "active" | "disabled";
+
+export interface Tag {
+  id: string;
+  name: string;
+  type: string;
+  status: TagStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---- System Config (Hadoop/Flink/Hive) ----
+
+export type SysConfigType = "HADOOP_CONFIG" | "FLINK_CONFIG" | "HIVE_CONFIG" | "SPARK_CONFIG";
+export type SysConfigStatus = "online" | "offline" | "deleted";
+
+export interface SysConfig {
+  id: string;
+  name: string;
+  type: SysConfigType;
+  version: string;
+  status: SysConfigStatus;
+  /** Raw config content (properties / xml / yaml). */
+  content: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
 }

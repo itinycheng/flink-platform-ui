@@ -1,12 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Dropdown, Flex, Modal, Spin, Tree, message } from "antd";
-import { DeleteOutlined, DownOutlined, EllipsisOutlined, PlusOutlined, PlayCircleOutlined } from "@ant-design/icons";
+import { ConfigProvider, Dropdown, Flex, Modal, Spin, Tree, message } from "antd";
+import { DownOutlined, EllipsisOutlined } from "@ant-design/icons";
 import type { MenuProps, TreeDataNode } from "antd";
+import { compactMenuTheme } from "@/theme";
 import type { MessageInstance } from "antd/es/message/interface";
 import { useTranslation } from "react-i18next";
 import { useJobStore } from "@/stores/jobStore";
 import type { JobTreeNode } from "@/types/job";
 import { TaskIcon } from "./TaskIcon";
+import { StatusDot } from "./StatusDot";
+import { RunStatusIcon } from "./RunStatusIcon";
+import { buildNodeMenuItems } from "./nodeMenu";
+import { useDefinitionLifecycle } from "./useDefinitionLifecycle";
+import { TagEditModal } from "./TagEditModal";
+import { AlertBindModal } from "./AlertBindModal";
 
 // ---------- constants & icons ----------
 
@@ -55,6 +62,8 @@ function JobTreeNodeTitle({ displayName, node, menuItems, onMenuAction }: JobTre
     <Flex align="center" justify="space-between" className="job-tree-title">
       <span
         style={{
+          flex: 1,
+          minWidth: 0,
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
@@ -63,18 +72,22 @@ function JobTreeNodeTitle({ displayName, node, menuItems, onMenuAction }: JobTre
       >
         {displayName}
       </span>
-      <Dropdown
-        menu={{
-          items: menuItems,
-          onClick: ({ key, domEvent }) => {
-            domEvent.stopPropagation();
-            onMenuAction(key, node);
-          },
-        }}
-        trigger={["click"]}
-      >
-        <EllipsisOutlined className="job-tree-more" style={moreButtonStyle} onClick={(e) => e.stopPropagation()} />
-      </Dropdown>
+      <Flex align="center" gap={4} style={{ flexShrink: 0 }}>
+        {node.lifecycleStatus && <StatusDot status={node.lifecycleStatus} />}
+        {node.type !== "group" && <RunStatusIcon status={node.status} />}
+        <Dropdown
+          menu={{
+            items: menuItems,
+            onClick: ({ key, domEvent }) => {
+              domEvent.stopPropagation();
+              onMenuAction(key, node);
+            },
+          }}
+          trigger={["click"]}
+        >
+          <EllipsisOutlined className="job-tree-more" style={moreButtonStyle} onClick={(e) => e.stopPropagation()} />
+        </Dropdown>
+      </Flex>
     </Flex>
   );
 }
@@ -241,29 +254,7 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
     [removeNode, messageApi, t],
   );
 
-  const getMenuItems = useCallback(
-    (node: JobTreeNode): MenuProps["items"] => [
-      ...(node.type === "group"
-        ? [
-            { key: "addWorkflow", icon: <PlusOutlined />, label: t("workflow.addWorkflow") },
-            { key: "addTask", icon: <PlayCircleOutlined />, label: t("workflow.addTask") },
-          ]
-        : []),
-      { key: "delete", icon: <DeleteOutlined />, label: t("common.delete"), danger: true },
-    ],
-    [t],
-  );
-
-  const handleMenuAction = useCallback(
-    (key: string, node: JobTreeNode) => {
-      if (key === "addWorkflow") handleAddWorkflow(node.id);
-      else if (key === "addTask") handleAddTask(node.id);
-      else if (key === "delete") handleDelete(node);
-    },
-    [handleAddWorkflow, handleAddTask, handleDelete],
-  );
-
-  return { getMenuItems, handleMenuAction };
+  return { handleAddWorkflow, handleAddTask, handleDelete };
 }
 
 // ---------- hooks: tree data mapping ----------
@@ -278,7 +269,7 @@ function useBuiltTreeData(
 
   return useMemo<TreeDataNode[]>(
     () =>
-      (treeData ?? []).map((group) => {
+      (Array.isArray(treeData) ? treeData : []).map((group) => {
         const isLoading = loadingGroups.has(group.id);
         const isLoaded = loadedGroups.has(group.id);
         const groupChildren =
@@ -328,6 +319,7 @@ const EMPTY_TYPE_FILTER: string[] = [];
 export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FILTER }: JobTreeProps) {
   const selectedNode = useJobStore((s) => s.selectedNode);
   const treeLoading = useJobStore((s) => s.treeLoading);
+  const { t } = useTranslation();
 
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -335,11 +327,25 @@ export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FI
     searchKeyword,
     typeFilter,
   });
-  const { getMenuItems, handleMenuAction } = useJobTreeActions({ messageApi });
+  const { handleAddWorkflow, handleAddTask, handleDelete } = useJobTreeActions({ messageApi });
+  const lifecycle = useDefinitionLifecycle(messageApi);
+
+  const getMenuItems = useCallback((node: JobTreeNode): MenuProps["items"] => buildNodeMenuItems(node, t), [t]);
+
+  const handleMenuAction = useCallback(
+    (key: string, node: JobTreeNode) => {
+      if (key === "addWorkflow") handleAddWorkflow(node.id);
+      else if (key === "addTask") handleAddTask(node.id);
+      else if (key === "delete") handleDelete(node);
+      else void lifecycle.handleLifecycle(key, node);
+    },
+    [handleAddWorkflow, handleAddTask, handleDelete, lifecycle],
+  );
+
   const builtTreeData = useBuiltTreeData(getMenuItems, handleMenuAction);
 
   return (
-    <>
+    <ConfigProvider theme={compactMenuTheme}>
       {contextHolder}
       <Spin spinning={treeLoading}>
         <Tree
@@ -371,6 +377,20 @@ export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FI
           <div style={{ position: "fixed", left: contextMenu.x, top: contextMenu.y, width: 1, height: 1 }} />
         </Dropdown>
       )}
-    </>
+      <TagEditModal
+        open={!!lifecycle.tagNode}
+        value={lifecycle.tagNode?.tags ?? []}
+        confirmLoading={lifecycle.saving}
+        onOk={lifecycle.saveTags}
+        onCancel={lifecycle.closeTag}
+      />
+      <AlertBindModal
+        open={!!lifecycle.alertNode}
+        value={lifecycle.alertNode?.alertRuleIds ?? []}
+        confirmLoading={lifecycle.saving}
+        onOk={lifecycle.saveAlerts}
+        onCancel={lifecycle.closeAlert}
+      />
+    </ConfigProvider>
   );
 }

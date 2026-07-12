@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, Button, Flex, Progress, Spin, Typography } from "antd";
 import { StatisticCard } from "@ant-design/pro-components";
 import { ReloadOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 import type { SystemMetric } from "@/types/monitor";
 import { getMetrics } from "@/api/monitor";
 
@@ -38,6 +39,7 @@ function isPercentageMetric(metric: SystemMetric): boolean {
  * Requirements: 8.4
  */
 export default function MetricsPanel() {
+  const { t } = useTranslation();
   const [metrics, setMetrics] = useState<SystemMetric[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,11 +51,11 @@ export default function MetricsPanel() {
       const data = await getMetrics();
       setMetrics(data);
     } catch {
-      setError("指标数据加载失败");
+      setError(t("monitor.metricsLoadFailed"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void loadMetrics();
@@ -61,7 +63,7 @@ export default function MetricsPanel() {
 
   return (
     <Flex data-testid="metrics-panel" vertical>
-      <Title level={5}>环境指标</Title>
+      <Title level={5}>{t("monitor.metricsTitle")}</Title>
 
       <Spin spinning={loading} data-testid="metrics-loading">
         {error ? (
@@ -71,7 +73,7 @@ export default function MetricsPanel() {
             title={error}
             action={
               <Button data-testid="metrics-retry-button" icon={<ReloadOutlined />} onClick={() => void loadMetrics()}>
-                重试
+                {t("common.retry")}
               </Button>
             }
           />

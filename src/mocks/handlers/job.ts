@@ -1,6 +1,12 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
-import type { JobTreeNode, WorkflowFormData, WorkflowRunRecord, JobStatus } from "@/types/job";
+import type {
+  JobTreeNode,
+  WorkflowFormData,
+  WorkflowRunRecord,
+  JobStatus,
+  WorkflowLifecycleStatus,
+} from "@/types/job";
 
 // ---- Seed data generated with faker ----
 
@@ -27,14 +33,11 @@ function generateWorkflowTree(): JobTreeNode[] {
               ]) + ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`,
         type: jobType,
         group: groupId,
-        status: faker.helpers.arrayElement([
-          "success",
-          "failed",
-          "running",
-          "scheduling",
-          "stopped",
-          "pending",
-        ] as JobStatus[]),
+        // Latest-run status (run outcome), shown as an icon on the definition node.
+        status: faker.helpers.arrayElement(["success", "failed", "running", "pending", "stopped"] as JobStatus[]),
+        lifecycleStatus: faker.helpers.arrayElement(["OFFLINE", "ONLINE", "SCHEDULING"] as WorkflowLifecycleStatus[]),
+        tags: faker.helpers.arrayElements(["etl", "daily", "hourly", "critical", "adhoc"], { min: 0, max: 2 }),
+        alertRuleIds: [],
       };
     });
     return {
@@ -48,6 +51,15 @@ function generateWorkflowTree(): JobTreeNode[] {
 }
 
 const mockTree: JobTreeNode[] = generateWorkflowTree();
+
+/** Find a definition node (a group's child) and its parent group by node id. */
+function findDefinition(id: string): { node: JobTreeNode; group: JobTreeNode } | null {
+  for (const group of mockTree) {
+    const node = group.children?.find((c) => c.id === id);
+    if (node) return { node, group };
+  }
+  return null;
+}
 
 function generateWorkflowFormData(id: string, name: string): WorkflowFormData {
   const taskType = faker.helpers.arrayElement(["sql", "shell", "spark"] as const);
@@ -217,5 +229,67 @@ export const workflowHandlers: RequestHandler[] = [
     await delay(200);
     const { id } = params as { id: string };
     return HttpResponse.json(generateRuns(id));
+  }),
+
+  // ---- Definition lifecycle (Task & Workflow nodes) ----
+
+  // POST /api/jobs/:id/run-once — trigger a single run
+  http.post("/api/jobs/:id/run-once", async ({ params }) => {
+    await delay(300);
+    const { id } = params as { id: string };
+    if (!findDefinition(id)) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
+    return HttpResponse.json({ flowRunId: `fr-${faker.string.nanoid(8)}` });
+  }),
+
+  // PUT /api/jobs/:id/status — lifecycle transition (online/offline, start/stop schedule)
+  http.put("/api/jobs/:id/status", async ({ params, request }) => {
+    await delay(200);
+    const { id } = params as { id: string };
+    const { status } = (await request.json()) as { status: WorkflowLifecycleStatus };
+    const found = findDefinition(id);
+    if (!found) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
+    found.node.lifecycleStatus = status;
+    return HttpResponse.json(found.node);
+  }),
+
+  // POST /api/jobs/:id/copy — duplicate a definition into the same group (offline)
+  http.post("/api/jobs/:id/copy", async ({ params }) => {
+    await delay(300);
+    const { id } = params as { id: string };
+    const found = findDefinition(id);
+    if (!found) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
+    const isWorkflow = found.node.type === "workflow";
+    const copy: JobTreeNode = {
+      ...found.node,
+      id: `${isWorkflow ? "wf" : "task"}-${faker.string.nanoid(6)}`,
+      name: `${found.node.name}-copy`,
+      lifecycleStatus: "OFFLINE",
+      tags: [...(found.node.tags ?? [])],
+      alertRuleIds: [...(found.node.alertRuleIds ?? [])],
+    };
+    found.group.children?.push(copy);
+    return HttpResponse.json(copy, { status: 201 });
+  }),
+
+  // PUT /api/jobs/:id/tags
+  http.put("/api/jobs/:id/tags", async ({ params, request }) => {
+    await delay(200);
+    const { id } = params as { id: string };
+    const { tags } = (await request.json()) as { tags: string[] };
+    const found = findDefinition(id);
+    if (!found) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
+    found.node.tags = tags;
+    return HttpResponse.json(found.node);
+  }),
+
+  // PUT /api/jobs/:id/alert-rules
+  http.put("/api/jobs/:id/alert-rules", async ({ params, request }) => {
+    await delay(200);
+    const { id } = params as { id: string };
+    const { alertRuleIds } = (await request.json()) as { alertRuleIds: string[] };
+    const found = findDefinition(id);
+    if (!found) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
+    found.node.alertRuleIds = alertRuleIds;
+    return HttpResponse.json(found.node);
   }),
 ];

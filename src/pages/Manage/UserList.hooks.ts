@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Form, message } from "antd";
+import { useTranslation } from "react-i18next";
 import type { ActionType } from "@ant-design/pro-components";
 import type { ManagedUser } from "@/types/manage";
 import { createUser, updateUser } from "@/api/manage";
@@ -9,6 +10,7 @@ function isFormValidationError(error: unknown): boolean {
 }
 
 export function useUserCrud() {
+  const { t } = useTranslation();
   const actionRef = useRef<ActionType>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
@@ -33,17 +35,17 @@ export function useUserCrud() {
       setConfirmLoading(true);
       if (editingUser) {
         await updateUser(editingUser.id, values);
-        message.success("用户更新成功");
+        message.success(t("common.updateSuccess"));
       } else {
         await createUser({ ...values, status: "active" });
-        message.success("用户创建成功");
+        message.success(t("common.createSuccess"));
       }
       setModalOpen(false);
       form.resetFields();
       void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
-      message.error(editingUser ? "用户更新失败，请重试" : "用户创建失败，请重试");
+      message.error(editingUser ? t("common.updateFailed") : t("common.createFailed"));
     } finally {
       setConfirmLoading(false);
     }
@@ -59,10 +61,10 @@ export function useUserCrud() {
     const newStatus = record.status === "active" ? "disabled" : "active";
     try {
       await updateUser(record.id, { status: newStatus });
-      message.success(newStatus === "disabled" ? "用户已禁用" : "用户已启用");
+      message.success(newStatus === "disabled" ? t("user2.disableSuccess") : t("user2.enableSuccess"));
       void actionRef.current?.reload();
     } catch {
-      message.error("操作失败，请重试");
+      message.error(t("common.actionFailed"));
     }
   };
 

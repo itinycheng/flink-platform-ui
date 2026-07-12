@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
 import { message } from "antd";
+import { useTranslation } from "react-i18next";
 import type { ActionType } from "@ant-design/pro-components";
 import { uploadResource, deleteResource } from "@/api/manage";
 
 export function useResourceActions() {
+  const { t } = useTranslation();
   const actionRef = useRef<ActionType>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
@@ -11,10 +13,10 @@ export function useResourceActions() {
     setUploadProgress(0);
     try {
       await uploadResource(file, (percent) => setUploadProgress(percent));
-      message.success(`文件 "${file.name}" 上传成功`);
+      message.success(t("resource.uploadSuccess", { name: file.name }));
       void actionRef.current?.reload();
     } catch {
-      message.error("文件上传失败，请重试");
+      message.error(t("resource.uploadFailed"));
     } finally {
       setUploadProgress(null);
     }
@@ -23,10 +25,10 @@ export function useResourceActions() {
   const handleDelete = async (id: string) => {
     try {
       await deleteResource(id);
-      message.success("资源已删除");
+      message.success(t("common.deleteSuccess"));
       void actionRef.current?.reload();
     } catch {
-      message.error("删除失败，请重试");
+      message.error(t("common.deleteFailed"));
     }
   };
 
