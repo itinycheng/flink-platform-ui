@@ -29,5 +29,4 @@ dist-ssr
 .kiro/*
 .claude/*
 
-!.idea/dictionaries/project.xml
 /docs/superpowers/

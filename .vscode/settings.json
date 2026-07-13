@@ -1,8 +1,8 @@
 {
-    "typescript.autoClosingTags": false,
-    "cSpell.words": [
-        "FLINK",
-        "kiro",
-        "sider"
-    ]
+  "typescript.autoClosingTags": false,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  }
 }
