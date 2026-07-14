@@ -12,7 +12,6 @@ import type {
   Tag,
   SysConfig,
   SysConfigType,
-  AuditLog,
 } from "@/types/manage";
 import { paginate } from "@/utils/pagination";
 
@@ -198,31 +197,6 @@ function generateSysConfigs(count: number): SysConfig[] {
   });
 }
 
-function generateAuditLogs(count: number): AuditLog[] {
-  const actions = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "RUN", "ONLINE", "OFFLINE"];
-  const modules = ["user", "resource", "workflow", "task", "datasource", "config", "tag"];
-  return Array.from({ length: count }, () => {
-    const action = faker.helpers.arrayElement(actions);
-    const withDiff = action === "UPDATE";
-    return {
-      id: `audit-${faker.string.nanoid(8)}`,
-      operator: faker.internet.username(),
-      action,
-      module: faker.helpers.arrayElement(modules),
-      target: faker.helpers.arrayElement([faker.word.noun(), faker.string.nanoid(6)]),
-      result: faker.helpers.weightedArrayElement([
-        { value: "success" as const, weight: 8 },
-        { value: "failed" as const, weight: 2 },
-      ]),
-      ip: faker.internet.ipv4(),
-      detail: withDiff
-        ? JSON.stringify({ before: { name: faker.word.noun() }, after: { name: faker.word.noun() } }, null, 2)
-        : "",
-      createdAt: faker.date.recent({ days: 30 }).toISOString(),
-    };
-  });
-}
-
 const mockResources: ResourceFile[] = generateResources(5);
 const mockUsers: ManagedUser[] = generateUsers(4);
 const mockParams: CustomParam[] = generateCustomParams(4);
@@ -231,7 +205,6 @@ const mockCatalogs: Catalog[] = generateCatalogs(5);
 const mockWorkers: Worker[] = generateWorkers(5);
 const mockTags: Tag[] = generateTags(8);
 const mockSysConfigs: SysConfig[] = generateSysConfigs(6);
-const mockAuditLogs: AuditLog[] = generateAuditLogs(200);
 
 export const manageHandlers: RequestHandler[] = [
   // ---- Resources ----
@@ -305,35 +278,6 @@ export const manageHandlers: RequestHandler[] = [
     }
     Object.assign(user, body);
     return HttpResponse.json(user);
-  }),
-
-  // ---- Audit Logs ----
-
-  // GET /api/audit-logs — read-only, filterable audit records (newest first)
-  http.get("/api/audit-logs", async ({ request }) => {
-    await delay(200);
-    const url = new URL(request.url);
-    const { page, pageSize } = parsePagination(url);
-    const operator = url.searchParams.get("operator")?.toLowerCase() ?? "";
-    const action = url.searchParams.get("action") ?? "";
-    const moduleName = url.searchParams.get("module") ?? "";
-    const result = url.searchParams.get("result") ?? "";
-    const startTime = url.searchParams.get("startTime") ?? "";
-    const endTime = url.searchParams.get("endTime") ?? "";
-
-    const filtered = mockAuditLogs
-      .filter((log) => {
-        if (operator && !log.operator.toLowerCase().includes(operator)) return false;
-        if (action && log.action !== action) return false;
-        if (moduleName && log.module !== moduleName) return false;
-        if (result && log.result !== result) return false;
-        if (startTime && log.createdAt < startTime) return false;
-        if (endTime && log.createdAt > endTime) return false;
-        return true;
-      })
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
-    return HttpResponse.json(paginate(filtered, page, pageSize));
   }),
 
   // ---- Custom Params ----

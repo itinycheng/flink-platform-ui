@@ -3,6 +3,7 @@ import { authHandlers } from "./auth";
 import { dashboardHandlers } from "./dashboard";
 import { workflowHandlers } from "./job";
 import { manageHandlers } from "./manage";
+import { auditHandlers } from "./audit";
 import { monitorHandlers } from "./monitor";
 import { runHandlers } from "./run";
 import { alertRuleHandlers } from "./alert";
@@ -14,6 +15,7 @@ export const handlers: RequestHandler[] = [
   ...dashboardHandlers,
   ...workflowHandlers,
   ...manageHandlers,
+  ...auditHandlers,
   ...monitorHandlers,
   ...runHandlers,
   ...alertRuleHandlers,
