@@ -21,10 +21,12 @@ function useAuditColumns(t: ReturnType<typeof useTranslation>["t"], setDetail: (
         key: "createdAt",
         width: 180,
         valueType: "dateTimeRange",
-        sorter: true,
         render: (_, r) => new Date(r.createdAt).toLocaleString(),
         search: {
-          transform: (value: [string, string]) => ({ startTime: value?.[0], endTime: value?.[1] }),
+          transform: (value: [string, string]) => ({
+            startTime: value?.[0] ? new Date(value[0]).toISOString() : undefined,
+            endTime: value?.[1] ? new Date(value[1]).toISOString() : undefined,
+          }),
         },
       },
       { title: t("audit.operator"), dataIndex: "operator", key: "operator", width: 140, ellipsis: true },

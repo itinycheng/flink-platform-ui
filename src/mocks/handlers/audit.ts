@@ -1,7 +1,7 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import type { AuditLog } from "@/types/manage";
-import { paginate } from "@/utils/pagination";
+import { paginate, parsePagination } from "@/utils/pagination";
 
 function generateAuditLogs(count: number): AuditLog[] {
   const actions = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "RUN", "ONLINE", "OFFLINE"];
@@ -49,8 +49,7 @@ export const auditHandlers: RequestHandler[] = [
   http.get("/api/audit-logs", async ({ request }) => {
     await delay(200);
     const url = new URL(request.url);
-    const page = Number(url.searchParams.get("page")) || 1;
-    const pageSize = Number(url.searchParams.get("pageSize")) || 10;
+    const { page, pageSize } = parsePagination(url);
     const operator = url.searchParams.get("operator")?.toLowerCase() ?? "";
     const action = url.searchParams.get("action") ?? "";
     const moduleName = url.searchParams.get("module") ?? "";

@@ -13,14 +13,7 @@ import type {
   SysConfig,
   SysConfigType,
 } from "@/types/manage";
-import { paginate } from "@/utils/pagination";
-
-function parsePagination(url: URL): { page: number; pageSize: number } {
-  return {
-    page: Number(url.searchParams.get("page")) || 1,
-    pageSize: Number(url.searchParams.get("pageSize")) || 10,
-  };
-}
+import { paginate, parsePagination } from "@/utils/pagination";
 
 // ---- Seed data generated with faker ----
 

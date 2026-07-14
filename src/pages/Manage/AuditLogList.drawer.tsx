@@ -15,7 +15,7 @@ function formatDetail(detail: string): string {
 export function AuditDetailDrawer({ record, onClose }: { record: AuditLog | null; onClose: () => void }) {
   const { t } = useTranslation();
   return (
-    <Drawer title={t("audit.detailTitle")} width={520} open={!!record} onClose={onClose} destroyOnClose>
+    <Drawer title={t("audit.detailTitle")} width={520} open={!!record} onClose={onClose} destroyOnHidden>
       {record && (
         <Descriptions column={1} bordered size="small">
           <Descriptions.Item label={t("audit.time")}>{new Date(record.createdAt).toLocaleString()}</Descriptions.Item>
