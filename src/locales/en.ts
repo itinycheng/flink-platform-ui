@@ -50,7 +50,7 @@ const en = {
     runs: "Runs",
     flowInstances: "Flow Instances",
     jobRuns: "Job Runs",
-    manage: "Management",
+    manage: "Manage",
     monitor: "Monitor",
     resources: "Resources",
     dataSources: "DataSources",
