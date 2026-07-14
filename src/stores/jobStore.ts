@@ -34,7 +34,7 @@ export interface WorkflowState {
 
   fetchTree: () => Promise<void>;
   fetchGroupChildren: (groupId: string) => Promise<void>;
-  searchTree: (keyword: string, types: string[]) => Promise<void>;
+  searchTree: (keyword: string, types: string[], statuses?: string[]) => Promise<void>;
   selectNode: (node: JobTreeNode | null) => Promise<void>;
   setFormData: (data: WorkflowFormData | null) => void;
   addNode: (node: JobTreeNode) => void;
@@ -143,10 +143,10 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     }
   },
 
-  searchTree: async (keyword, types) => {
+  searchTree: async (keyword, types, statuses) => {
     set({ treeLoading: true });
     try {
-      const results = await searchJobs({ keyword, types });
+      const results = await searchJobs({ keyword, types, statuses });
       const list = Array.isArray(results) ? results : [];
       set({
         treeData: list,

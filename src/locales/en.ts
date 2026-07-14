@@ -291,9 +291,13 @@ const en = {
     search: "Search",
     errors: "Errors",
     trash: "Trash",
-    jobs: "Jobs",
+    jobs: "Explorer",
     noErrors: "No errors",
     trashEmpty: "Trash is empty",
+    filter: "Filter",
+    filterType: "Type",
+    filterStatus: "Status",
+    clearFilter: "Clear filters",
   },
 
   sidePanel: {

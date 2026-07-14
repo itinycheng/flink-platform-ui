@@ -7,9 +7,10 @@ import {
   WarningOutlined,
   DeleteOutlined,
   FolderAddOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
-import { Button, Divider, Flex, Input, Tag, Tooltip, Typography } from "antd";
-import React, { useCallback, useState } from "react";
+import { Badge, Button, Divider, Flex, Input, Popover, Tag, Tooltip, Typography } from "antd";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 function generateId(prefix: string): string {
@@ -24,6 +25,15 @@ const JOB_TYPE_FILTERS = [
   { label: "Flink", value: "flink" },
 ];
 
+const STATUS_FILTERS = [
+  { labelKey: "jobStatus.success", value: "success" },
+  { labelKey: "jobStatus.failed", value: "failed" },
+  { labelKey: "jobStatus.running", value: "running" },
+  { labelKey: "jobStatus.pending", value: "pending" },
+  { labelKey: "jobStatus.stopped", value: "stopped" },
+  { labelKey: "jobStatus.scheduling", value: "scheduling" },
+];
+
 type PanelKey = "tree" | "search" | "errors" | "trash";
 
 const PANELS: { key: PanelKey; icon: React.ReactNode; tooltip: string }[] = [
@@ -35,6 +45,40 @@ const PANELS: { key: PanelKey; icon: React.ReactNode; tooltip: string }[] = [
 
 const ICON_BAR_WIDTH = 45;
 const ICON_SIZE = 45;
+
+const MIN_PANEL_WIDTH = 180;
+const MAX_PANEL_WIDTH = 480;
+const DEFAULT_PANEL_WIDTH = 240;
+
+/** Panel width with a drag-to-resize handler (resets to default on refresh). */
+function usePanelWidth() {
+  const [width, setWidth] = useState(DEFAULT_PANEL_WIDTH);
+
+  const startResize = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startWidth = width;
+      const onMove = (ev: MouseEvent) => {
+        const next = Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, startWidth + ev.clientX - startX));
+        setWidth(next);
+      };
+      const onUp = () => {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      };
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    },
+    [width],
+  );
+
+  return { width, startResize };
+}
 
 const iconStyle: React.CSSProperties = {
   width: ICON_SIZE,
@@ -62,6 +106,7 @@ const iconInactiveStyle: React.CSSProperties = {
 
 export default function SiderPanel() {
   const [activePanel, setActivePanel] = useState<PanelKey | null>("tree");
+  const { width, startResize } = usePanelWidth();
 
   const handlePanelClick = useCallback((key: PanelKey) => {
     setActivePanel((prev) => (prev === key ? null : key));
@@ -70,7 +115,12 @@ export default function SiderPanel() {
   return (
     <Flex style={{ height: "100%", overflow: "hidden" }}>
       <ActivityBar activePanel={activePanel} onPanelClick={handlePanelClick} />
-      {activePanel && <PanelContent activePanel={activePanel} />}
+      {activePanel && (
+        <>
+          <PanelContent activePanel={activePanel} width={width} />
+          <div className="sider-resizer" onMouseDown={startResize} />
+        </>
+      )}
     </Flex>
   );
 }
@@ -110,12 +160,12 @@ function ActivityBar({
   );
 }
 
-function PanelContent({ activePanel }: { activePanel: PanelKey }) {
+function PanelContent({ activePanel, width }: { activePanel: PanelKey; width: number }) {
   return (
     <Flex
       vertical
       style={{
-        width: 240,
+        width,
         flexShrink: 0,
         overflow: "hidden",
         borderRight: "1px solid var(--ant-color-border-secondary)",
@@ -129,10 +179,159 @@ function PanelContent({ activePanel }: { activePanel: PanelKey }) {
   );
 }
 
-/** Tree panel — job tree with add group button */
+interface FilterState {
+  keyword: string;
+  types: string[];
+  statuses: string[];
+}
+
+/** Type + status checkable tags shown inside the filter popover. */
+function FilterPopoverContent({
+  types,
+  statuses,
+  onToggleType,
+  onToggleStatus,
+  onClear,
+}: {
+  types: string[];
+  statuses: string[];
+  onToggleType: (value: string) => void;
+  onToggleStatus: (value: string) => void;
+  onClear: () => void;
+}) {
+  const { t } = useTranslation();
+  const section = (
+    title: string,
+    items: { value: string; label: string }[],
+    selected: string[],
+    onToggle: (value: string) => void,
+  ) => (
+    <div>
+      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+        {title}
+      </Typography.Text>
+      <Flex wrap gap={4} style={{ marginTop: 6 }}>
+        {items.map((item) => (
+          <Tag
+            key={item.value}
+            color={selected.includes(item.value) ? "blue" : undefined}
+            onClick={() => onToggle(item.value)}
+            style={{ cursor: "pointer", margin: 0 }}
+          >
+            {item.label}
+          </Tag>
+        ))}
+      </Flex>
+    </div>
+  );
+
+  return (
+    <Flex vertical gap={10} style={{ width: 208 }}>
+      {section(t("sider.filterType"), JOB_TYPE_FILTERS, types, onToggleType)}
+      {section(
+        t("sider.filterStatus"),
+        STATUS_FILTERS.map((s) => ({ value: s.value, label: t(s.labelKey) })),
+        statuses,
+        onToggleStatus,
+      )}
+      {types.length + statuses.length > 0 && (
+        <Button type="link" size="small" style={{ padding: 0, height: "auto", alignSelf: "flex-start" }} onClick={onClear}>
+          {t("sider.clearFilter")}
+        </Button>
+      )}
+    </Flex>
+  );
+}
+
+/** Explorer header with a collapsible inline filter (keyword + type/status popover). */
+function TreeFilterBar({ onChange }: { onChange: (filter: FilterState) => void }) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const [keyword, setKeyword] = useState("");
+  const [types, setTypes] = useState<string[]>([]);
+  const [statuses, setStatuses] = useState<string[]>([]);
+  const activeFilterCount = types.length + statuses.length;
+
+  useEffect(() => onChange({ keyword, types, statuses }), [keyword, types, statuses, onChange]);
+
+  // Collapsing the filter also clears it, so a hidden filter never silently narrows the tree.
+  const toggleOpen = useCallback(() => {
+    setOpen((prev) => {
+      if (prev) {
+        setKeyword("");
+        setTypes([]);
+        setStatuses([]);
+      }
+      return !prev;
+    });
+  }, []);
+
+  const toggle = (value: string, setList: React.Dispatch<React.SetStateAction<string[]>>) =>
+    setList((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+
+  const active = open && (keyword.trim() !== "" || activeFilterCount > 0);
+
+  return (
+    <>
+      <Flex align="center" justify="space-between" style={{ flexShrink: 0, paddingInline: 4 }}>
+        <Typography.Text strong style={{ fontSize: 14 }}>
+          {t("sider.jobs")}
+        </Typography.Text>
+        <Tooltip title={t("sider.filter")} placement="left">
+          <SearchOutlined
+            onClick={toggleOpen}
+            style={{
+              cursor: "pointer",
+              fontSize: 14,
+              padding: 4,
+              borderRadius: 4,
+              color: active ? "#168eff" : "var(--ant-color-text-tertiary)",
+            }}
+          />
+        </Tooltip>
+      </Flex>
+      {open && (
+        <Flex gap={4} style={{ flexShrink: 0, padding: "6px 4px 0" }}>
+          <Input
+            placeholder={t("workflow.searchPlaceholder")}
+            prefix={<SearchOutlined />}
+            allowClear
+            size="small"
+            autoFocus
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
+          <Popover
+            trigger="click"
+            placement="bottomRight"
+            content={
+              <FilterPopoverContent
+                types={types}
+                statuses={statuses}
+                onToggleType={(v) => toggle(v, setTypes)}
+                onToggleStatus={(v) => toggle(v, setStatuses)}
+                onClear={() => {
+                  setTypes([]);
+                  setStatuses([]);
+                }}
+              />
+            }
+          >
+            <Badge count={activeFilterCount} size="small" offset={[-2, 2]}>
+              <Button size="small" icon={<FilterOutlined />} type={activeFilterCount > 0 ? "primary" : "default"} />
+            </Badge>
+          </Popover>
+        </Flex>
+      )}
+    </>
+  );
+}
+
+/** Tree panel — job tree with add group button and a collapsible inline filter */
 function TreePanel() {
   const { t } = useTranslation();
   const addNode = useJobStore((s) => s.addNode);
+  const [filter, setFilter] = useState<FilterState>({ keyword: "", types: [], statuses: [] });
 
   const handleAddGroup = () => {
     const newGroup: JobTreeNode = {
@@ -147,9 +346,7 @@ function TreePanel() {
 
   return (
     <Flex vertical style={{ height: "100%", padding: "4px 4px 0" }}>
-      <Typography.Text strong style={{ fontSize: 14, paddingInline: 4, flexShrink: 0 }}>
-        {t("sider.jobs")}
-      </Typography.Text>
+      <TreeFilterBar onChange={setFilter} />
       <Flex gap={4} style={{ flexShrink: 0, padding: "6px 4px" }}>
         <Button type="dashed" size="small" icon={<FolderAddOutlined />} onClick={handleAddGroup} block>
           {t("workflow.addGroup")}
@@ -157,7 +354,7 @@ function TreePanel() {
       </Flex>
       <Divider style={{ margin: "2px 0 6px" }} />
       <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
-        <JobTree />
+        <JobTree searchKeyword={filter.keyword} typeFilter={filter.types} statusFilter={filter.statuses} />
       </div>
     </Flex>
   );

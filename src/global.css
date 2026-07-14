@@ -93,9 +93,27 @@
 .job-tree-wrapper .ant-tree-node-content-wrapper {
   display: flex !important;
   align-items: center !important;
+  width: 100%;
+  min-width: 0;
 }
 
 .job-tree-wrapper .ant-tree-title {
   flex: 1;
   min-width: 0;
+}
+
+/* Draggable handle overlaying the sider panel's right edge (the divider itself
+   is the panel's border-right). Negative margin keeps it out of the layout flow
+   so it doesn't widen the right gutter. */
+.sider-resizer {
+  flex-shrink: 0;
+  width: 5px;
+  margin-left: -5px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.15s;
+}
+.sider-resizer:hover,
+.sider-resizer:active {
+  background: #168eff;
 }

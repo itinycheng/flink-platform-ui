@@ -10,41 +10,51 @@ import type {
 
 // ---- Seed data generated with faker ----
 
+// Group name + how many children to generate. One oversized group stress-tests virtual scrolling.
+const GROUP_SPECS: { name: string; size: number }[] = [
+  { name: "数据采集", size: 1200 },
+  { name: "数据处理", size: 350 },
+  { name: "实时计算", size: 600 },
+  { name: "机器学习", size: 15 },
+  { name: "报表生成", size: 8 },
+];
+
+function generateChild(gi: number, groupId: string): JobTreeNode {
+  const jobType = faker.helpers.arrayElement(["SQL", "SHELL", "SPARK", "FLINK", "workflow"]);
+  return {
+    id: jobType === "workflow" ? `wf-${faker.string.nanoid(6)}` : `task-${faker.string.nanoid(6)}`,
+    name:
+      jobType === "workflow"
+        ? faker.helpers.arrayElement(["日报汇总", "数据同步流程", "ETL Pipeline", "报表生成流程"]) +
+          ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`
+        : faker.helpers.arrayElement([
+            "MySQL 数据同步",
+            "Kafka 消费任务",
+            "Spark ETL 日报",
+            "Shell 清理脚本",
+            "Hive 分区整理",
+            "Flink CDC 实时同步",
+          ]) + ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`,
+    type: jobType,
+    group: groupId,
+    // Latest-run status (run outcome), shown as an icon on the definition node.
+    status: faker.helpers.arrayElement(["success", "failed", "running", "pending", "stopped"] as JobStatus[]),
+    lifecycleStatus: faker.helpers.arrayElement(["OFFLINE", "ONLINE", "SCHEDULING"] as WorkflowLifecycleStatus[]),
+    tags: faker.helpers.arrayElements(["etl", "daily", "hourly", "critical", "adhoc"], { min: 0, max: 2 }),
+    alertRuleIds: [],
+  };
+}
+
 function generateWorkflowTree(): JobTreeNode[] {
-  const groups = ["数据采集", "数据处理", "报表生成"];
-  return groups.map((groupName, gi) => {
+  return GROUP_SPECS.map(({ name, size }, gi) => {
     const groupId = `g-${faker.string.nanoid(6)}`;
-    const childCount = faker.number.int({ min: 2, max: 4 });
-    const children: JobTreeNode[] = Array.from({ length: childCount }, () => {
-      const jobType = faker.helpers.arrayElement(["SQL", "SHELL", "SPARK", "FLINK", "workflow"]);
-      return {
-        id: jobType === "workflow" ? `wf-${faker.string.nanoid(6)}` : `task-${faker.string.nanoid(6)}`,
-        name:
-          jobType === "workflow"
-            ? faker.helpers.arrayElement(["日报汇总", "数据同步流程", "ETL Pipeline", "报表生成流程"]) +
-              ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`
-            : faker.helpers.arrayElement([
-                "MySQL 数据同步",
-                "Kafka 消费任务",
-                "Spark ETL 日报",
-                "Shell 清理脚本",
-                "Hive 分区整理",
-                "Flink CDC 实时同步",
-              ]) + ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`,
-        type: jobType,
-        group: groupId,
-        // Latest-run status (run outcome), shown as an icon on the definition node.
-        status: faker.helpers.arrayElement(["success", "failed", "running", "pending", "stopped"] as JobStatus[]),
-        lifecycleStatus: faker.helpers.arrayElement(["OFFLINE", "ONLINE", "SCHEDULING"] as WorkflowLifecycleStatus[]),
-        tags: faker.helpers.arrayElements(["etl", "daily", "hourly", "critical", "adhoc"], { min: 0, max: 2 }),
-        alertRuleIds: [],
-      };
-    });
+    const children: JobTreeNode[] = Array.from({ length: size }, () => generateChild(gi, groupId));
     return {
       id: groupId,
-      name: groupName,
+      name,
       type: "group" as const,
       group: "",
+      childCount: children.length,
       children,
     };
   });
@@ -95,14 +105,16 @@ function generateWorkflowFormData(id: string, name: string): WorkflowFormData {
   };
 }
 
-// Build initial workflow lookup from tree
+// Workflow detail is generated lazily on first fetch to keep MSW startup fast with large trees.
 const mockWorkflows: Record<string, WorkflowFormData> = {};
-for (const group of mockTree) {
-  if (group.children) {
-    for (const child of group.children) {
-      mockWorkflows[child.id] = generateWorkflowFormData(child.id, child.name);
-    }
-  }
+
+function getOrCreateWorkflow(id: string): WorkflowFormData | null {
+  if (mockWorkflows[id]) return mockWorkflows[id];
+  const found = findDefinition(id);
+  if (!found) return null;
+  const wf = generateWorkflowFormData(id, found.node.name);
+  mockWorkflows[id] = wf;
+  return wf;
 }
 
 function generateRuns(workflowId: string): WorkflowRunRecord[] {
@@ -151,15 +163,19 @@ export const workflowHandlers: RequestHandler[] = [
     await delay(200);
     const url = new URL(request.url);
     const keyword = (url.searchParams.get("keyword") ?? "").toLowerCase().trim();
-    const typesParam = url.searchParams.get("types");
-    const types = typesParam ? typesParam.split(",") : [];
+    const splitParam = (key: string) =>
+      url.searchParams.get(key) ? url.searchParams.get(key)!.toLowerCase().split(",") : [];
+    const types = splitParam("types");
+    const statuses = splitParam("statuses");
 
     const results: JobTreeNode[] = [];
     for (const group of mockTree) {
       const matched = (group.children ?? []).filter((child) => {
-        const matchKeyword = !keyword || child.name.toLowerCase().includes(keyword);
-        const matchType = types.length === 0 || types.includes(child.type);
-        return matchKeyword && matchType;
+        const matchKeyword =
+          !keyword || child.name.toLowerCase().includes(keyword) || child.id.toLowerCase().includes(keyword);
+        const matchType = types.length === 0 || types.includes(child.type.toLowerCase());
+        const matchStatus = statuses.length === 0 || (child.status ? statuses.includes(child.status) : false);
+        return matchKeyword && matchType && matchStatus;
       });
       if (matched.length > 0) {
         results.push({ ...group, children: matched });
@@ -179,7 +195,7 @@ export const workflowHandlers: RequestHandler[] = [
     await delay(200);
     const { id } = params as { id: string };
     // Skip if the path looks like /workflows/:id/runs (handled by another handler)
-    const wf = mockWorkflows[id];
+    const wf = getOrCreateWorkflow(id);
     if (!wf) {
       return HttpResponse.json({ message: "工作流不存在" }, { status: 404 });
     }

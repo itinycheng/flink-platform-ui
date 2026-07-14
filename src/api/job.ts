@@ -11,9 +11,15 @@ export function getJobsByGroup(groupId: string): Promise<JobTreeNode[]> {
   return http.get<JobTreeNode[]>(`/jobs/groups/${groupId}/children`);
 }
 
-/** 搜索 Job（服务端，跨所有分组） */
-export function searchJobs(params: { keyword?: string; types?: string[] }): Promise<JobTreeNode[]> {
-  return http.get<JobTreeNode[]>("/jobs/search", { params });
+/** 搜索 Job（服务端，跨所有分组）。数组参数拼成逗号串，避免 axios 默认的 `key[]=` 序列化。 */
+export function searchJobs(params: { keyword?: string; types?: string[]; statuses?: string[] }): Promise<JobTreeNode[]> {
+  return http.get<JobTreeNode[]>("/jobs/search", {
+    params: {
+      keyword: params.keyword || undefined,
+      types: params.types?.length ? params.types.join(",") : undefined,
+      statuses: params.statuses?.length ? params.statuses.join(",") : undefined,
+    },
+  });
 }
 
 export function getWorkflowTree(): Promise<JobTreeNode[]> {

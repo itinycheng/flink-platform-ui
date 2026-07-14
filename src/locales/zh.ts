@@ -290,9 +290,13 @@ const zh = {
     search: "搜索",
     errors: "错误",
     trash: "回收站",
-    jobs: "作业列表",
+    jobs: "资源管理器",
     noErrors: "暂无错误",
     trashEmpty: "回收站为空",
+    filter: "筛选",
+    filterType: "类型",
+    filterStatus: "状态",
+    clearFilter: "清除筛选",
   },
 
   sidePanel: {

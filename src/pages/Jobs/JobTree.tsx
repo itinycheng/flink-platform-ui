@@ -28,6 +28,15 @@ const moreButtonStyle: React.CSSProperties = {
   transition: "opacity 0.15s",
 };
 
+/** Fixed-width slot so status indicators line up into columns across rows. */
+const slotStyle = (width: number): React.CSSProperties => ({
+  width,
+  flexShrink: 0,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+});
+
 function getNodeIcon(node: { type: string }): React.ReactNode {
   return <TaskIcon type={node.type} size={ICON_SIZE} />;
 }
@@ -53,11 +62,12 @@ function findNode(treeData: JobTreeNode[], nodeId: string): JobTreeNode | null {
 interface JobTreeNodeTitleProps {
   displayName: string;
   node: JobTreeNode;
+  count?: number;
   menuItems: MenuProps["items"];
   onMenuAction: (key: string, node: JobTreeNode) => void;
 }
 
-function JobTreeNodeTitle({ displayName, node, menuItems, onMenuAction }: JobTreeNodeTitleProps) {
+function JobTreeNodeTitle({ displayName, node, count, menuItems, onMenuAction }: JobTreeNodeTitleProps) {
   return (
     <Flex align="center" justify="space-between" className="job-tree-title">
       <span
@@ -67,14 +77,20 @@ function JobTreeNodeTitle({ displayName, node, menuItems, onMenuAction }: JobTre
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
-          fontSize: node.type !== "group" ? 13 : undefined,
+          fontSize: 13,
         }}
       >
         {displayName}
       </span>
-      <Flex align="center" gap={4} style={{ flexShrink: 0 }}>
-        {node.lifecycleStatus && <StatusDot status={node.lifecycleStatus} />}
-        {node.type !== "group" && <RunStatusIcon status={node.status} />}
+      <Flex align="center" gap={6} style={{ flexShrink: 0 }}>
+        {typeof count === "number" && count > 0 ? (
+          <span style={{ fontSize: 12, color: "var(--ant-color-text-quaternary)" }}>{count}</span>
+        ) : (
+          <>
+            <span style={slotStyle(7)}>{node.lifecycleStatus && <StatusDot status={node.lifecycleStatus} />}</span>
+            <span style={slotStyle(12)}>{node.type !== "group" && <RunStatusIcon status={node.status} />}</span>
+          </>
+        )}
         <Dropdown
           menu={{
             items: menuItems,
@@ -103,10 +119,10 @@ interface ContextMenuState {
 
 const INITIAL_CTX: ContextMenuState = { visible: false, x: 0, y: 0, node: null };
 
-function useTreeFetching(searchKeyword: string, typeFilter: string[]) {
+function useTreeFetching(searchKeyword: string, typeFilter: string[], statusFilter: string[]) {
   const fetchTree = useJobStore((s) => s.fetchTree);
   const searchTree = useJobStore((s) => s.searchTree);
-  const hasSearch = searchKeyword.trim() !== "" || typeFilter.length > 0;
+  const hasSearch = searchKeyword.trim() !== "" || typeFilter.length > 0 || statusFilter.length > 0;
 
   useEffect(() => {
     void fetchTree();
@@ -114,9 +130,9 @@ function useTreeFetching(searchKeyword: string, typeFilter: string[]) {
 
   useEffect(() => {
     if (!hasSearch) return;
-    const timer = setTimeout(() => void searchTree(searchKeyword.trim(), typeFilter), 300);
+    const timer = setTimeout(() => void searchTree(searchKeyword.trim(), typeFilter, statusFilter), 300);
     return () => clearTimeout(timer);
-  }, [searchKeyword, typeFilter, searchTree, hasSearch]);
+  }, [searchKeyword, typeFilter, statusFilter, searchTree, hasSearch]);
 
   const hadSearchRef = useRef(false);
   useEffect(() => {
@@ -179,11 +195,19 @@ function useContextMenu(treeData: JobTreeNode[]) {
   return { contextMenu, setContextMenu, handleRightClick };
 }
 
-function useJobTreeData({ searchKeyword, typeFilter }: { searchKeyword: string; typeFilter: string[] }) {
+function useJobTreeData({
+  searchKeyword,
+  typeFilter,
+  statusFilter,
+}: {
+  searchKeyword: string;
+  typeFilter: string[];
+  statusFilter: string[];
+}) {
   const treeData = useJobStore((s) => s.treeData);
   const selectNode = useJobStore((s) => s.selectNode);
 
-  useTreeFetching(searchKeyword, typeFilter);
+  useTreeFetching(searchKeyword, typeFilter, statusFilter);
   const { expandedKeys, setExpandedKeys, loadedGroups, fetchGroupChildren, handleExpand } = useTreeExpansion();
   const { contextMenu, setContextMenu, handleRightClick } = useContextMenu(treeData);
 
@@ -288,12 +312,14 @@ function useBuiltTreeData(
                 isLeaf: true,
               }))
             : undefined;
+        const groupCount = group.childCount ?? group.children?.length;
         return {
           key: group.id,
           title: (
             <JobTreeNodeTitle
               displayName={isLoading ? `${group.name} ...` : group.name}
               node={group}
+              count={groupCount}
               menuItems={getMenuItems(group)}
               onMenuAction={handleMenuAction}
             />
@@ -307,16 +333,42 @@ function useBuiltTreeData(
   );
 }
 
+// ---------- hooks: virtual-scroll height ----------
+
+/** Track a container's height so the Tree can virtualize (only visible rows render). */
+function useContainerHeight() {
+  const ref = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(400);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const h = entries[0]?.contentRect.height;
+      if (h) setHeight(h);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return { ref, height };
+}
+
 // ---------- component ----------
 
 interface JobTreeProps {
   searchKeyword?: string;
   typeFilter?: string[];
+  statusFilter?: string[];
 }
 
-const EMPTY_TYPE_FILTER: string[] = [];
+const EMPTY_FILTER: string[] = [];
 
-export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FILTER }: JobTreeProps) {
+export default function JobTree({
+  searchKeyword = "",
+  typeFilter = EMPTY_FILTER,
+  statusFilter = EMPTY_FILTER,
+}: JobTreeProps) {
   const selectedNode = useJobStore((s) => s.selectedNode);
   const treeLoading = useJobStore((s) => s.treeLoading);
   const { t } = useTranslation();
@@ -326,6 +378,7 @@ export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FI
   const { expandedKeys, contextMenu, setContextMenu, handleSelect, handleRightClick, handleExpand } = useJobTreeData({
     searchKeyword,
     typeFilter,
+    statusFilter,
   });
   const { handleAddWorkflow, handleAddTask, handleDelete } = useJobTreeActions({ messageApi });
   const lifecycle = useDefinitionLifecycle(messageApi);
@@ -343,26 +396,31 @@ export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FI
   );
 
   const builtTreeData = useBuiltTreeData(getMenuItems, handleMenuAction);
+  const { ref: containerRef, height } = useContainerHeight();
 
   return (
     <ConfigProvider theme={compactMenuTheme}>
       {contextHolder}
-      <Spin spinning={treeLoading}>
-        <Tree
-          className="job-tree-wrapper"
-          styles={{ root: { color: "var(--ant-color-text-secondary)" } }}
-          showIcon
-          showLine
-          blockNode
-          switcherIcon={<DownOutlined />}
-          expandedKeys={expandedKeys}
-          onExpand={handleExpand}
-          selectedKeys={selectedNode ? [selectedNode.id] : []}
-          onSelect={handleSelect}
-          onRightClick={handleRightClick}
-          treeData={builtTreeData}
-        />
-      </Spin>
+      <div ref={containerRef} style={{ height: "100%" }}>
+        <Spin spinning={treeLoading}>
+          <Tree
+            className="job-tree-wrapper"
+            styles={{ root: { color: "var(--ant-color-text-secondary)" } }}
+            showIcon
+            showLine
+            blockNode
+            virtual
+            height={height}
+            switcherIcon={<DownOutlined />}
+            expandedKeys={expandedKeys}
+            onExpand={handleExpand}
+            selectedKeys={selectedNode ? [selectedNode.id] : []}
+            onSelect={handleSelect}
+            onRightClick={handleRightClick}
+            treeData={builtTreeData}
+          />
+        </Spin>
+      </div>
       {contextMenu.visible && contextMenu.node && (
         <Dropdown
           open
@@ -377,6 +435,14 @@ export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FI
           <div style={{ position: "fixed", left: contextMenu.x, top: contextMenu.y, width: 1, height: 1 }} />
         </Dropdown>
       )}
+      <LifecycleModals lifecycle={lifecycle} />
+    </ConfigProvider>
+  );
+}
+
+function LifecycleModals({ lifecycle }: { lifecycle: ReturnType<typeof useDefinitionLifecycle> }) {
+  return (
+    <>
       <TagEditModal
         open={!!lifecycle.tagNode}
         value={lifecycle.tagNode?.tags ?? []}
@@ -391,6 +457,6 @@ export default function JobTree({ searchKeyword = "", typeFilter = EMPTY_TYPE_FI
         onOk={lifecycle.saveAlerts}
         onCancel={lifecycle.closeAlert}
       />
-    </ConfigProvider>
+    </>
   );
 }

@@ -8,6 +8,8 @@ export interface JobTreeNode {
   type: JobType;
   group: string;
   children?: JobTreeNode[];
+  /** Total number of direct children (for the group count badge); may exceed loaded `children` when paginated. */
+  childCount?: number;
   /** Latest run status (for the run-status indicator). */
   status?: JobStatus;
   /** Lifecycle status of a definition node (Task or Workflow). Absent on group nodes. */
