@@ -76,8 +76,8 @@ export default function AppRouter() {
             <Route path="sys-configs" element={<SysConfigList />} />
             <Route path="alert-rules" element={<AlertRuleList />} />
             <Route path="workspaces" element={<WorkspaceList />} />
-            <Route path="audit-logs" element={<AuditLogList />} />
           </Route>
+          <Route path="/audit-logs" element={<AuditLogList />} />
           <Route path="/runs" element={<RunsPage />}>
             <Route index element={<Navigate to="/runs/flows" replace />} />
             <Route path="flows" element={<FlowRunList />} />
