@@ -9,6 +9,8 @@ import type {
   Worker,
   Tag,
   SysConfig,
+  AuditLog,
+  AuditResult,
 } from "@/types/manage";
 import type { PaginatedResponse, PaginationParams } from "@/types/common";
 
@@ -178,4 +180,19 @@ export function deleteSysConfig(id: string): Promise<void> {
 /** Physically purge a soft-deleted config. */
 export function purgeSysConfig(id: string): Promise<void> {
   return http.delete(`/sys-configs/${id}/purge`);
+}
+
+// ---- Audit Log ----
+
+export interface AuditLogQuery extends PaginationParams {
+  operator?: string;
+  action?: string;
+  module?: string;
+  result?: AuditResult;
+  startTime?: string;
+  endTime?: string;
+}
+
+export function getAuditLogs(params?: AuditLogQuery): Promise<PaginatedResponse<AuditLog>> {
+  return http.get<PaginatedResponse<AuditLog>>("/audit-logs", { params });
 }

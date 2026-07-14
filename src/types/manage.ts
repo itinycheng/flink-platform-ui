@@ -106,3 +106,19 @@ export interface SysConfig {
   createdAt: string;
   updatedAt: string;
 }
+
+// ---- Audit Log ----
+
+export type AuditResult = "success" | "failed";
+
+export interface AuditLog {
+  id: string;
+  operator: string; // who performed the action (username)
+  action: string; // e.g. CREATE / UPDATE / DELETE / LOGIN / RUN (backend enum)
+  module: string; // resource type / module (backend enum)
+  target?: string; // affected entity name or id
+  result: AuditResult;
+  ip?: string;
+  detail?: string; // change detail, typically before/after JSON string
+  createdAt: string; // ISO timestamp
+}
