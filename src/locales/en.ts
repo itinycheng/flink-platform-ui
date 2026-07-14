@@ -63,6 +63,7 @@ const en = {
     alertRules: "Alert Channels",
     workspaces: "Workspaces",
     customParams: "Global Parameters",
+    auditLogs: "Audit Log",
   },
 
   http: {
@@ -348,6 +349,27 @@ const en = {
     typeNumber: "Number",
     typeBoolean: "Boolean",
     typeJson: "JSON",
+  },
+
+  audit: {
+    title: "Audit Log",
+    time: "Time",
+    operator: "Operator",
+    action: "Action",
+    module: "Module",
+    target: "Target",
+    result: "Result",
+    ip: "IP",
+    detail: "Detail",
+    resultSuccess: "Success",
+    resultFailed: "Failed",
+    view: "View",
+    detailTitle: "Audit Detail",
+    noDetail: "No detail",
+    operatorPlaceholder: "Operator",
+    selectAction: "Action",
+    selectModule: "Module",
+    selectResult: "Result",
   },
 
   user2: {

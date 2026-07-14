@@ -63,6 +63,7 @@ const zh = {
     alertRules: "告警通道",
     workspaces: "工作空间",
     customParams: "全局参数",
+    auditLogs: "审计日志",
   },
 
   http: {
@@ -347,6 +348,27 @@ const zh = {
     typeNumber: "数字",
     typeBoolean: "布尔值",
     typeJson: "JSON",
+  },
+
+  audit: {
+    title: "审计日志",
+    time: "时间",
+    operator: "操作人",
+    action: "操作类型",
+    module: "模块",
+    target: "操作对象",
+    result: "结果",
+    ip: "IP",
+    detail: "详情",
+    resultSuccess: "成功",
+    resultFailed: "失败",
+    view: "查看",
+    detailTitle: "审计详情",
+    noDetail: "暂无详情",
+    operatorPlaceholder: "操作人",
+    selectAction: "操作类型",
+    selectModule: "模块",
+    selectResult: "结果",
   },
 
   user2: {
