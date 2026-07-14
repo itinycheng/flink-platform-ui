@@ -5,7 +5,7 @@ import Forbidden from "../pages/Forbidden";
 import NotFound from "../pages/NotFound";
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
-import JobsPage from "../pages/Jobs";
+import StudioPage from "../pages/Studio";
 import ManagePage from "../pages/Manage";
 import ResourceList from "../pages/Manage/ResourceList";
 import UserList from "../pages/Manage/UserList";
@@ -57,7 +57,7 @@ export default function AppRouter() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/studio" element={<JobsPage />} />
+          <Route path="/studio" element={<StudioPage />} />
           {/* Legacy paths → Studio (Jobs + Definitions were merged into the tree view) */}
           <Route path="/jobs" element={<Navigate to="/studio" replace />} />
           <Route path="/definitions" element={<Navigate to="/studio" replace />} />

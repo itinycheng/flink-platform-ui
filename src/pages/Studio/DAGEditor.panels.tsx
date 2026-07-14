@@ -11,7 +11,7 @@ import type { MessageInstance } from "antd/es/message/interface";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import type { Node } from "@xyflow/react";
-import { getTaskTypeDefinition } from "@/pages/Jobs/tasks/registry";
+import { getTaskTypeDefinition } from "@/pages/Studio/tasks/registry";
 import type { TaskParams } from "@/types/job";
 
 interface DAGToolbarProps {

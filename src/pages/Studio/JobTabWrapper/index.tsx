@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Drawer, Flex } from "antd";
 import { useTranslation } from "react-i18next";
 import type { JobTreeNode } from "@/types/job";
-import DAGEditor from "@/pages/Jobs/DAGEditor";
-import JobForm from "@/pages/Jobs/JobForm";
+import DAGEditor from "@/pages/Studio/DAGEditor";
+import JobForm from "@/pages/Studio/JobForm";
 import SchedulePanel from "./SchedulePanel";
 import ParamsPanel from "./ParamsPanel";
 

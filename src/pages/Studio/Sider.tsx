@@ -1,5 +1,5 @@
-import JobTree from "@/pages/Jobs/JobTree";
-import { GroupEditModal } from "@/pages/Jobs/GroupEditModal";
+import JobTree from "@/pages/Studio/JobTree";
+import { GroupEditModal } from "@/pages/Studio/GroupEditModal";
 import { useJobStore } from "@/stores/jobStore";
 import {
   SearchOutlined,

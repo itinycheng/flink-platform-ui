@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ConfigProvider, Dropdown, Flex, Modal, Spin, Tree, message } from "antd";
 import { DownOutlined, EllipsisOutlined } from "@ant-design/icons";
-import type { MenuProps, TreeDataNode } from "antd";
+import type { MenuProps, ThemeConfig, TreeDataNode } from "antd";
 import { compactMenuTheme } from "@/theme";
 import type { MessageInstance } from "antd/es/message/interface";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,19 @@ import { GroupEditModal } from "./GroupEditModal";
 
 // ---------- constants & icons ----------
 
-const ICON_SIZE = 18;
+// Tree density knobs — tweak these three to taste.
+const NODE_FONT_SIZE = 14; // row text size (group count uses this - 1)
+const NODE_ROW_HEIGHT = 30; // row height == line spacing (virtual-scroll item height)
+const ICON_SIZE = 18; // leaf type-icon size
+
+/** Tree row density/typography, layered on top of the compact menu theme. */
+const jobTreeTheme: ThemeConfig = {
+  ...compactMenuTheme,
+  components: {
+    ...compactMenuTheme.components,
+    Tree: { titleHeight: NODE_ROW_HEIGHT, fontSize: NODE_FONT_SIZE },
+  },
+};
 
 const moreButtonStyle: React.CSSProperties = {
   fontSize: 14,
@@ -69,14 +81,14 @@ function JobTreeNodeTitle({ displayName, node, count, menuItems, onMenuAction }:
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
-          fontSize: 13,
+          fontSize: NODE_FONT_SIZE,
         }}
       >
         {displayName}
       </span>
       <Flex align="center" gap={6} style={{ flexShrink: 0 }}>
         {typeof count === "number" && count > 0 ? (
-          <span style={{ fontSize: 12, color: "var(--ant-color-text-quaternary)" }}>{count}</span>
+          <span style={{ fontSize: NODE_FONT_SIZE - 1, color: "var(--ant-color-text-quaternary)" }}>{count}</span>
         ) : (
           <>
             <span style={slotStyle(7)}>{node.lifecycleStatus && <StatusDot status={node.lifecycleStatus} />}</span>
@@ -381,7 +393,7 @@ export default function JobTree({
   const { ref: containerRef, height } = useContainerHeight();
 
   return (
-    <ConfigProvider theme={compactMenuTheme}>
+    <ConfigProvider theme={jobTreeTheme}>
       {contextHolder}
       <div ref={containerRef} style={{ height: "100%" }}>
         <Spin spinning={treeLoading}>

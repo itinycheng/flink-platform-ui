@@ -2,9 +2,9 @@ import { ConfigProvider, Flex, Tabs, Typography, type ThemeConfig } from "antd";
 import { InboxOutlined, CloseOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { useJobStore, findNodeById } from "@/stores/jobStore";
-import SiderPanel from "@/pages/Jobs/Sider";
-import JobTabWrapper from "@/pages/Jobs/JobTabWrapper";
-import { TaskIcon } from "@/pages/Jobs/TaskIcon";
+import SiderPanel from "@/pages/Studio/Sider";
+import JobTabWrapper from "@/pages/Studio/JobTabWrapper";
+import { TaskIcon } from "@/pages/Studio/TaskIcon";
 import React from "react";
 
 const tabTheme: ThemeConfig = {
@@ -25,7 +25,7 @@ function getTabIcon(jobType: string): React.ReactNode {
   return <TaskIcon type={jobType} size={16} style={{ marginRight: 4 }} />;
 }
 
-export default function JobsPage() {
+export default function StudioPage() {
   const { selectedNode, treeData, openTabs, activeTabKey, closeTab, setActiveTab } = useJobStore();
   const { t } = useTranslation();
 

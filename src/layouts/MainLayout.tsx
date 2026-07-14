@@ -125,7 +125,7 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, i18n } = useTranslation();
-  const isJobsPage = location.pathname.startsWith("/studio");
+  const isStudioPage = location.pathname.startsWith("/studio");
   const isDashboard = location.pathname === "/dashboard" || location.pathname === "/";
   const title = t("app.title", { appName: __APP_NAME__ });
   const layoutRoutes = buildLayoutRoutes(t);
@@ -159,7 +159,7 @@ export default function MainLayout() {
               )
             : false
         }
-        menuRender={isJobsPage ? false : undefined}
+        menuRender={isStudioPage ? false : undefined}
         contentStyle={{
           display: "flex",
           flexDirection: "column" as const,

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button, Flex, message, Typography } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
-import { getTaskTypeDefinition } from "@/pages/Jobs/tasks/registry";
+import { getTaskTypeDefinition } from "@/pages/Studio/tasks/registry";
 import type { TaskParams } from "@/types/job";
 
 export default function JobForm({ taskType }: { taskType?: string }) {
