@@ -1,6 +1,13 @@
 import { create } from "zustand";
 import type { JobTreeNode, WorkflowFormData, WorkflowLifecycleStatus } from "@/types/job";
 import {
+  findNodeById,
+  updateNodeById,
+  removeNodeById,
+  insertChild,
+  collectSubtreeIds,
+} from "@/utils/tree";
+import {
   getJobGroups,
   getJobsByGroup,
   searchJobs,
@@ -53,47 +60,9 @@ export interface WorkflowState {
   setActiveTab: (key: string) => void;
 }
 
-/**
- * Find a node by ID in the tree (searches both top-level and children).
- */
-export function findNodeById(tree: JobTreeNode[], id: string): JobTreeNode | null {
-  for (const node of tree) {
-    if (node.id === id) return node;
-    if (node.children) {
-      const found = findNodeById(node.children, id);
-      if (found) return found;
-    }
-  }
-  return null;
-}
-
-/**
- * Count all nodes in the tree (including children).
- */
-export function countNodes(tree: JobTreeNode[]): number {
-  let count = 0;
-  for (const node of tree) {
-    count += 1;
-    if (node.children) {
-      count += countNodes(node.children);
-    }
-  }
-  return count;
-}
-
-function removeNodeFromTree(treeData: JobTreeNode[], nodeId: string, isGroup: boolean): JobTreeNode[] {
-  if (isGroup) return treeData.filter((g) => g.id !== nodeId);
-  return treeData.map((group) =>
-    group.children ? { ...group, children: group.children.filter((child) => child.id !== nodeId) } : group,
-  );
-}
-
-function collectRemovedIds(treeData: JobTreeNode[], nodeId: string, isGroup: boolean): Set<string> {
-  const removedIds = new Set<string>([nodeId]);
-  if (!isGroup) return removedIds;
-  treeData.find((g) => g.id === nodeId)?.children?.forEach((child) => removedIds.add(child.id));
-  return removedIds;
-}
+// Re-exported so existing imports (`@/stores/jobStore`) keep working; the tree
+// helpers themselves now live in `@/utils/tree` and are depth-agnostic.
+export { findNodeById } from "@/utils/tree";
 
 export const useJobStore = create<WorkflowState>((set, get) => ({
   treeData: [],
@@ -129,7 +98,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
       const children = await getJobsByGroup(groupId);
       const safeChildren = Array.isArray(children) ? children : [];
       const { treeData, loadingGroups: currentLoading, loadedGroups: currentLoaded } = get();
-      const newTree = treeData.map((group) => (group.id === groupId ? { ...group, children: safeChildren } : group));
+      const newTree = updateNodeById(treeData, groupId, (group) => ({ ...group, children: safeChildren }));
       const newLoadingSet = new Set(currentLoading);
       newLoadingSet.delete(groupId);
       const newLoadedSet = new Set(currentLoaded);
@@ -178,55 +147,21 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
 
   addNode: (node) => {
     const { treeData } = get();
-    if (node.group === null) {
-      // Top-level group node
+    // A node with no parent (empty/null `group`) is a root node; otherwise it is
+    // appended to its parent's children, at whatever depth the parent lives.
+    if (!node.group) {
       set({ treeData: [...treeData, node] });
     } else {
-      // Child workflow node — add to parent's children
-      const newTree = treeData.map((group) => {
-        if (group.id === node.group) {
-          return {
-            ...group,
-            children: [...(group.children ?? []), node],
-          };
-        }
-        return group;
-      });
-      set({ treeData: newTree });
+      set({ treeData: insertChild(treeData, node.group, node) });
     }
   },
 
   updateNodeName: (nodeId, newName) => {
-    const { treeData } = get();
-    const newTree = treeData.map((group) => {
-      if (group.id === nodeId) {
-        return { ...group, name: newName };
-      }
-      if (group.children) {
-        return {
-          ...group,
-          children: group.children.map((child) => (child.id === nodeId ? { ...child, name: newName } : child)),
-        };
-      }
-      return group;
-    });
-    set({ treeData: newTree });
+    set({ treeData: updateNodeById(get().treeData, nodeId, (node) => ({ ...node, name: newName })) });
   },
 
   patchNode: (nodeId, patch) => {
-    const { treeData } = get();
-    set({
-      treeData: treeData.map((group) =>
-        group.id === nodeId
-          ? { ...group, ...patch }
-          : group.children
-            ? {
-                ...group,
-                children: group.children.map((c) => (c.id === nodeId ? { ...c, ...patch } : c)),
-              }
-            : group,
-      ),
-    });
+    set({ treeData: updateNodeById(get().treeData, nodeId, (node) => ({ ...node, ...patch })) });
   },
 
   runOnce: async (nodeId) => {
@@ -258,9 +193,11 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
 
   removeNode: (nodeId) => {
     const { treeData, selectedNode, openTabs, activeTabKey } = get();
-    const isGroup = treeData.some((g) => g.id === nodeId);
-    const newTree = removeNodeFromTree(treeData, nodeId, isGroup);
-    const removedIds = collectRemovedIds(treeData, nodeId, isGroup);
+    const target = findNodeById(treeData, nodeId);
+    const newTree = removeNodeById(treeData, nodeId);
+    // Removing a node drops its whole subtree, so tabs/selection for any
+    // descendant must be cleaned up too.
+    const removedIds = new Set<string>(target ? collectSubtreeIds(target) : [nodeId]);
 
     const newTabs = openTabs.filter((tab) => !removedIds.has(tab.key));
     const newActiveKey =

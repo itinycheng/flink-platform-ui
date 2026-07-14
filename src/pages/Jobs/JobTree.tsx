@@ -6,6 +6,7 @@ import { compactMenuTheme } from "@/theme";
 import type { MessageInstance } from "antd/es/message/interface";
 import { useTranslation } from "react-i18next";
 import { useJobStore } from "@/stores/jobStore";
+import { findNodeById } from "@/utils/tree";
 import type { JobTreeNode } from "@/types/job";
 import { TaskIcon } from "./TaskIcon";
 import { StatusDot } from "./StatusDot";
@@ -45,16 +46,6 @@ function getNodeIcon(node: { type: string }): React.ReactNode {
 
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-/** Find a node by ID in the two-level tree structure (groups + their direct children). */
-function findNode(treeData: JobTreeNode[], nodeId: string): JobTreeNode | null {
-  for (const group of treeData) {
-    if (group.id === nodeId) return group;
-    const child = group.children?.find((c) => c.id === nodeId);
-    if (child) return child;
-  }
-  return null;
 }
 
 // ---------- node title ----------
@@ -186,7 +177,7 @@ function useContextMenu(treeData: JobTreeNode[]) {
     ({ event, node: treeNode }: { event: React.MouseEvent; node: TreeDataNode }) => {
       event.preventDefault();
       event.stopPropagation();
-      const found = findNode(treeData, String(treeNode.key));
+      const found = findNodeById(treeData, String(treeNode.key));
       if (found) setContextMenu({ visible: true, x: event.clientX, y: event.clientY, node: found });
     },
     [treeData],
@@ -215,7 +206,7 @@ function useJobTreeData({
     (selectedKeys: React.Key[]) => {
       if (selectedKeys.length === 0) return;
       const nodeId = String(selectedKeys[0]);
-      const node = findNode(treeData, nodeId);
+      const node = findNodeById(treeData, nodeId);
       if (!node) return;
       if (node.type !== "group") {
         void selectNode(node);
@@ -291,46 +282,34 @@ function useBuiltTreeData(
   const loadingGroups = useJobStore((s) => s.loadingGroups);
   const loadedGroups = useJobStore((s) => s.loadedGroups);
 
-  return useMemo<TreeDataNode[]>(
-    () =>
-      (Array.isArray(treeData) ? treeData : []).map((group) => {
-        const isLoading = loadingGroups.has(group.id);
-        const isLoaded = loadedGroups.has(group.id);
-        const groupChildren =
-          isLoaded || group.children?.length
-            ? group.children?.map((child) => ({
-                key: child.id,
-                title: (
-                  <JobTreeNodeTitle
-                    displayName={child.name}
-                    node={child}
-                    menuItems={getMenuItems(child)}
-                    onMenuAction={handleMenuAction}
-                  />
-                ),
-                icon: getNodeIcon(child),
-                isLeaf: true,
-              }))
-            : undefined;
-        const groupCount = group.childCount ?? group.children?.length;
-        return {
-          key: group.id,
-          title: (
-            <JobTreeNodeTitle
-              displayName={isLoading ? `${group.name} ...` : group.name}
-              node={group}
-              count={groupCount}
-              menuItems={getMenuItems(group)}
-              onMenuAction={handleMenuAction}
-            />
-          ),
-          icon: undefined,
-          isLeaf: false,
-          children: groupChildren,
-        };
-      }),
-    [treeData, loadingGroups, loadedGroups, getMenuItems, handleMenuAction],
-  );
+  return useMemo<TreeDataNode[]>(() => {
+    // Recurse to any depth: only `group` nodes are expandable (with lazy-loaded
+    // children); everything else is a leaf. Groups and leaves may be siblings.
+    const buildNode = (node: JobTreeNode): TreeDataNode => {
+      const title = (
+        <JobTreeNodeTitle
+          displayName={loadingGroups.has(node.id) ? `${node.name} ...` : node.name}
+          node={node}
+          count={node.type === "group" ? (node.childCount ?? node.children?.length) : undefined}
+          menuItems={getMenuItems(node)}
+          onMenuAction={handleMenuAction}
+        />
+      );
+      if (node.type !== "group") {
+        return { key: node.id, title, icon: getNodeIcon(node), isLeaf: true };
+      }
+      // Show the expand arrow before children are fetched; map them once loaded.
+      const loaded = loadedGroups.has(node.id) || Boolean(node.children?.length);
+      return {
+        key: node.id,
+        title,
+        icon: undefined,
+        isLeaf: false,
+        children: loaded ? node.children?.map(buildNode) : undefined,
+      };
+    };
+    return (Array.isArray(treeData) ? treeData : []).map(buildNode);
+  }, [treeData, loadingGroups, loadedGroups, getMenuItems, handleMenuAction]);
 }
 
 // ---------- hooks: virtual-scroll height ----------
