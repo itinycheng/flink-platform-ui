@@ -15,6 +15,7 @@ import { buildNodeMenuItems } from "./nodeMenu";
 import { useDefinitionLifecycle } from "./useDefinitionLifecycle";
 import { TagEditModal } from "./TagEditModal";
 import { AlertBindModal } from "./AlertBindModal";
+import { GroupEditModal } from "./GroupEditModal";
 
 // ---------- constants & icons ----------
 
@@ -361,6 +362,7 @@ export default function JobTree({
   });
   const { handleAddWorkflow, handleAddTask, handleDelete } = useJobTreeActions({ messageApi });
   const lifecycle = useDefinitionLifecycle(messageApi);
+  const [renameNode, setRenameNode] = useState<JobTreeNode | null>(null);
 
   const getMenuItems = useCallback((node: JobTreeNode): MenuProps["items"] => buildNodeMenuItems(node, t), [t]);
 
@@ -368,6 +370,7 @@ export default function JobTree({
     (key: string, node: JobTreeNode) => {
       if (key === "addWorkflow") handleAddWorkflow(node.id);
       else if (key === "addTask") handleAddTask(node.id);
+      else if (key === "rename") setRenameNode(node);
       else if (key === "delete") handleDelete(node);
       else void lifecycle.handleLifecycle(key, node);
     },
@@ -415,7 +418,33 @@ export default function JobTree({
         </Dropdown>
       )}
       <LifecycleModals lifecycle={lifecycle} />
+      <GroupRenameModal node={renameNode} onClose={() => setRenameNode(null)} />
     </ConfigProvider>
+  );
+}
+
+/** Names of a node's same-level groups (excluding itself), for duplicate checks. */
+function groupSiblingNames(treeData: JobTreeNode[], node: JobTreeNode): string[] {
+  const siblings = node.group ? (findNodeById(treeData, node.group)?.children ?? []) : treeData;
+  return siblings.filter((n) => n.type === "group" && n.id !== node.id).map((n) => n.name);
+}
+
+/** Rename modal for a group node; reads the store so JobTree only holds the target. */
+function GroupRenameModal({ node, onClose }: { node: JobTreeNode | null; onClose: () => void }) {
+  const treeData = useJobStore((s) => s.treeData);
+  const updateNodeName = useJobStore((s) => s.updateNodeName);
+  return (
+    <GroupEditModal
+      open={!!node}
+      mode="rename"
+      initialName={node?.name}
+      siblingNames={node ? groupSiblingNames(treeData, node) : undefined}
+      onOk={(name) => {
+        if (node) updateNodeName(node.id, name);
+        onClose();
+      }}
+      onCancel={onClose}
+    />
   );
 }
 

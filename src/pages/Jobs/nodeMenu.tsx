@@ -10,6 +10,7 @@ import {
   CloudDownloadOutlined,
   ClockCircleOutlined,
   PauseCircleOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import type { TFunction } from "i18next";
 import type { JobTreeNode } from "@/types/job";
@@ -21,6 +22,7 @@ function groupMenu(t: TFunction): MenuItem[] {
     { key: "addWorkflow", icon: <PlusOutlined />, label: t("workflow.addWorkflow") },
     { key: "addTask", icon: <PlusOutlined />, label: t("workflow.addTask") },
     { type: "divider" },
+    { key: "rename", icon: <EditOutlined />, label: t("workflow.editName") },
     { key: "delete", icon: <DeleteOutlined />, label: t("common.delete"), danger: true },
   ];
 }

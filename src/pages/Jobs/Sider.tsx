@@ -1,6 +1,6 @@
 import JobTree from "@/pages/Jobs/JobTree";
+import { GroupEditModal } from "@/pages/Jobs/GroupEditModal";
 import { useJobStore } from "@/stores/jobStore";
-import type { JobTreeNode } from "@/types/job";
 import {
   SearchOutlined,
   ApartmentOutlined,
@@ -331,24 +331,20 @@ function TreeFilterBar({ onChange }: { onChange: (filter: FilterState) => void }
 function TreePanel() {
   const { t } = useTranslation();
   const addNode = useJobStore((s) => s.addNode);
+  const treeData = useJobStore((s) => s.treeData);
   const [filter, setFilter] = useState<FilterState>({ keyword: "", types: [], statuses: [] });
+  const [addOpen, setAddOpen] = useState(false);
 
-  const handleAddGroup = () => {
-    const newGroup: JobTreeNode = {
-      id: generateId("group"),
-      name: t("workflow.newGroup"),
-      type: "group",
-      group: "",
-      children: [],
-    };
-    addNode(newGroup);
+  const handleCreateGroup = (name: string) => {
+    addNode({ id: generateId("group"), name, type: "group", group: "", children: [] });
+    setAddOpen(false);
   };
 
   return (
     <Flex vertical style={{ height: "100%", padding: "4px 4px 0" }}>
       <TreeFilterBar onChange={setFilter} />
       <Flex gap={4} style={{ flexShrink: 0, padding: "6px 4px" }}>
-        <Button type="dashed" size="small" icon={<FolderAddOutlined />} onClick={handleAddGroup} block>
+        <Button type="dashed" size="small" icon={<FolderAddOutlined />} onClick={() => setAddOpen(true)} block>
           {t("workflow.addGroup")}
         </Button>
       </Flex>
@@ -356,6 +352,13 @@ function TreePanel() {
       <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
         <JobTree searchKeyword={filter.keyword} typeFilter={filter.types} statusFilter={filter.statuses} />
       </div>
+      <GroupEditModal
+        open={addOpen}
+        mode="create"
+        siblingNames={treeData.filter((n) => n.type === "group").map((n) => n.name)}
+        onOk={handleCreateGroup}
+        onCancel={() => setAddOpen(false)}
+      />
     </Flex>
   );
 }
