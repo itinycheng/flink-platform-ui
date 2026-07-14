@@ -20,6 +20,7 @@ import {
   BellOutlined,
   ConsoleSqlOutlined,
   AppstoreOutlined,
+  AuditOutlined,
 } from "@ant-design/icons";
 import UserAvatar from "@/components/UserAvatar";
 import LangSwitcher from "@/components/LangSwitcher";
@@ -63,6 +64,7 @@ function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
           { path: "/manage/alert-rules", name: t("menu.alertRules"), icon: <BellOutlined /> },
           { path: "/manage/workspaces", name: t("menu.workspaces"), icon: <AppstoreOutlined /> },
           { path: "/manage/params", name: t("menu.customParams"), icon: <ToolOutlined /> },
+          { path: "/manage/audit-logs", name: t("menu.auditLogs"), icon: <AuditOutlined /> },
         ],
       },
       { path: "/monitor", name: t("menu.monitor"), icon: <MonitorOutlined /> },

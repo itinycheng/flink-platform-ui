@@ -17,6 +17,7 @@ import TagList from "../pages/Manage/TagList";
 import SysConfigList from "../pages/Manage/SysConfigList";
 import AlertRuleList from "../pages/Manage/AlertRuleList";
 import WorkspaceList from "../pages/Manage/WorkspaceList";
+import AuditLogList from "../pages/Manage/AuditLogList";
 import ReactiveQuery from "../pages/Extension/ReactiveQuery";
 import MonitorPage from "../pages/Monitor";
 import RunsPage from "../pages/Runs";
@@ -75,6 +76,7 @@ export default function AppRouter() {
             <Route path="sys-configs" element={<SysConfigList />} />
             <Route path="alert-rules" element={<AlertRuleList />} />
             <Route path="workspaces" element={<WorkspaceList />} />
+            <Route path="audit-logs" element={<AuditLogList />} />
           </Route>
           <Route path="/runs" element={<RunsPage />}>
             <Route index element={<Navigate to="/runs/flows" replace />} />
