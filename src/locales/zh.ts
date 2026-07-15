@@ -632,11 +632,10 @@ const zh = {
     clearHistory: "清空历史",
     exportCsv: "导出 CSV",
     rowsMeta: "{{rows}} 行 · {{ms}} ms",
-    tables: "表",
-    searchTable: "搜索表",
-    selectDatasourceForTables: "选择数据源以浏览其中的表",
-    noTables: "未找到表",
-    clickToInsert: "点击插入到编辑器",
+    schema: "库表",
+    searchTable: "搜索库 / 表",
+    selectDatasourceForTables: "选择数据源以浏览其中的库表",
+    noDatabases: "未找到库",
   },
 
   taskForm: {

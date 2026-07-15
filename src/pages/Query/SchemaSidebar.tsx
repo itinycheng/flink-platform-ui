@@ -1,35 +1,60 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { Key } from "react";
 import { useTranslation } from "react-i18next";
-import { Empty, Flex, Input, Spin, Tag, Typography } from "antd";
-import { TableOutlined } from "@ant-design/icons";
-import { getTables } from "@/api/query";
+import { Empty, Flex, Input, Spin, Tree, Typography, type TreeDataNode } from "antd";
+import { DatabaseOutlined, TableOutlined } from "@ant-design/icons";
+import { getDatabases, getTables } from "@/api/query";
 
 interface SchemaSidebarProps {
   datasourceId?: string;
-  /** Insert the clicked table name into the editor. */
-  onInsert: (table: string) => void;
+  /** Insert the clicked table (qualified as `db.table`) into the editor. */
+  onInsert: (text: string) => void;
 }
 
-/** Lite schema browser: lists tables for the active data source; click to insert. */
+/** Build a leaf node for a table; its key is the qualified `db.table` name. */
+function tableNode(db: string, table: string): TreeDataNode {
+  return { key: `${db}.${table}`, title: table, isLeaf: true, icon: <TableOutlined /> };
+}
+
+/** Return a copy of the tree with `children` attached to the node keyed by `db`. */
+function attachTables(nodes: TreeDataNode[], db: string, children: TreeDataNode[]): TreeDataNode[] {
+  return nodes.map((n) => (n.key === db ? { ...n, children } : n));
+}
+
+/** Filter the (partially loaded) tree by a lowercased query over db and table names. */
+function filterTree(nodes: TreeDataNode[], q: string): TreeDataNode[] {
+  if (!q) return nodes;
+  const out: TreeDataNode[] = [];
+  for (const db of nodes) {
+    if (String(db.key).toLowerCase().includes(q)) {
+      out.push(db);
+    } else {
+      const kids = (db.children ?? []).filter((c) => String(c.title).toLowerCase().includes(q));
+      if (kids.length) out.push({ ...db, children: kids });
+    }
+  }
+  return out;
+}
+
 export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarProps) {
   const { t } = useTranslation();
-  const [tables, setTables] = useState<string[]>([]);
+  const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("");
+  const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      if (!datasourceId) {
-        setTables([]);
-        return;
-      }
+      setTreeData([]);
+      setExpandedKeys([]);
+      if (!datasourceId) return;
       setLoading(true);
       try {
-        const data = await getTables(datasourceId);
-        if (!cancelled) setTables(data);
+        const dbs = await getDatabases(datasourceId);
+        if (!cancelled) setTreeData(dbs.map((db) => ({ key: db, title: db, icon: <DatabaseOutlined /> })));
       } catch (err) {
-        console.error("[Query] load tables failed", err);
+        console.error("[Query] load databases failed", err);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -40,18 +65,27 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
     };
   }, [datasourceId]);
 
-  const shown = tables.filter((tb) => tb.toLowerCase().includes(filter.trim().toLowerCase()));
+  const onLoadData = async (node: TreeDataNode) => {
+    if (!datasourceId || node.children) return;
+    const db = String(node.key);
+    const tables = await getTables(datasourceId, db);
+    setTreeData((origin) =>
+      attachTables(origin, db, tables.map((tb) => tableNode(db, tb))),
+    );
+  };
+
+  const q = filter.trim().toLowerCase();
+  const shown = useMemo(() => filterTree(treeData, q), [treeData, q]);
+  // While searching, expand every database that survived the filter so matches show.
+  const searchExpand = useMemo(() => (q ? shown.map((db) => db.key) : null), [q, shown]);
 
   return (
     <div className="schema-sidebar">
-      <Flex align="center" justify="space-between" style={{ padding: "8px 10px" }}>
-        <Flex align="center" gap={6}>
-          <TableOutlined style={{ color: "var(--ant-color-text-tertiary)" }} />
-          <Typography.Text strong style={{ fontSize: 13 }}>
-            {t("query.tables")}
-          </Typography.Text>
-        </Flex>
-        {datasourceId && !loading ? <Tag style={{ marginInlineEnd: 0 }}>{tables.length}</Tag> : null}
+      <Flex align="center" gap={6} style={{ padding: "8px 10px" }}>
+        <DatabaseOutlined style={{ color: "var(--ant-color-text-tertiary)" }} />
+        <Typography.Text strong style={{ fontSize: 13 }}>
+          {t("query.schema")}
+        </Typography.Text>
       </Flex>
       <div style={{ padding: "0 10px 8px" }}>
         <Input.Search
@@ -64,7 +98,16 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
         />
       </div>
       <div className="schema-sidebar-list">
-        <SchemaBody datasourceId={datasourceId} loading={loading} tables={shown} onInsert={onInsert} />
+        <SchemaBody
+          datasourceId={datasourceId}
+          loading={loading}
+          empty={treeData.length === 0}
+          treeData={shown}
+          expandedKeys={searchExpand ?? expandedKeys}
+          onExpand={setExpandedKeys}
+          onLoadData={onLoadData}
+          onInsert={onInsert}
+        />
       </div>
     </div>
   );
@@ -73,12 +116,18 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
 interface SchemaBodyProps {
   datasourceId?: string;
   loading: boolean;
-  tables: string[];
-  onInsert: (table: string) => void;
+  empty: boolean;
+  treeData: TreeDataNode[];
+  expandedKeys: Key[];
+  onExpand: (keys: Key[]) => void;
+  onLoadData: (node: TreeDataNode) => Promise<void>;
+  onInsert: (text: string) => void;
 }
 
-function SchemaBody({ datasourceId, loading, tables, onInsert }: SchemaBodyProps) {
+function SchemaBody(props: SchemaBodyProps) {
   const { t } = useTranslation();
+  const { datasourceId, loading, empty, treeData, expandedKeys, onExpand, onLoadData, onInsert } = props;
+
   if (!datasourceId) {
     return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("query.selectDatasourceForTables")} />;
   }
@@ -89,22 +138,26 @@ function SchemaBody({ datasourceId, loading, tables, onInsert }: SchemaBodyProps
       </Flex>
     );
   }
-  if (tables.length === 0) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("query.noTables")} />;
+  if (empty) {
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("query.noDatabases")} />;
   }
   return (
-    <>
-      {tables.map((tb) => (
-        <div
-          key={tb}
-          className="schema-table-row"
-          title={t("query.clickToInsert")}
-          onClick={() => onInsert(tb)}
-        >
-          <TableOutlined style={{ color: "var(--ant-color-text-quaternary)", fontSize: 12 }} />
-          <span>{tb}</span>
-        </div>
-      ))}
-    </>
+    <Tree
+      blockNode
+      showIcon
+      treeData={treeData}
+      loadData={onLoadData}
+      expandedKeys={expandedKeys}
+      onExpand={onExpand}
+      onSelect={(_, { node }) => {
+        // Leaf = table → insert; database row → toggle expand (loads tables lazily).
+        if (node.isLeaf) {
+          onInsert(String(node.key));
+          return;
+        }
+        const key = node.key;
+        onExpand(expandedKeys.includes(key) ? expandedKeys.filter((k) => k !== key) : [...expandedKeys, key]);
+      }}
+    />
   );
 }

@@ -35,6 +35,9 @@ function buildResult(sql: string): QueryResult {
   };
 }
 
+/** Realistic warehouse-layer database names the schema browser draws from. */
+const DATABASE_POOL = ["default", "ods", "dwd", "dws", "ads", "tag", "analytics"];
+
 /** A pool of realistic table names the schema browser draws from. */
 const TABLE_POOL = [
   "orders",
@@ -66,12 +69,22 @@ export const queryHandlers: RequestHandler[] = [
     return HttpResponse.json(buildResult(sql));
   }),
 
-  http.get("/api/query/tables", async ({ request }) => {
+  http.get("/api/query/databases", async ({ request }) => {
     const datasourceId = new URL(request.url).searchParams.get("datasourceId");
-    await delay(300);
+    await delay(250);
     if (!datasourceId) return HttpResponse.json([]);
-    // Vary the set per request so switching data sources feels real.
-    const count = faker.number.int({ min: 8, max: TABLE_POOL.length });
+    const count = faker.number.int({ min: 2, max: DATABASE_POOL.length });
+    return HttpResponse.json(faker.helpers.arrayElements(DATABASE_POOL, count).sort());
+  }),
+
+  http.get("/api/query/tables", async ({ request }) => {
+    const url = new URL(request.url);
+    const datasourceId = url.searchParams.get("datasourceId");
+    const database = url.searchParams.get("database");
+    await delay(300);
+    if (!datasourceId || !database) return HttpResponse.json([]);
+    // Vary the set per database so expanding different databases feels real.
+    const count = faker.number.int({ min: 6, max: TABLE_POOL.length });
     return HttpResponse.json(faker.helpers.arrayElements(TABLE_POOL, count).sort());
   }),
 ];

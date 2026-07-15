@@ -6,7 +6,12 @@ export function execQuery(data: QueryRequest): Promise<QueryResult> {
   return http.post<QueryResult>("/query/execute", data);
 }
 
-/** List table names in the given data source, for the schema browser. */
-export function getTables(datasourceId: string): Promise<string[]> {
-  return http.get<string[]>("/query/tables", { params: { datasourceId } });
+/** List database/schema names in the given data source. */
+export function getDatabases(datasourceId: string): Promise<string[]> {
+  return http.get<string[]>("/query/databases", { params: { datasourceId } });
+}
+
+/** List table names within a database of the given data source. */
+export function getTables(datasourceId: string, database: string): Promise<string[]> {
+  return http.get<string[]>("/query/tables", { params: { datasourceId, database } });
 }
