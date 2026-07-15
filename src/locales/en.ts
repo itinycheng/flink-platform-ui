@@ -426,6 +426,15 @@ const en = {
     folderNamePlaceholder: "Folder name",
     folderCreated: "Folder created",
     createFolderFailed: "Could not create folder, please retry",
+    rename: "Rename",
+    renamePlaceholder: "New name",
+    renameSuccess: "Renamed",
+    renameFailed: "Rename failed, please retry",
+    move: "Move",
+    moveTitle: "Move to",
+    moveTargetPlaceholder: "Select a destination folder",
+    moveSuccess: "Moved",
+    moveFailed: "Move failed, please retry",
   },
 
   datasource: {

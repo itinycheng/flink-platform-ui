@@ -1,4 +1,4 @@
-import { DeleteOutlined, FileOutlined, FolderFilled } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, FileOutlined, FolderFilled, FolderOpenOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import RowActions from "@/components/RowActions";
 import type { ResourceFile } from "@/types/manage";
@@ -29,10 +29,12 @@ export function ResourceNameCell({ record, onOpen }: ResourceNameCellProps) {
 
 interface ResourceActionsCellProps {
   record: ResourceFile;
+  onRename: (record: ResourceFile) => void;
+  onMove: (record: ResourceFile) => void;
   onDelete: (id: string) => void;
 }
 
-export function ResourceActionsCell({ record, onDelete }: ResourceActionsCellProps) {
+export function ResourceActionsCell({ record, onRename, onMove, onDelete }: ResourceActionsCellProps) {
   const { t } = useTranslation();
   const confirm = record.isDir
     ? t("resource.deleteFolderConfirm", { name: record.name })
@@ -40,6 +42,18 @@ export function ResourceActionsCell({ record, onDelete }: ResourceActionsCellPro
   return (
     <RowActions
       actions={[
+        {
+          key: "rename",
+          tooltip: t("resource.rename"),
+          icon: <EditOutlined />,
+          onClick: () => onRename(record),
+        },
+        {
+          key: "move",
+          tooltip: t("resource.move"),
+          icon: <FolderOpenOutlined />,
+          onClick: () => onMove(record),
+        },
         {
           key: "delete",
           tooltip: t("common.delete"),

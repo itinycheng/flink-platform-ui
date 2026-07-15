@@ -2,6 +2,7 @@ import { http } from "@/utils/request";
 import type {
   ResourceFile,
   ResourcePathItem,
+  FolderNode,
   ManagedUser,
   CustomParam,
   DataSource,
@@ -55,6 +56,20 @@ export function uploadResource(
 /** Ancestor path (root → … → the folder) for the breadcrumb. */
 export function getResourcePath(id: string): Promise<ResourcePathItem[]> {
   return http.get<ResourcePathItem[]>(`/resources/${id}/path`);
+}
+
+export function renameResource(id: string, name: string): Promise<ResourceFile> {
+  return http.put<ResourceFile>(`/resources/${id}`, { name });
+}
+
+/** Move a resource under a new parent folder (root when omitted). */
+export function moveResource(id: string, targetParentId?: string): Promise<ResourceFile> {
+  return http.post<ResourceFile>(`/resources/${id}/move`, { targetParentId: targetParentId ?? null });
+}
+
+/** The full folder hierarchy, for the move-target picker. */
+export function getFolderTree(): Promise<FolderNode[]> {
+  return http.get<FolderNode[]>("/resources/folders");
 }
 
 export function deleteResource(id: string): Promise<void> {

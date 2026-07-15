@@ -425,6 +425,15 @@ const zh = {
     folderNamePlaceholder: "目录名称",
     folderCreated: "目录已创建",
     createFolderFailed: "创建目录失败，请重试",
+    rename: "重命名",
+    renamePlaceholder: "新名称",
+    renameSuccess: "已重命名",
+    renameFailed: "重命名失败，请重试",
+    move: "移动",
+    moveTitle: "移动到",
+    moveTargetPlaceholder: "选择目标目录",
+    moveSuccess: "已移动",
+    moveFailed: "移动失败，请重试",
   },
 
   datasource: {

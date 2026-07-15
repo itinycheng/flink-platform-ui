@@ -3,7 +3,14 @@ import { message } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { ActionType } from "@ant-design/pro-components";
-import { uploadResource, deleteResource, createFolder, getResourcePath } from "@/api/manage";
+import {
+  uploadResource,
+  deleteResource,
+  createFolder,
+  getResourcePath,
+  renameResource,
+  moveResource,
+} from "@/api/manage";
 import type { ResourcePathItem } from "@/types/manage";
 
 /** Folder navigation, upload, create-folder and delete actions for the resource browser. */
@@ -50,7 +57,37 @@ export function useResourceActions() {
     }
   };
 
-  return { actionRef, folder, uploadProgress, navigateFolder, handleUpload, handleCreateFolder, handleDelete };
+  const handleRename = async (id: string, name: string) => {
+    try {
+      await renameResource(id, name);
+      message.success(t("resource.renameSuccess"));
+      reload();
+    } catch {
+      message.error(t("resource.renameFailed"));
+    }
+  };
+
+  const handleMove = async (id: string, targetParentId?: string) => {
+    try {
+      await moveResource(id, targetParentId);
+      message.success(t("resource.moveSuccess"));
+      reload();
+    } catch {
+      message.error(t("resource.moveFailed"));
+    }
+  };
+
+  return {
+    actionRef,
+    folder,
+    uploadProgress,
+    navigateFolder,
+    handleUpload,
+    handleCreateFolder,
+    handleDelete,
+    handleRename,
+    handleMove,
+  };
 }
 
 /** Resolve the ancestor path (root → … → current) of `folder` for the breadcrumb. */

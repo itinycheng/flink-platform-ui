@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
-import type { ResourceFile } from "@/types/manage";
+import type { ResourceFile, FolderNode } from "@/types/manage";
 import { paginate, parsePagination } from "@/utils/pagination";
 
 const RESOURCE_MIME: Record<string, string> = {
@@ -108,6 +108,39 @@ export const resourceHandlers: RequestHandler[] = [
     resource.uploadTime = new Date().toISOString();
     mockResources.push(resource);
     return HttpResponse.json(resource, { status: 201 });
+  }),
+
+  // GET /api/resources/folders  (folder-only hierarchy for the move picker)
+  http.get("/api/resources/folders", async () => {
+    await delay(150);
+    const build = (parentId: string | null): FolderNode[] =>
+      mockResources
+        .filter((r) => r.isDir && (r.parentId ?? null) === parentId)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map((d) => ({ id: d.id, name: d.name, children: build(d.id) }));
+    return HttpResponse.json(build(null));
+  }),
+
+  // PUT /api/resources/:id  { name }  (rename)
+  http.put("/api/resources/:id", async ({ params, request }) => {
+    await delay(200);
+    const { id } = params as { id: string };
+    const { name } = (await request.json()) as { name: string };
+    const target = mockResources.find((r) => r.id === id);
+    if (!target) return HttpResponse.json({ message: "资源不存在" }, { status: 404 });
+    target.name = name;
+    return HttpResponse.json(target);
+  }),
+
+  // POST /api/resources/:id/move  { targetParentId }
+  http.post("/api/resources/:id/move", async ({ params, request }) => {
+    await delay(200);
+    const { id } = params as { id: string };
+    const { targetParentId } = (await request.json()) as { targetParentId: string | null };
+    const target = mockResources.find((r) => r.id === id);
+    if (!target) return HttpResponse.json({ message: "资源不存在" }, { status: 404 });
+    target.parentId = targetParentId ?? null;
+    return HttpResponse.json(target);
   }),
 
   // GET /api/resources/:id/path  (root → … → the folder itself)
