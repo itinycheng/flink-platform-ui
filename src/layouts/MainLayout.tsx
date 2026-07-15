@@ -49,6 +49,7 @@ function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
           { path: "/runs/jobs", name: t("menu.jobRuns"), icon: <HistoryOutlined /> },
         ],
       },
+      { path: "/monitor", name: t("menu.monitor"), icon: <MonitorOutlined /> },
       {
         path: "/manage",
         name: t("menu.manage"),
@@ -66,7 +67,6 @@ function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
           { path: "/manage/params", name: t("menu.customParams"), icon: <ToolOutlined /> },
         ],
       },
-      { path: "/monitor", name: t("menu.monitor"), icon: <MonitorOutlined /> },
       { path: "/audit-logs", name: t("menu.auditLogs"), icon: <AuditOutlined /> },
     ],
   };
@@ -98,27 +98,31 @@ const layoutToken: ProLayoutProps["token"] = {
 function renderHeaderTitle(title: string) {
   const brandGradient = "linear-gradient(135deg, var(--ant-color-primary-active), var(--ant-color-primary-hover))";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <div
-        style={{
-          width: 30,
-          height: 30,
-          background: brandGradient,
-          mask: "url(/logo.svg) no-repeat center / contain",
-          WebkitMask: "url(/logo.svg) no-repeat center / contain",
-        }}
-      />
-      <span
-        style={{
-          fontSize: 24,
-          fontWeight: 600,
-          background: brandGradient,
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-        }}
-      >
-        {title}
-      </span>
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div
+          style={{
+            width: 30,
+            height: 30,
+            background: brandGradient,
+            mask: "url(/logo.svg) no-repeat center / contain",
+            WebkitMask: "url(/logo.svg) no-repeat center / contain",
+          }}
+        />
+        <span
+          style={{
+            fontSize: 24,
+            fontWeight: 600,
+            background: brandGradient,
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
+          {title}
+        </span>
+      </div>
+      {/* Workspace scopes everything below it, so it belongs beside the brand as a context selector. */}
+      <WorkspaceSwitcher leadingDivider />
     </div>
   );
 }
@@ -147,11 +151,7 @@ export default function MainLayout() {
         menuItemRender={(item, dom) => (
           <a onClick={() => item.path && item.name !== "_jobs" && navigate(item.path)}>{dom}</a>
         )}
-        actionsRender={() => [
-          <WorkspaceSwitcher key="workspace" />,
-          <LangSwitcher key="lang" aria-hidden />,
-          <UserAvatar key="avatar" />,
-        ]}
+        actionsRender={() => [<LangSwitcher key="lang" aria-hidden />, <UserAvatar key="avatar" />]}
         footerRender={
           isDashboard
             ? () => (
