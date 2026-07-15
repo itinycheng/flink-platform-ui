@@ -1,7 +1,6 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import type {
-  ResourceFile,
   ManagedUser,
   CustomParam,
   DataSource,
@@ -16,33 +15,6 @@ import type {
 import { paginate, parsePagination } from "@/utils/pagination";
 
 // ---- Seed data generated with faker ----
-
-function generateResources(count: number): ResourceFile[] {
-  const extensions = ["py", "yaml", "jar", "sql", "sh", "json", "csv", "xml"];
-  const mimeTypes: Record<string, string> = {
-    py: "text/x-python",
-    yaml: "application/x-yaml",
-    jar: "application/java-archive",
-    sql: "application/sql",
-    sh: "application/x-sh",
-    json: "application/json",
-    csv: "text/csv",
-    xml: "application/xml",
-  };
-
-  return Array.from({ length: count }, () => {
-    const ext = faker.helpers.arrayElement(extensions);
-    const fileName = `${faker.word.noun()}-${faker.word.verb()}.${ext}`;
-    return {
-      id: `res-${faker.string.nanoid(6)}`,
-      name: fileName,
-      size: faker.number.int({ min: 512, max: 52_428_800 }),
-      type: mimeTypes[ext] || "application/octet-stream",
-      uploadTime: faker.date.recent({ days: 30 }).toISOString(),
-      url: `/files/${fileName}`,
-    };
-  });
-}
 
 function generateUsers(count: number): ManagedUser[] {
   return Array.from({ length: count }, () => ({
@@ -190,7 +162,6 @@ function generateSysConfigs(count: number): SysConfig[] {
   });
 }
 
-const mockResources: ResourceFile[] = generateResources(5);
 const mockUsers: ManagedUser[] = generateUsers(4);
 const mockParams: CustomParam[] = generateCustomParams(4);
 const mockDataSources: DataSource[] = generateDataSources(6);
@@ -200,44 +171,6 @@ const mockTags: Tag[] = generateTags(8);
 const mockSysConfigs: SysConfig[] = generateSysConfigs(6);
 
 export const manageHandlers: RequestHandler[] = [
-  // ---- Resources ----
-
-  // POST /api/resources/upload
-  http.post("/api/resources/upload", async () => {
-    await delay(500);
-    const ext = faker.helpers.arrayElement(["py", "sh", "jar", "sql", "csv"]);
-    const fileName = `${faker.word.noun()}-upload.${ext}`;
-    const resource: ResourceFile = {
-      id: `res-${faker.string.nanoid(6)}`,
-      name: fileName,
-      size: faker.number.int({ min: 1024, max: 10_000_000 }),
-      type: "application/octet-stream",
-      uploadTime: new Date().toISOString(),
-      url: `/files/${fileName}`,
-    };
-    mockResources.push(resource);
-    return HttpResponse.json(resource, { status: 201 });
-  }),
-
-  // GET /api/resources
-  http.get("/api/resources", async ({ request }) => {
-    await delay(200);
-    const { page, pageSize } = parsePagination(new URL(request.url));
-    return HttpResponse.json(paginate(mockResources, page, pageSize));
-  }),
-
-  // DELETE /api/resources/:id
-  http.delete("/api/resources/:id", async ({ params }) => {
-    await delay(200);
-    const { id } = params as { id: string };
-    const idx = mockResources.findIndex((r) => r.id === id);
-    if (idx === -1) {
-      return HttpResponse.json({ message: "资源不存在" }, { status: 404 });
-    }
-    mockResources.splice(idx, 1);
-    return new HttpResponse(null, { status: 204 });
-  }),
-
   // ---- Users ----
 
   // GET /api/users

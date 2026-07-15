@@ -419,6 +419,13 @@ const en = {
     uploadFailed: "File upload failed, please retry",
     fileTooLarge: 'File "{{name}}" exceeds the size limit (max {{max}})',
     deleteConfirmDesc: 'Delete file "{{name}}"?',
+    deleteFolderConfirm: 'Delete folder "{{name}}" and everything inside it?',
+    home: "Home",
+    folder: "Folder",
+    newFolder: "New Folder",
+    folderNamePlaceholder: "Folder name",
+    folderCreated: "Folder created",
+    createFolderFailed: "Could not create folder, please retry",
   },
 
   datasource: {

@@ -2,9 +2,26 @@ export interface ResourceFile {
   id: string;
   name: string;
   size: number;
+  /** MIME type for files; "DIR" for folders. */
   type: string;
   uploadTime: string;
   url: string;
+  /** Parent folder id; null at the root. */
+  parentId: string | null;
+  isDir: boolean;
+}
+
+/** One ancestor step for the folder breadcrumb (root → … → current). */
+export interface ResourcePathItem {
+  id: string;
+  name: string;
+}
+
+/** A folder node in the move-target picker tree. */
+export interface FolderNode {
+  id: string;
+  name: string;
+  children: FolderNode[];
 }
 
 export interface ManagedUser {

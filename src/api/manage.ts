@@ -1,6 +1,7 @@
 import { http } from "@/utils/request";
 import type {
   ResourceFile,
+  ResourcePathItem,
   ManagedUser,
   CustomParam,
   DataSource,
@@ -16,9 +17,31 @@ import type { PaginatedResponse, PaginationParams } from "@/types/common";
 
 // ---- Resource Management ----
 
-export function uploadResource(file: File, onProgress?: (percent: number) => void): Promise<ResourceFile> {
+export interface ResourceQuery {
+  /** Folder to list; omit for the root. */
+  parentId?: string;
+  name?: string;
+  page: number;
+  pageSize: number;
+}
+
+export function getResources(params: ResourceQuery): Promise<PaginatedResponse<ResourceFile>> {
+  return http.get<PaginatedResponse<ResourceFile>>("/resources", { params });
+}
+
+/** Create a folder under `parentId` (root when omitted). */
+export function createFolder(name: string, parentId?: string): Promise<ResourceFile> {
+  return http.post<ResourceFile>("/resources/folder", { name, parentId: parentId ?? null });
+}
+
+export function uploadResource(
+  file: File,
+  parentId?: string,
+  onProgress?: (percent: number) => void,
+): Promise<ResourceFile> {
   const formData = new FormData();
   formData.append("file", file);
+  if (parentId) formData.append("parentId", parentId);
   return http.post<ResourceFile>("/resources/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress: (event) => {
@@ -29,8 +52,9 @@ export function uploadResource(file: File, onProgress?: (percent: number) => voi
   });
 }
 
-export function getResources(params?: PaginationParams): Promise<PaginatedResponse<ResourceFile>> {
-  return http.get<PaginatedResponse<ResourceFile>>("/resources", { params });
+/** Ancestor path (root → … → the folder) for the breadcrumb. */
+export function getResourcePath(id: string): Promise<ResourcePathItem[]> {
+  return http.get<ResourcePathItem[]>(`/resources/${id}/path`);
 }
 
 export function deleteResource(id: string): Promise<void> {
