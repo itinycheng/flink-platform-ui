@@ -27,7 +27,12 @@ export function useQueryConsole() {
 
   useEffect(() => {
     getDataSources({ page: 1, pageSize: 100 })
-      .then((res) => setOptions(res.data.map((d) => ({ label: `${d.name} (${d.type})`, value: d.id }))))
+      .then((res) => {
+        const opts = res.data.map((d) => ({ label: `${d.name} (${d.type})`, value: d.id }));
+        setOptions(opts);
+        // Default to the first data source so the schema browser is populated on open.
+        setDatasourceId((cur) => cur ?? opts[0]?.value);
+      })
       .catch((err) => console.error("[Query] load datasources failed", err));
   }, []);
 

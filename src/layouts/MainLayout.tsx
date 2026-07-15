@@ -124,8 +124,8 @@ function renderHeaderTitle(title: string) {
       </div>
       {/* Workspace scopes everything below it — a "brand / workspace" breadcrumb reads it as context. */}
       <WorkspaceSwitcher breadcrumb />
-      {/* Vertical rule closing the brand+workspace context cluster off from the nav menu. */}
-      <span aria-hidden style={{ width: 1, height: 20, background: "var(--ant-color-split)" }} />
+      {/* Trailing slash closes the brand+workspace context cluster off from the nav menu. */}
+      <span style={{ color: "var(--ant-color-split)", fontSize: 18, fontWeight: 300, userSelect: "none" }}>/</span>
     </div>
   );
 }
