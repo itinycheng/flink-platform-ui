@@ -4,9 +4,9 @@ import { message } from "antd";
 import { format } from "sql-formatter";
 import type { CodeEditorHandle } from "@/components/CodeEditor";
 import { getDataSources } from "@/api/manage";
-import { execQuery } from "@/api/reactive";
+import { execQuery } from "@/api/query";
 import { downloadCsv } from "@/utils/file";
-import type { QueryResult } from "@/types/reactive";
+import type { QueryResult } from "@/types/query";
 import { useQueryHistory, type QueryHistoryEntry } from "./useQueryHistory";
 
 export interface DsOption {
@@ -14,8 +14,8 @@ export interface DsOption {
   value: string;
 }
 
-/** State + handlers backing the reactive SQL console page. */
-export function useReactiveQuery() {
+/** State + handlers backing the SQL query console page. */
+export function useQueryConsole() {
   const { t } = useTranslation();
   const editorRef = useRef<CodeEditorHandle>(null);
   const [options, setOptions] = useState<DsOption[]>([]);
@@ -28,18 +28,18 @@ export function useReactiveQuery() {
   useEffect(() => {
     getDataSources({ page: 1, pageSize: 100 })
       .then((res) => setOptions(res.data.map((d) => ({ label: `${d.name} (${d.type})`, value: d.id }))))
-      .catch((err) => console.error("[Reactive] load datasources failed", err));
+      .catch((err) => console.error("[Query] load datasources failed", err));
   }, []);
 
   const run = async () => {
     if (!datasourceId) {
-      message.warning(t("reactive.selectDatasourceFirst"));
+      message.warning(t("query.selectDatasourceFirst"));
       return;
     }
     // Run the highlighted statement when there's a selection, else the whole editor.
     const toRun = editorRef.current?.getSelectedText().trim() || sql.trim();
     if (!toRun) {
-      message.warning(t("reactive.sqlRequired"));
+      message.warning(t("query.sqlRequired"));
       return;
     }
     setRunning(true);
@@ -48,7 +48,7 @@ export function useReactiveQuery() {
       setResult(res);
       history.add(toRun, datasourceId, Date.now());
     } catch {
-      message.error(t("reactive.queryFailed"));
+      message.error(t("query.queryFailed"));
     } finally {
       setRunning(false);
     }
@@ -59,7 +59,7 @@ export function useReactiveQuery() {
     try {
       setSql(format(sql, { language: "sql" }));
     } catch {
-      message.warning(t("reactive.formatFailed"));
+      message.warning(t("query.formatFailed"));
     }
   };
 

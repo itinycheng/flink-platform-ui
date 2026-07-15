@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Empty, Flex, Input, Spin, Tag, Typography } from "antd";
 import { TableOutlined } from "@ant-design/icons";
-import { getTables } from "@/api/reactive";
+import { getTables } from "@/api/query";
 
 interface SchemaSidebarProps {
   datasourceId?: string;
@@ -29,7 +29,7 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
         const data = await getTables(datasourceId);
         if (!cancelled) setTables(data);
       } catch (err) {
-        console.error("[Reactive] load tables failed", err);
+        console.error("[Query] load tables failed", err);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -48,7 +48,7 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
         <Flex align="center" gap={6}>
           <TableOutlined style={{ color: "var(--ant-color-text-tertiary)" }} />
           <Typography.Text strong style={{ fontSize: 13 }}>
-            {t("reactive.tables")}
+            {t("query.tables")}
           </Typography.Text>
         </Flex>
         {datasourceId && !loading ? <Tag style={{ marginInlineEnd: 0 }}>{tables.length}</Tag> : null}
@@ -57,7 +57,7 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
         <Input.Search
           size="small"
           allowClear
-          placeholder={t("reactive.searchTable")}
+          placeholder={t("query.searchTable")}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           disabled={!datasourceId}
@@ -80,7 +80,7 @@ interface SchemaBodyProps {
 function SchemaBody({ datasourceId, loading, tables, onInsert }: SchemaBodyProps) {
   const { t } = useTranslation();
   if (!datasourceId) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("reactive.selectDatasourceForTables")} />;
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("query.selectDatasourceForTables")} />;
   }
   if (loading) {
     return (
@@ -90,7 +90,7 @@ function SchemaBody({ datasourceId, loading, tables, onInsert }: SchemaBodyProps
     );
   }
   if (tables.length === 0) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("reactive.noTables")} />;
+    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("query.noTables")} />;
   }
   return (
     <>
@@ -98,7 +98,7 @@ function SchemaBody({ datasourceId, loading, tables, onInsert }: SchemaBodyProps
         <div
           key={tb}
           className="schema-table-row"
-          title={t("reactive.clickToInsert")}
+          title={t("query.clickToInsert")}
           onClick={() => onInsert(tb)}
         >
           <TableOutlined style={{ color: "var(--ant-color-text-quaternary)", fontSize: 12 }} />

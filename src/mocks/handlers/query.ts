@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
-import type { QueryRequest, QueryResult } from "@/types/reactive";
+import type { QueryRequest, QueryResult } from "@/types/query";
 
 function buildResult(sql: string): QueryResult {
   const elapsedMs = faker.number.int({ min: 30, max: 1800 });
@@ -59,20 +59,19 @@ const TABLE_POOL = [
   "accounts",
 ];
 
-export const reactiveHandlers: RequestHandler[] = [
-  http.post("/api/reactive/query", async ({ request }) => {
+export const queryHandlers: RequestHandler[] = [
+  http.post("/api/query/execute", async ({ request }) => {
     const { sql } = (await request.json()) as QueryRequest;
     await delay(600);
     return HttpResponse.json(buildResult(sql));
   }),
 
-  http.get("/api/reactive/tables", async ({ request }) => {
+  http.get("/api/query/tables", async ({ request }) => {
     const datasourceId = new URL(request.url).searchParams.get("datasourceId");
     await delay(300);
     if (!datasourceId) return HttpResponse.json([]);
     // Vary the set per request so switching data sources feels real.
     const count = faker.number.int({ min: 8, max: TABLE_POOL.length });
-    const tables = faker.helpers.arrayElements(TABLE_POOL, count).sort();
-    return HttpResponse.json(tables);
+    return HttpResponse.json(faker.helpers.arrayElements(TABLE_POOL, count).sort());
   }),
 ];

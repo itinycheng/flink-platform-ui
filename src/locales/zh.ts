@@ -309,6 +309,8 @@ const zh = {
     schedule: "调度配置",
     params: "参数配置",
     cronExpression: "Cron 表达式",
+    cronInvalid: "Cron 表达式无效",
+    nextRuns: "接下来 5 次执行时间",
     timezone: "时区",
     timezonePlaceholder: "请选择时区",
     timeout: "超时时间",
@@ -610,7 +612,7 @@ const zh = {
     alertsUpdateFailed: "更新告警失败，请重试",
   },
 
-  reactive: {
+  query: {
     selectDatasource: "选择数据源",
     run: "执行",
     sqlPlaceholder: "输入 SQL 语句",
@@ -620,8 +622,6 @@ const zh = {
     resultCount: "结果 ({{count}})",
     logTab: "日志",
     queryFailedSeeLog: "查询失败，请查看日志",
-    cronInvalid: "Cron 表达式无效",
-    nextRuns: "接下来 5 次执行时间",
     sqlRequired: "请输入 SQL 语句",
     runTooltip: "执行（⌘/Ctrl+Enter），若有选中则只执行选中部分",
     formatSql: "格式化",

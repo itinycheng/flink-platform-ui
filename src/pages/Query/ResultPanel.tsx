@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Empty, Table, Tabs, Typography } from "antd";
-import type { QueryResult } from "@/types/reactive";
+import type { QueryResult } from "@/types/query";
 
 interface ResultPanelProps {
   result: QueryResult | null;
@@ -10,7 +10,7 @@ interface ResultPanelProps {
 export default function ResultPanel({ result }: ResultPanelProps) {
   const { t } = useTranslation();
   if (!result) {
-    return <Empty description={t("reactive.emptyHint")} style={{ marginTop: 60 }} />;
+    return <Empty description={t("query.emptyHint")} style={{ marginTop: 60 }} />;
   }
 
   const columns = result.columns.map((c) => ({ title: c, dataIndex: c, key: c, ellipsis: true }));
@@ -22,16 +22,16 @@ export default function ResultPanel({ result }: ResultPanelProps) {
       items={[
         {
           key: "result",
-          label: t("reactive.resultCount", { count: result.rows.length }),
+          label: t("query.resultCount", { count: result.rows.length }),
           children: result.success ? (
             <Table size="small" columns={columns} dataSource={dataSource} scroll={{ x: true }} pagination={{ pageSize: 10 }} />
           ) : (
-            <Empty description={t("reactive.queryFailedSeeLog")} />
+            <Empty description={t("query.queryFailedSeeLog")} />
           ),
         },
         {
           key: "log",
-          label: t("reactive.logTab"),
+          label: t("query.logTab"),
           children: (
             <Typography.Paragraph>
               <pre

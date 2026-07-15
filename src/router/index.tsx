@@ -18,7 +18,7 @@ import SysConfigList from "../pages/Manage/SysConfigList";
 import AlertRuleList from "../pages/Manage/AlertRuleList";
 import WorkspaceList from "../pages/Manage/WorkspaceList";
 import AuditLogList from "../pages/Manage/AuditLogList";
-import ReactiveQuery from "../pages/Extension/ReactiveQuery";
+import QueryConsole from "../pages/Query/QueryConsole";
 import MonitorPage from "../pages/Monitor";
 import RunsPage from "../pages/Runs";
 import FlowRunList from "../pages/Runs/FlowRunList";
@@ -62,7 +62,7 @@ export default function AppRouter() {
           {/* Legacy paths → Studio (Jobs + Definitions were merged into the tree view) */}
           <Route path="/jobs" element={<Navigate to="/studio" replace />} />
           <Route path="/definitions" element={<Navigate to="/studio" replace />} />
-          <Route path="/reactive" element={<ReactiveQuery />} />
+          <Route path="/query" element={<QueryConsole />} />
           <Route path="/manage" element={<ManagePage />}>
             <Route index element={<Navigate to="/manage/resources" replace />} />
             <Route path="resources" element={<ResourceList />} />

@@ -21,13 +21,13 @@ export default function CronPreview({ expression }: CronPreviewProps) {
   if (!expression?.trim()) return null;
 
   if (!valid) {
-    return <Alert type="error" showIcon message={t("reactive.cronInvalid")} style={{ marginBottom: 8 }} />;
+    return <Alert type="error" showIcon message={t("sidePanel.cronInvalid")} style={{ marginBottom: 8 }} />;
   }
 
   return (
     <List
       size="small"
-      header={<Typography.Text type="secondary">{t("reactive.nextRuns")}</Typography.Text>}
+      header={<Typography.Text type="secondary">{t("sidePanel.nextRuns")}</Typography.Text>}
       dataSource={runs}
       renderItem={(iso) => (
         <List.Item style={{ padding: "2px 0" }}>

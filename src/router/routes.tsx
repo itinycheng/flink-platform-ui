@@ -19,7 +19,7 @@ export const routeConfigs: RouteConfig[] = [
     permission: "workflow:view",
   },
   {
-    path: "/reactive",
+    path: "/query",
     permission: "workflow:view",
   },
   {

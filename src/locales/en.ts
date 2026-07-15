@@ -310,6 +310,8 @@ const en = {
     schedule: "Schedule",
     params: "Parameters",
     cronExpression: "Cron Expression",
+    cronInvalid: "Invalid cron expression",
+    nextRuns: "Next 5 execution times",
     timezone: "Timezone",
     timezonePlaceholder: "Select timezone",
     timeout: "Timeout",
@@ -612,7 +614,7 @@ const en = {
     alertsUpdateFailed: "Failed to update alerts, please retry",
   },
 
-  reactive: {
+  query: {
     selectDatasource: "Select data source",
     run: "Run",
     sqlPlaceholder: "Enter SQL statement",
@@ -622,8 +624,6 @@ const en = {
     resultCount: "Results ({{count}})",
     logTab: "Log",
     queryFailedSeeLog: "Query failed, please check the log",
-    cronInvalid: "Invalid cron expression",
-    nextRuns: "Next 5 execution times",
     sqlRequired: "Please enter a SQL statement",
     runTooltip: "Run (⌘/Ctrl+Enter) — runs the selected text if any",
     formatSql: "Format",

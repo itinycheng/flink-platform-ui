@@ -12,10 +12,10 @@ import {
 } from "@ant-design/icons";
 import { PageContainer } from "@ant-design/pro-components";
 import CodeEditor from "@/components/CodeEditor";
-import type { QueryResult } from "@/types/reactive";
+import type { QueryResult } from "@/types/query";
 import ResultPanel from "./ResultPanel";
 import SchemaSidebar from "./SchemaSidebar";
-import { useReactiveQuery, type DsOption } from "./useReactiveQuery";
+import { useQueryConsole, type DsOption } from "./useQueryConsole";
 import type { QueryHistoryEntry } from "./useQueryHistory";
 
 function formatTime(ts: number): string {
@@ -24,7 +24,7 @@ function formatTime(ts: number): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export default function ReactiveQuery() {
+export default function QueryConsole() {
   const { t } = useTranslation();
   const {
     editorRef,
@@ -42,12 +42,12 @@ export default function ReactiveQuery() {
     pickHistory,
     exportCsv,
     insertToken,
-  } = useReactiveQuery();
+  } = useQueryConsole();
 
   const canExport = !!result?.success && result.rows.length > 0;
 
   return (
-    <PageContainer header={{ title: false }} data-testid="reactive-query">
+    <PageContainer header={{ title: false }} data-testid="query-console">
       <Flex gap={12} align="flex-start">
         <SchemaSidebar datasourceId={datasourceId} onInsert={insertToken} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -69,7 +69,7 @@ export default function ReactiveQuery() {
               value={sql}
               onChange={setSql}
               language="sql"
-              placeholder={t("reactive.sqlPlaceholder")}
+              placeholder={t("query.sqlPlaceholder")}
               onRun={run}
             />
           </Card>
@@ -83,7 +83,7 @@ export default function ReactiveQuery() {
                 onClick={exportCsv}
                 data-testid="export-csv-button"
               >
-                {t("reactive.exportCsv")}
+                {t("query.exportCsv")}
               </Button>
             </Flex>
             <ResultPanel result={result} />
@@ -127,15 +127,15 @@ function Toolbar(props: ToolbarProps) {
           ),
         })),
         { type: "divider" as const },
-        { key: "clear-history", label: t("reactive.clearHistory"), onClick: props.onClearHistory },
+        { key: "clear-history", label: t("query.clearHistory"), onClick: props.onClearHistory },
       ]
-    : [{ key: "empty", label: t("reactive.historyEmpty"), disabled: true }];
+    : [{ key: "empty", label: t("query.historyEmpty"), disabled: true }];
 
   return (
     <Flex justify="space-between" align="center" wrap gap={8} style={{ marginBottom: 12 }}>
       <Space wrap>
         <Select
-          placeholder={t("reactive.selectDatasource")}
+          placeholder={t("query.selectDatasource")}
           style={{ width: 280 }}
           options={options}
           value={datasourceId}
@@ -144,7 +144,7 @@ function Toolbar(props: ToolbarProps) {
           optionFilterProp="label"
           data-testid="datasource-select"
         />
-        <Tooltip title={t("reactive.runTooltip")}>
+        <Tooltip title={t("query.runTooltip")}>
           <Button
             type="primary"
             icon={<PlayCircleOutlined />}
@@ -152,19 +152,19 @@ function Toolbar(props: ToolbarProps) {
             onClick={onRun}
             data-testid="run-query-button"
           >
-            {t("reactive.run")}
+            {t("query.run")}
           </Button>
         </Tooltip>
         <Button icon={<FormatPainterOutlined />} onClick={onFormat}>
-          {t("reactive.formatSql")}
+          {t("query.formatSql")}
         </Button>
         <Button icon={<ClearOutlined />} onClick={onClear}>
-          {t("reactive.clear")}
+          {t("query.clear")}
         </Button>
       </Space>
       <Dropdown menu={{ items: historyItems }} trigger={["click"]} placement="bottomRight">
         <Button icon={<HistoryOutlined />} data-testid="history-button">
-          {t("reactive.history")}
+          {t("query.history")}
         </Button>
       </Dropdown>
     </Flex>
@@ -179,7 +179,7 @@ function ResultMeta({ result }: { result: QueryResult | null }) {
     return (
       <Space size={6}>
         <CloseCircleFilled style={{ color: "var(--ant-color-error)" }} />
-        <Typography.Text type="danger">{t("reactive.queryFailedSeeLog")}</Typography.Text>
+        <Typography.Text type="danger">{t("query.queryFailedSeeLog")}</Typography.Text>
       </Space>
     );
   }
@@ -187,7 +187,7 @@ function ResultMeta({ result }: { result: QueryResult | null }) {
     <Space size={6}>
       <CheckCircleFilled style={{ color: "var(--ant-color-success)" }} />
       <Typography.Text type="secondary">
-        {t("reactive.rowsMeta", { rows: result.rows.length, ms: result.elapsedMs })}
+        {t("query.rowsMeta", { rows: result.rows.length, ms: result.elapsedMs })}
       </Typography.Text>
     </Space>
   );

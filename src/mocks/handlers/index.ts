@@ -7,7 +7,7 @@ import { auditHandlers } from "./audit";
 import { monitorHandlers } from "./monitor";
 import { runHandlers } from "./run";
 import { alertRuleHandlers } from "./alert";
-import { reactiveHandlers } from "./reactive";
+import { queryHandlers } from "./query";
 import { workspaceHandlers } from "./workspace";
 
 export const handlers: RequestHandler[] = [
@@ -19,6 +19,6 @@ export const handlers: RequestHandler[] = [
   ...monitorHandlers,
   ...runHandlers,
   ...alertRuleHandlers,
-  ...reactiveHandlers,
+  ...queryHandlers,
   ...workspaceHandlers,
 ];

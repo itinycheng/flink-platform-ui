@@ -39,7 +39,7 @@ function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
         icon: <PartitionOutlined />,
         routes: [{ path: "/studio/list", name: "_jobs", icon: <PartitionOutlined /> }],
       },
-      { path: "/reactive", name: t("menu.query"), icon: <ConsoleSqlOutlined /> },
+      { path: "/query", name: t("menu.query"), icon: <ConsoleSqlOutlined /> },
       {
         path: "/runs",
         name: t("menu.runs"),
