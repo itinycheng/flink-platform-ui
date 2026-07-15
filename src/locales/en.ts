@@ -624,6 +624,16 @@ const en = {
     queryFailedSeeLog: "Query failed, please check the log",
     cronInvalid: "Invalid cron expression",
     nextRuns: "Next 5 execution times",
+    sqlRequired: "Please enter a SQL statement",
+    runTooltip: "Run (⌘/Ctrl+Enter) — runs the selected text if any",
+    formatSql: "Format",
+    formatFailed: "Could not format SQL, please check the syntax",
+    clear: "Clear",
+    history: "History",
+    historyEmpty: "No query history yet",
+    clearHistory: "Clear history",
+    exportCsv: "Export CSV",
+    rowsMeta: "{{rows}} rows · {{ms}} ms",
   },
 
   taskForm: {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 
@@ -17,6 +17,14 @@ export interface CodeEditorProps {
   readOnly?: boolean;
   /** Overlay text shown when the editor is empty (Monaco has no native placeholder). */
   placeholder?: string;
+  /** Invoked when the user presses Cmd/Ctrl+Enter inside the editor. */
+  onRun?: () => void;
+}
+
+/** Imperative handle for reading the current selection from a parent. */
+export interface CodeEditorHandle {
+  /** Text currently selected in the editor, or "" when nothing is selected. */
+  getSelectedText: () => string;
 }
 
 /** Leave room for form chrome (labels, drawer padding, buttons) below the editor. */
@@ -53,6 +61,13 @@ function useAutoGrowHeight(minHeight: number, maxHeight?: number) {
   return { height, notifyContentHeight };
 }
 
+/** Text currently selected in the editor, or "" when there's no selection. */
+function readSelection(ed: editor.IStandaloneCodeEditor | null): string {
+  const selection = ed?.getSelection();
+  if (!ed || !selection) return "";
+  return ed.getModel()?.getValueInRange(selection) ?? "";
+}
+
 const EDITOR_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
@@ -75,21 +90,24 @@ const EDITOR_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
  * `minHeight` and `maxHeight`, then scrolls internally once content exceeds
  * the max. Matches the app's light Ant Design theme.
  */
-export default function CodeEditor({
-  value,
-  onChange,
-  language,
-  minHeight = 120,
-  maxHeight,
-  readOnly = false,
-  placeholder,
-}: CodeEditorProps) {
+const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function CodeEditor(
+  { value, onChange, language, minHeight = 120, maxHeight, readOnly = false, placeholder, onRun },
+  ref,
+) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  // Keep the latest onRun in a ref so the Monaco keybinding (registered once on
+  // mount) always calls the current handler without re-registering.
+  const onRunRef = useRef(onRun);
+  useEffect(() => {
+    onRunRef.current = onRun;
+  }, [onRun]);
   // Guards the onChange handler while we push an *external* value via setValue —
   // Monaco fires onDidChangeModelContent synchronously from setValue, and
   // without this we'd echo the imported value straight back to the parent.
   const suppressChangeRef = useRef(false);
   const { height, notifyContentHeight } = useAutoGrowHeight(minHeight, maxHeight);
+
+  useImperativeHandle(ref, () => ({ getSelectedText: () => readSelection(editorRef.current) }));
 
   // Re-clamp when bounds change (e.g. window resized while editing).
   useEffect(() => {
@@ -97,10 +115,11 @@ export default function CodeEditor({
     if (ed) notifyContentHeight(ed.getContentHeight());
   }, [notifyContentHeight]);
 
-  const handleMount: OnMount = (ed) => {
+  const handleMount: OnMount = (ed, monaco) => {
     editorRef.current = ed;
     notifyContentHeight(ed.getContentHeight());
     ed.onDidContentSizeChange(() => notifyContentHeight(ed.getContentHeight()));
+    ed.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => onRunRef.current?.());
   };
 
   // Sync *external* value changes (e.g. switching tasks) into the model, but
@@ -162,4 +181,6 @@ export default function CodeEditor({
       ) : null}
     </div>
   );
-}
+});
+
+export default CodeEditor;

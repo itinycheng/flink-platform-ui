@@ -622,6 +622,16 @@ const zh = {
     queryFailedSeeLog: "查询失败，请查看日志",
     cronInvalid: "Cron 表达式无效",
     nextRuns: "接下来 5 次执行时间",
+    sqlRequired: "请输入 SQL 语句",
+    runTooltip: "执行（⌘/Ctrl+Enter），若有选中则只执行选中部分",
+    formatSql: "格式化",
+    formatFailed: "无法格式化 SQL，请检查语法",
+    clear: "清空",
+    history: "历史",
+    historyEmpty: "暂无查询历史",
+    clearHistory: "清空历史",
+    exportCsv: "导出 CSV",
+    rowsMeta: "{{rows}} 行 · {{ms}} ms",
   },
 
   taskForm: {
