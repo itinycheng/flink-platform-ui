@@ -5,3 +5,8 @@ import type { QueryRequest, QueryResult } from "@/types/reactive";
 export function execQuery(data: QueryRequest): Promise<QueryResult> {
   return http.post<QueryResult>("/reactive/query", data);
 }
+
+/** List table names in the given data source, for the schema browser. */
+export function getTables(datasourceId: string): Promise<string[]> {
+  return http.get<string[]>("/reactive/tables", { params: { datasourceId } });
+}

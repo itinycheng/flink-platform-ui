@@ -634,6 +634,11 @@ const en = {
     clearHistory: "Clear history",
     exportCsv: "Export CSV",
     rowsMeta: "{{rows}} rows · {{ms}} ms",
+    tables: "Tables",
+    searchTable: "Search tables",
+    selectDatasourceForTables: "Select a data source to browse its tables",
+    noTables: "No tables found",
+    clickToInsert: "Click to insert into the editor",
   },
 
   taskForm: {

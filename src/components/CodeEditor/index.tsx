@@ -21,10 +21,12 @@ export interface CodeEditorProps {
   onRun?: () => void;
 }
 
-/** Imperative handle for reading the current selection from a parent. */
+/** Imperative handle exposed to parents for reading/mutating editor content. */
 export interface CodeEditorHandle {
   /** Text currently selected in the editor, or "" when nothing is selected. */
   getSelectedText: () => string;
+  /** Insert text at the cursor (replacing any selection) and refocus the editor. */
+  insertText: (text: string) => void;
 }
 
 /** Leave room for form chrome (labels, drawer padding, buttons) below the editor. */
@@ -68,6 +70,14 @@ function readSelection(ed: editor.IStandaloneCodeEditor | null): string {
   return ed.getModel()?.getValueInRange(selection) ?? "";
 }
 
+/** Insert text at the cursor (replacing any selection) and refocus the editor. */
+function insertAtCursor(ed: editor.IStandaloneCodeEditor | null, text: string): void {
+  const selection = ed?.getSelection();
+  if (!ed || !selection) return;
+  ed.executeEdits("insert-token", [{ range: selection, text, forceMoveMarkers: true }]);
+  ed.focus();
+}
+
 const EDITOR_OPTIONS: editor.IStandaloneEditorConstructionOptions = {
   minimap: { enabled: false },
   scrollBeyondLastLine: false,
@@ -107,7 +117,10 @@ const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(function CodeEd
   const suppressChangeRef = useRef(false);
   const { height, notifyContentHeight } = useAutoGrowHeight(minHeight, maxHeight);
 
-  useImperativeHandle(ref, () => ({ getSelectedText: () => readSelection(editorRef.current) }));
+  useImperativeHandle(ref, () => ({
+    getSelectedText: () => readSelection(editorRef.current),
+    insertText: (text) => insertAtCursor(editorRef.current, text),
+  }));
 
   // Re-clamp when bounds change (e.g. window resized while editing).
   useEffect(() => {

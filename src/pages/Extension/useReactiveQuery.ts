@@ -78,6 +78,8 @@ export function useReactiveQuery() {
     downloadCsv(`query-${Date.now()}.csv`, result.columns, result.rows);
   };
 
+  const insertToken = (text: string) => editorRef.current?.insertText(text);
+
   return {
     editorRef,
     options,
@@ -93,5 +95,6 @@ export function useReactiveQuery() {
     clear,
     pickHistory,
     exportCsv,
+    insertToken,
   };
 }

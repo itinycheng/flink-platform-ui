@@ -35,10 +35,44 @@ function buildResult(sql: string): QueryResult {
   };
 }
 
+/** A pool of realistic table names the schema browser draws from. */
+const TABLE_POOL = [
+  "orders",
+  "order_items",
+  "users",
+  "user_profiles",
+  "products",
+  "product_categories",
+  "payments",
+  "refunds",
+  "invoices",
+  "shipments",
+  "inventory",
+  "sessions",
+  "events",
+  "audit_logs",
+  "campaigns",
+  "subscriptions",
+  "carts",
+  "addresses",
+  "reviews",
+  "accounts",
+];
+
 export const reactiveHandlers: RequestHandler[] = [
   http.post("/api/reactive/query", async ({ request }) => {
     const { sql } = (await request.json()) as QueryRequest;
     await delay(600);
     return HttpResponse.json(buildResult(sql));
+  }),
+
+  http.get("/api/reactive/tables", async ({ request }) => {
+    const datasourceId = new URL(request.url).searchParams.get("datasourceId");
+    await delay(300);
+    if (!datasourceId) return HttpResponse.json([]);
+    // Vary the set per request so switching data sources feels real.
+    const count = faker.number.int({ min: 8, max: TABLE_POOL.length });
+    const tables = faker.helpers.arrayElements(TABLE_POOL, count).sort();
+    return HttpResponse.json(tables);
   }),
 ];

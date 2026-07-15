@@ -14,6 +14,7 @@ import { PageContainer } from "@ant-design/pro-components";
 import CodeEditor from "@/components/CodeEditor";
 import type { QueryResult } from "@/types/reactive";
 import ResultPanel from "./ResultPanel";
+import SchemaSidebar from "./SchemaSidebar";
 import { useReactiveQuery, type DsOption } from "./useReactiveQuery";
 import type { QueryHistoryEntry } from "./useQueryHistory";
 
@@ -40,49 +41,55 @@ export default function ReactiveQuery() {
     clear,
     pickHistory,
     exportCsv,
+    insertToken,
   } = useReactiveQuery();
 
   const canExport = !!result?.success && result.rows.length > 0;
 
   return (
     <PageContainer header={{ title: false }} data-testid="reactive-query">
-      <Card size="small" style={{ marginBottom: 12 }}>
-        <Toolbar
-          options={options}
-          datasourceId={datasourceId}
-          onDatasourceChange={setDatasourceId}
-          running={running}
-          onRun={run}
-          onFormat={formatSql}
-          onClear={clear}
-          history={history.entries}
-          onPickHistory={pickHistory}
-          onClearHistory={history.clear}
-        />
-        <CodeEditor
-          ref={editorRef}
-          value={sql}
-          onChange={setSql}
-          language="sql"
-          placeholder={t("reactive.sqlPlaceholder")}
-          onRun={run}
-        />
-      </Card>
-      <Card size="small">
-        <Flex justify="space-between" align="center" style={{ marginBottom: 8, minHeight: 24 }}>
-          <ResultMeta result={result} />
-          <Button
-            size="small"
-            icon={<DownloadOutlined />}
-            disabled={!canExport}
-            onClick={exportCsv}
-            data-testid="export-csv-button"
-          >
-            {t("reactive.exportCsv")}
-          </Button>
-        </Flex>
-        <ResultPanel result={result} />
-      </Card>
+      <Flex gap={12} align="flex-start">
+        <SchemaSidebar datasourceId={datasourceId} onInsert={insertToken} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <Card size="small" style={{ marginBottom: 12 }}>
+            <Toolbar
+              options={options}
+              datasourceId={datasourceId}
+              onDatasourceChange={setDatasourceId}
+              running={running}
+              onRun={run}
+              onFormat={formatSql}
+              onClear={clear}
+              history={history.entries}
+              onPickHistory={pickHistory}
+              onClearHistory={history.clear}
+            />
+            <CodeEditor
+              ref={editorRef}
+              value={sql}
+              onChange={setSql}
+              language="sql"
+              placeholder={t("reactive.sqlPlaceholder")}
+              onRun={run}
+            />
+          </Card>
+          <Card size="small">
+            <Flex justify="space-between" align="center" style={{ marginBottom: 8, minHeight: 24 }}>
+              <ResultMeta result={result} />
+              <Button
+                size="small"
+                icon={<DownloadOutlined />}
+                disabled={!canExport}
+                onClick={exportCsv}
+                data-testid="export-csv-button"
+              >
+                {t("reactive.exportCsv")}
+              </Button>
+            </Flex>
+            <ResultPanel result={result} />
+          </Card>
+        </div>
+      </Flex>
     </PageContainer>
   );
 }
