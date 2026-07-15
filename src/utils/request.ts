@@ -1,21 +1,23 @@
 import axios, { type AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
 import { message } from "antd";
 import i18n from "@/i18n";
+import { API } from "@/config";
+import { STORAGE_KEYS } from "@/constants/storage";
 
 const request = axios.create({
-  baseURL: "/api",
-  timeout: 30000,
+  baseURL: API.baseURL,
+  timeout: API.timeout,
 });
 
 // Request interceptor: attach Authorization Bearer token from localStorage
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem(STORAGE_KEYS.token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     // Multi-tenant isolation: scope every request to the active workspace.
-    const workspaceId = localStorage.getItem("workspaceId");
+    const workspaceId = localStorage.getItem(STORAGE_KEYS.workspaceId);
     if (workspaceId) {
       config.headers["X-Workspace-Id"] = workspaceId;
     }
@@ -37,8 +39,8 @@ request.interceptors.response.use(
 
       if (status === 401) {
         // Clear token and redirect to login
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+        localStorage.removeItem(STORAGE_KEYS.token);
+        localStorage.removeItem(STORAGE_KEYS.user);
         // Avoid redirect loop if already on login page
         if (window.location.pathname !== "/login") {
           message.error(i18n.t("http.authExpired"));

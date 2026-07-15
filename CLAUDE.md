@@ -52,9 +52,17 @@ The most complex module — a VS Code-like IDE layout:
 - `src/api/request.ts` — Axios instance with `baseURL: /api`, 30s timeout; request interceptor adds Bearer token; response interceptor handles 401 (redirect to login), 403, 404, 500
 - Separate modules: `api/job.ts`, `api/auth.ts`, `api/dashboard.ts`, `api/manage.ts`, `api/monitor.ts`
 
+### Configuration & Environments
+
+Per-environment values live in Vite env files (`.env` shared defaults, plus `.env.development` / `.env.staging` / `.env.production`; `.env.example` documents every var, `.env.local` is git-ignored). All `VITE_`-prefixed vars are read through one module — **`src/config/index.ts`** (`API.baseURL`, `API.timeout`, `ENABLE_MOCK`, `APP.name/version`) — so nothing reaches into `import.meta.env` or hardcodes literals directly. Env var types are declared in `src/vite-env.d.ts`.
+
+localStorage keys are centralized in **`src/constants/storage.ts`** (`STORAGE_KEYS`) — the request interceptor and the owning stores share them instead of duplicating string literals.
+
+Builds: `npm run build` (production), `npm run build:stage` (staging mode). Set `VITE_API_PROXY` in `.env.local` to develop against a real backend — Vite proxies `VITE_API_BASE_URL` to it and mocks turn off automatically.
+
 ### Dev Mocking (MSW)
 
-MSW is automatically started in dev mode (`main.tsx`). Handlers live in `src/mocks/handlers/`. Unhandled requests bypass to the real network (`onUnhandledRequest: "bypass"`).
+MSW is started in dev when `ENABLE_MOCK` is true (`main.tsx`); it's gated on `import.meta.env.DEV` so production builds tree-shake the worker out. Handlers live in `src/mocks/handlers/`. Unhandled requests bypass to the real network (`onUnhandledRequest: "bypass"`).
 
 ### i18n
 
@@ -68,7 +76,7 @@ MSW is automatically started in dev mode (`main.tsx`). Handlers live in `src/moc
 
 ### Global Defines
 
-`__APP_NAME__` and `__APP_VERSION__` are injected at build time from `package.json`.
+`__APP_NAME__` and `__APP_VERSION__` are injected at build time from `package.json` (surfaced via `APP` in `src/config`).
 
 ### Testing
 

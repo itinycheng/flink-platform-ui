@@ -1,9 +1,7 @@
 import { create } from "zustand";
 import type { Workspace } from "@/types/workspace";
 import { getAllWorkspaces } from "@/api/workspace";
-
-/** localStorage key holding the active workspace id — read by the request interceptor. */
-export const WORKSPACE_KEY = "workspaceId";
+import { STORAGE_KEYS } from "@/constants/storage";
 
 interface WorkspaceState {
   workspaces: Workspace[];
@@ -15,7 +13,7 @@ interface WorkspaceState {
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   workspaces: [],
-  currentId: localStorage.getItem(WORKSPACE_KEY),
+  currentId: localStorage.getItem(STORAGE_KEYS.workspaceId),
   loading: false,
 
   loadWorkspaces: async () => {
@@ -26,7 +24,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       let currentId = get().currentId;
       if (!currentId || !list.some((w) => w.id === currentId)) {
         currentId = list[0]?.id ?? null;
-        if (currentId) localStorage.setItem(WORKSPACE_KEY, currentId);
+        if (currentId) localStorage.setItem(STORAGE_KEYS.workspaceId, currentId);
       }
       set({ workspaces: list, currentId });
     } finally {
@@ -36,7 +34,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   setCurrent: (id) => {
     if (id === get().currentId) return;
-    localStorage.setItem(WORKSPACE_KEY, id);
+    localStorage.setItem(STORAGE_KEYS.workspaceId, id);
     set({ currentId: id });
     // All list pages fetch on mount / via ProTable requests, so a full reload is
     // the simplest way to guarantee every view re-fetches under the new workspace.

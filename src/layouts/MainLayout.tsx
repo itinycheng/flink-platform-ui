@@ -25,6 +25,7 @@ import {
 import UserAvatar from "@/components/UserAvatar";
 import LangSwitcher from "@/components/LangSwitcher";
 import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
+import { APP } from "@/config";
 
 type TFunc = (key: string) => string;
 
@@ -133,7 +134,7 @@ export default function MainLayout() {
   const { t, i18n } = useTranslation();
   const isStudioPage = location.pathname.startsWith("/studio");
   const isDashboard = location.pathname === "/dashboard" || location.pathname === "/";
-  const title = t("app.title", { appName: __APP_NAME__ });
+  const title = t("app.title", { appName: APP.name });
   const layoutRoutes = buildLayoutRoutes(t);
 
   return (
@@ -156,7 +157,7 @@ export default function MainLayout() {
           isDashboard
             ? () => (
                 <Typography.Text type="secondary" style={{ textAlign: "center" }}>
-                  {t("app.footer", { year: new Date().getFullYear(), version: __APP_VERSION__, appName: __APP_NAME__ })}
+                  {t("app.footer", { year: new Date().getFullYear(), version: APP.version, appName: APP.name })}
                 </Typography.Text>
               )
             : false

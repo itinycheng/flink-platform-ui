@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { STORAGE_KEYS } from "@/constants/storage";
 
-const STORAGE_KEY = "dtail.query.history";
+const STORAGE_KEY = STORAGE_KEYS.queryHistory;
 const MAX_ENTRIES = 20;
 
 export interface QueryHistoryEntry {

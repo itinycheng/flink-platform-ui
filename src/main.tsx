@@ -4,11 +4,15 @@ import "./i18n";
 import "./global.css";
 import "./lib/monaco/setup";
 import App from "./App";
+import { APP, ENABLE_MOCK } from "./config";
 
 async function bootstrap() {
-  document.title = __APP_NAME__;
+  document.title = APP.name;
 
-  if (import.meta.env.DEV) {
+  // `import.meta.env.DEV` is statically replaced at build time, so production
+  // builds tree-shake the MSW worker out entirely. ENABLE_MOCK then decides
+  // whether to actually start it in dev (off when a real backend proxy is set).
+  if (import.meta.env.DEV && ENABLE_MOCK) {
     const { worker } = await import("./mocks/browser");
     await worker.start({ onUnhandledRequest: "bypass" });
   }

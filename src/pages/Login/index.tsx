@@ -4,6 +4,7 @@ import { Card, Flex, Form, Input, Button, Typography, message } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/authStore";
+import { APP } from "@/config";
 
 interface LoginFormValues {
   username: string;
@@ -36,7 +37,7 @@ export default function Login() {
     <Flex justify="center" align="center" style={{ minHeight: "100vh" }}>
       <Card style={{ width: 400 }}>
         <Typography.Title level={3} style={{ textAlign: "center" }}>
-          {t("login.title", { appName: __APP_NAME__ })}
+          {t("login.title", { appName: APP.name })}
         </Typography.Title>
         <Form<LoginFormValues> form={form} onFinish={handleSubmit} autoComplete="off" size="large">
           <Form.Item name="username" rules={[{ required: true, message: t("login.usernameRequired") }]}>
