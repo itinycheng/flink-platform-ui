@@ -121,8 +121,8 @@ function renderHeaderTitle(title: string) {
           {title}
         </span>
       </div>
-      {/* Workspace scopes everything below it, so it belongs beside the brand as a context selector. */}
-      <WorkspaceSwitcher leadingDivider />
+      {/* Workspace scopes everything below it — a "brand / workspace" breadcrumb reads it as context. */}
+      <WorkspaceSwitcher breadcrumb />
     </div>
   );
 }

@@ -5,12 +5,12 @@ import { useTranslation } from "react-i18next";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 interface WorkspaceSwitcherProps {
-  /** Render a hairline divider before the control — used when it sits beside the brand. */
-  leadingDivider?: boolean;
+  /** Render a "/" breadcrumb separator before the control — used when it sits beside the brand. */
+  breadcrumb?: boolean;
 }
 
 /** Header dropdown for switching the active workspace (multi-tenant scope). */
-export default function WorkspaceSwitcher({ leadingDivider = false }: WorkspaceSwitcherProps) {
+export default function WorkspaceSwitcher({ breadcrumb = false }: WorkspaceSwitcherProps) {
   const { t } = useTranslation();
   const { workspaces, currentId, loadWorkspaces, setCurrent } = useWorkspaceStore();
 
@@ -21,15 +21,18 @@ export default function WorkspaceSwitcher({ leadingDivider = false }: WorkspaceS
   if (workspaces.length === 0) return null;
 
   return (
-    <Flex align="center" gap={12}>
-      {leadingDivider && <span style={{ width: 1, height: 16, background: "var(--ant-color-split)" }} />}
+    <Flex align="center" gap={8}>
+      {breadcrumb && (
+        <span style={{ color: "var(--ant-color-split)", fontSize: 18, fontWeight: 300, userSelect: "none" }}>/</span>
+      )}
       <Select
+        className="workspace-switcher"
         size="small"
-        variant="filled"
+        variant="borderless"
         style={{ width: 180 }}
         value={currentId ?? undefined}
         onChange={setCurrent}
-        prefix={<AppstoreOutlined />}
+        prefix={<AppstoreOutlined style={{ color: "var(--ant-color-text-tertiary)" }} />}
         options={workspaces.map((w) => ({ label: w.isDefault ? t("workspace.defaultName") : w.name, value: w.id }))}
         data-testid="workspace-switcher"
       />
