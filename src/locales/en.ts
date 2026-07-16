@@ -576,6 +576,8 @@ const en = {
     title: "Runs",
     type: "Type",
     detail: "Run Detail",
+    fullscreen: "Fullscreen",
+    exitFullscreen: "Exit fullscreen",
     type_flow: "Flow",
     type_spark: "Spark",
     type_flink: "Flink",

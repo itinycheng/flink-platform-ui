@@ -574,6 +574,8 @@ const zh = {
     title: "运行记录",
     type: "类型",
     detail: "运行详情",
+    fullscreen: "全屏",
+    exitFullscreen: "退出全屏",
     type_flow: "工作流",
     type_spark: "Spark",
     type_flink: "Flink",
