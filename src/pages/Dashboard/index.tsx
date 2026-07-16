@@ -63,7 +63,7 @@ function TrendChart({ trend }: { trend: TrendDataPoint[] }) {
   const navigate = useNavigate();
   // Drill-down: clicking a series jumps to Job Runs filtered by that status.
   const drill = (status: string) => {
-    void navigate(`/runs/jobs?status=${status}`);
+    void navigate(`/runs?status=${status}`);
   };
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -148,7 +148,7 @@ export default function Dashboard() {
       .catch((err) => console.error("[Dashboard] getTrend failed", err));
   }, [timeRange]);
 
-  const toRuns = (status?: string) => () => void navigate(status ? `/runs/jobs?status=${status}` : "/runs/jobs");
+  const toRuns = (status?: string) => () => void navigate(status ? `/runs?status=${status}` : "/runs");
 
   return (
     <div style={{ padding: 24, height: "100%", overflow: "auto" }}>

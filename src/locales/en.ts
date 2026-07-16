@@ -573,6 +573,15 @@ const en = {
   },
 
   runs: {
+    title: "Runs",
+    type: "Type",
+    detail: "Run Detail",
+    type_flow: "Flow",
+    type_spark: "Spark",
+    type_flink: "Flink",
+    type_shell: "Shell",
+    type_sql: "SQL",
+    killConfirm: "Terminate this run?",
     flowTitle: "Workflow Instances",
     jobTitle: "Job Run Records",
     instanceLog: "Instance Log",

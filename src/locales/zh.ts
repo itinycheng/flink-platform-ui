@@ -571,6 +571,15 @@ const zh = {
   },
 
   runs: {
+    title: "运行记录",
+    type: "类型",
+    detail: "运行详情",
+    type_flow: "工作流",
+    type_spark: "Spark",
+    type_flink: "Flink",
+    type_shell: "Shell",
+    type_sql: "SQL",
+    killConfirm: "确认终止该运行？",
     flowTitle: "工作流实例",
     jobTitle: "作业运行记录",
     instanceLog: "实例日志",

@@ -24,34 +24,71 @@ import React from "react";
 const edgeTypes = { status: StatusEdge };
 const nodeTypes = { taskNode: TaskNode };
 
+function ToolbarPanel({ embedded, onSave, messageApi }: { embedded: boolean; onSave?: () => void; messageApi?: MessageInstance }) {
+  if (!onSave || !messageApi) return null;
+  return (
+    <Panel position="top-right">
+      <DAGToolbar embedded={embedded} onSave={onSave} messageApi={messageApi} />
+    </Panel>
+  );
+}
+
+function CanvasContextMenu({
+  contextMenu,
+  nodeMenuItems,
+  edgeMenuItems,
+  onMenuClick,
+}: Pick<DAGCanvasProps, "contextMenu" | "nodeMenuItems" | "edgeMenuItems" | "onMenuClick">) {
+  if (!contextMenu) return null;
+  return (
+    <ConfigProvider theme={compactMenuTheme}>
+      <Dropdown
+        open
+        menu={{
+          items: contextMenu.type === "node" ? nodeMenuItems : edgeMenuItems,
+          onClick: ({ key }) => onMenuClick?.(key),
+        }}
+        styles={{ root: { position: "fixed" } }}
+      >
+        <div style={{ position: "absolute", left: contextMenu.x, top: contextMenu.y, width: 1, height: 1 }} />
+      </Dropdown>
+    </ConfigProvider>
+  );
+}
+
 interface DAGCanvasProps {
-  embedded: boolean;
-  flowRef: React.RefObject<HTMLDivElement | null>;
   nodes: Node[];
   edges: Edge[];
-  onNodesChange: OnNodesChange;
-  onEdgesChange: OnEdgesChange;
-  onConnect: (params: Connection) => void;
-  onNodeContextMenu: NodeMouseHandler;
-  onEdgeContextMenu: EdgeMouseHandler;
-  onPaneClick: () => void;
-  onNodeDoubleClick: NodeMouseHandler;
-  onInit: (instance: ReactFlowInstance) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: (e: React.DragEvent) => void;
-  onSave: () => void;
-  messageApi: MessageInstance;
-  contextMenu: { type: "node" | "edge"; id: string; x: number; y: number } | null;
-  nodeMenuItems: MenuProps["items"];
-  edgeMenuItems: MenuProps["items"];
-  onMenuClick: (key: string) => void;
+  /** Read-only mode disables editing (drag/connect/context menu/toolbar) — used by the run graph. */
+  readOnly?: boolean;
+  onNodeClick?: NodeMouseHandler;
+  embedded?: boolean;
+  flowRef?: React.RefObject<HTMLDivElement | null>;
+  onNodesChange?: OnNodesChange;
+  onEdgesChange?: OnEdgesChange;
+  onConnect?: (params: Connection) => void;
+  onNodeContextMenu?: NodeMouseHandler;
+  onEdgeContextMenu?: EdgeMouseHandler;
+  onPaneClick?: () => void;
+  onNodeDoubleClick?: NodeMouseHandler;
+  onInit?: (instance: ReactFlowInstance) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onSave?: () => void;
+  messageApi?: MessageInstance;
+  contextMenu?: { type: "node" | "edge"; id: string; x: number; y: number } | null;
+  nodeMenuItems?: MenuProps["items"];
+  edgeMenuItems?: MenuProps["items"];
+  onMenuClick?: (key: string) => void;
 }
 
 export function DAGCanvas({
-  embedded,
-  flowRef,
   nodes,
   edges,
+  readOnly = false,
+  onNodeClick,
+  embedded = false,
+  flowRef,
   onNodesChange,
   onEdgesChange,
   onConnect,
@@ -69,6 +106,11 @@ export function DAGCanvas({
   edgeMenuItems,
   onMenuClick,
 }: DAGCanvasProps) {
+  // Editing-only handlers — omitted entirely in read-only mode (run graph).
+  const editHandlers = readOnly
+    ? {}
+    : { onConnect, onNodeContextMenu, onEdgeContextMenu, onNodeDoubleClick, onDragOver, onDrop };
+
   return (
     <div style={{ flex: 1, position: "relative", minHeight: 0 }} ref={flowRef}>
       <ReactFlow
@@ -78,38 +120,28 @@ export function DAGCanvas({
         edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onNodeContextMenu={onNodeContextMenu}
-        onEdgeContextMenu={onEdgeContextMenu}
+        onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
-        onNodeDoubleClick={onNodeDoubleClick}
         onInit={onInit}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
+        {...editHandlers}
         fitView
-        fitViewOptions={{ maxZoom: 1, minZoom: 1 }}
+        fitViewOptions={{ maxZoom: 1, minZoom: 0.5 }}
         style={{ background: "#fff" }}
       >
         <Background gap={16} size={1} />
-        <Controls />
+        <Controls showInteractive={!readOnly} />
         <MiniMap nodeStrokeWidth={3} />
-        <Panel position="top-right">
-          <DAGToolbar embedded={embedded} onSave={onSave} messageApi={messageApi} />
-        </Panel>
+        {!readOnly && <ToolbarPanel embedded={embedded} onSave={onSave} messageApi={messageApi} />}
       </ReactFlow>
-      {contextMenu && (
-        <ConfigProvider theme={compactMenuTheme}>
-          <Dropdown
-            open
-            menu={{
-              items: contextMenu.type === "node" ? nodeMenuItems : edgeMenuItems,
-              onClick: ({ key }) => onMenuClick(key),
-            }}
-            styles={{ root: { position: "fixed" } }}
-          >
-            <div style={{ position: "absolute", left: contextMenu.x, top: contextMenu.y, width: 1, height: 1 }} />
-          </Dropdown>
-        </ConfigProvider>
+      {!readOnly && (
+        <CanvasContextMenu
+          contextMenu={contextMenu}
+          nodeMenuItems={nodeMenuItems}
+          edgeMenuItems={edgeMenuItems}
+          onMenuClick={onMenuClick}
+        />
       )}
     </div>
   );

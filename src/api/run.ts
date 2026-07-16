@@ -1,31 +1,22 @@
 import { http } from "@/utils/request";
-import type { FlowRun, JobRun, RunListParams, RunLog } from "@/types/run";
+import type { Run, RunDetail, RunListParams, RunLog } from "@/types/run";
 import type { PaginatedResponse } from "@/types/common";
 
-// ---- Workflow Instances (Flow Runs) ----
-
-export function getFlowRuns(params: RunListParams): Promise<PaginatedResponse<FlowRun>> {
-  return http.get<PaginatedResponse<FlowRun>>("/flow-runs", { params });
+/** Unified list of top-level runs (flow + atomic). */
+export function getRuns(params: RunListParams): Promise<PaginatedResponse<Run>> {
+  return http.get<PaginatedResponse<Run>>("/runs", { params });
 }
 
-export function killFlowRun(id: string): Promise<FlowRun> {
-  return http.post<FlowRun>(`/flow-runs/${id}/kill`);
+/** Full detail for one run, including the flow graph + node runs when type=flow. */
+export function getRunDetail(id: string): Promise<RunDetail> {
+  return http.get<RunDetail>(`/runs/${id}`);
 }
 
-export function getFlowRunLog(id: string): Promise<RunLog> {
-  return http.get<RunLog>(`/flow-runs/${id}/log`);
+export function killRun(id: string): Promise<Run> {
+  return http.post<Run>(`/runs/${id}/kill`);
 }
 
-// ---- Job Run Records ----
-
-export function getJobRuns(params: RunListParams): Promise<PaginatedResponse<JobRun>> {
-  return http.get<PaginatedResponse<JobRun>>("/job-runs", { params });
-}
-
-export function killJobRun(id: string): Promise<JobRun> {
-  return http.post<JobRun>(`/job-runs/${id}/kill`);
-}
-
-export function getJobRunLog(id: string): Promise<RunLog> {
-  return http.get<RunLog>(`/job-runs/${id}/log`);
+/** Log for a run, or a single flow node when `nodeId` is given. */
+export function getRunLog(id: string, nodeId?: string): Promise<RunLog> {
+  return http.get<RunLog>(`/runs/${id}/log`, { params: nodeId ? { node: nodeId } : undefined });
 }

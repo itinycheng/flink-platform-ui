@@ -16,6 +16,15 @@ import {
 } from "./DAGEditor.constants";
 import { TaskIcon } from "./TaskIcon";
 
+/** Border/dot color when a node carries a run status (used by the read-only run graph). */
+const RUN_STATUS_COLOR: Record<string, string> = {
+  success: "#52c41a",
+  failed: "#ff4d4f",
+  running: "#1677ff",
+  killed: "#faad14",
+  waiting: "#bfbfbf",
+};
+
 export function StatusEdge(props: EdgeProps) {
   const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style, markerEnd, data } = props;
   const [edgePath, labelX, labelY] = getBezierPath({
@@ -60,6 +69,14 @@ export function TaskNode({ data, selected }: NodeProps) {
   const desc = data.description as string | undefined;
   const priority = data.priority as string | undefined;
   const taskType = data.taskType as string | undefined;
+  const runStatus = data.status as string | undefined;
+  const statusColor = runStatus ? RUN_STATUS_COLOR[runStatus] : undefined;
+
+  const border = selected
+    ? "2px solid var(--ant-color-primary)"
+    : statusColor
+      ? `2px solid ${statusColor}`
+      : "1px solid var(--ant-color-border, #ddd)";
 
   return (
     <div
@@ -67,7 +84,7 @@ export function TaskNode({ data, selected }: NodeProps) {
       onMouseLeave={() => setHovered(false)}
       style={{
         padding: "4px 6px",
-        border: selected ? "2px solid var(--ant-color-primary)" : "1px solid var(--ant-color-border, #ddd)",
+        border,
         background: "var(--ant-color-bg-container, #fff)",
         minWidth: 60,
         textAlign: "center",
@@ -80,6 +97,20 @@ export function TaskNode({ data, selected }: NodeProps) {
     >
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <Handle type="target" position={Position.Left} id="left-in" style={handleStyle} />
+      {statusColor && (
+        <span
+          style={{
+            position: "absolute",
+            top: -5,
+            right: -5,
+            width: 9,
+            height: 9,
+            borderRadius: "50%",
+            background: statusColor,
+            border: "1.5px solid #fff",
+          }}
+        />
+      )}
       <TaskIcon type={taskType} size={20} />
       {data.label as string}
       <Handle type="source" position={Position.Bottom} style={handleStyle} />

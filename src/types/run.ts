@@ -1,11 +1,46 @@
 export type RunStatus = "waiting" | "running" | "success" | "failed" | "killed";
 
-/** A single execution instance of a workflow (JobFlowRun in the legacy project). */
-export interface FlowRun {
+/** A run's task type. "flow" is a composite workflow; the rest are atomic tasks. */
+export type RunType = "flow" | "spark" | "flink" | "shell" | "sql";
+
+/** A single node's execution inside a flow run (one task within the workflow). */
+export interface RunNode {
   id: string;
-  /** Workflow definition id this run belongs to. */
-  flowId: string;
   name: string;
+  type: RunType;
+  status: RunStatus;
+  /** Duration in seconds. */
+  duration: number;
+  /** Runtime parameters serialized as a JSON string. */
+  params: string;
+  trackingUrl?: string;
+}
+
+/** DAG geometry for a flow run — node positions/status + edges, rendered read-only. */
+export interface RunGraphNode {
+  id: string;
+  label: string;
+  type: RunType;
+  x: number;
+  y: number;
+  status: RunStatus;
+}
+
+export interface RunGraphEdge {
+  source: string;
+  target: string;
+}
+
+export interface RunGraph {
+  nodes: RunGraphNode[];
+  edges: RunGraphEdge[];
+}
+
+/** A top-level execution — either an atomic task run or a flow (workflow) run. */
+export interface Run {
+  id: string;
+  name: string;
+  type: RunType;
   status: RunStatus;
   tags: string[];
   startTime: string;
@@ -13,36 +48,25 @@ export interface FlowRun {
   /** Duration in seconds. */
   duration: number;
   owner: string;
-}
-
-/** A single execution record of a task/job within a flow run (JobRun in the legacy project). */
-export interface JobRun {
-  id: string;
-  jobId: string;
-  /** Parent flow run id. */
-  flowRunId: string;
-  name: string;
-  type: string;
-  status: RunStatus;
-  startTime: string;
-  endTime?: string;
-  /** Duration in seconds. */
-  duration: number;
-  /** External Flink/Spark console URL, when available. */
+  /** External Flink/Spark console URL (atomic runs). */
   trackingUrl?: string;
-  /** Runtime parameters serialized as a JSON string. */
-  params: string;
-  owner: string;
+  /** Runtime parameters serialized as a JSON string (atomic runs). */
+  params?: string;
 }
 
-/** Filters accepted by the run list endpoints (all optional). */
+/** Full run detail, including the flow graph + node runs (from /api/runs/:id). */
+export interface RunDetail extends Run {
+  graph?: RunGraph;
+  nodes?: RunNode[];
+}
+
+/** Filters accepted by the run list endpoint (all optional). */
 export interface RunListParams {
   page: number;
   pageSize: number;
   name?: string;
+  type?: RunType;
   status?: RunStatus;
-  flowRunId?: string;
-  jobId?: string;
   startFrom?: string;
   startTo?: string;
 }

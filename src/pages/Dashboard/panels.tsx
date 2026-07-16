@@ -3,8 +3,8 @@ import { Empty, Flex, Spin, Tag, Typography } from "antd";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { getJobRuns } from "@/api/run";
-import type { JobRun, RunStatus } from "@/types/run";
+import { getRuns } from "@/api/run";
+import type { Run, RunStatus } from "@/types/run";
 import type { DashboardStats } from "@/api/dashboard";
 import { RunStatusTag } from "@/pages/Runs/RunStatusTag";
 import { formatDuration } from "@/pages/Runs/runStatus";
@@ -71,7 +71,7 @@ export function StatusDonut({ stats }: { stats: DashboardStats | null }) {
               innerRadius={72}
               outerRadius={100}
               paddingAngle={2}
-              onClick={(d: { payload?: DonutSlice }) => d.payload?.status && navigate(`/runs/jobs?status=${d.payload.status}`)}
+              onClick={(d: { payload?: DonutSlice }) => d.payload?.status && navigate(`/runs?status=${d.payload.status}`)}
             >
               {data.map((d) => (
                 <Cell key={d.name} fill={d.color} cursor={d.status ? "pointer" : "default"} />
@@ -107,7 +107,7 @@ interface RunListCardProps {
 export function RunListCard({ status, title, emptyText }: RunListCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [items, setItems] = useState<JobRun[]>([]);
+  const [items, setItems] = useState<Run[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export function RunListCard({ status, title, emptyText }: RunListCardProps) {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await getJobRuns({ page: 1, pageSize: 6, status });
+        const res = await getRuns({ page: 1, pageSize: 6, status });
         if (!cancelled) setItems(res.data);
       } catch {
         if (!cancelled) setItems([]);
@@ -131,7 +131,7 @@ export function RunListCard({ status, title, emptyText }: RunListCardProps) {
 
   return (
     <div style={cardStyle}>
-      <CardHeader title={title} onViewAll={() => navigate(`/runs/jobs?status=${status}`)} />
+      <CardHeader title={title} onViewAll={() => navigate(`/runs?status=${status}`)} />
       {loading ? (
         <Flex justify="center" style={{ padding: 40 }}>
           <Spin />

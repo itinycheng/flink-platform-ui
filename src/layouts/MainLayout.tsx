@@ -6,7 +6,6 @@ import {
   DashboardOutlined,
   SettingOutlined,
   MonitorOutlined,
-  ScheduleOutlined,
   FolderOutlined,
   TeamOutlined,
   ToolOutlined,
@@ -41,15 +40,7 @@ function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
         routes: [{ path: "/studio/list", name: "_jobs", icon: <PartitionOutlined /> }],
       },
       { path: "/query", name: t("menu.query"), icon: <ConsoleSqlOutlined /> },
-      {
-        path: "/runs",
-        name: t("menu.runs"),
-        icon: <HistoryOutlined />,
-        routes: [
-          { path: "/runs/flows", name: t("menu.flowInstances"), icon: <ScheduleOutlined /> },
-          { path: "/runs/jobs", name: t("menu.jobRuns"), icon: <HistoryOutlined /> },
-        ],
-      },
+      { path: "/runs", name: t("menu.runs"), icon: <HistoryOutlined /> },
       { path: "/monitor", name: t("menu.monitor"), icon: <MonitorOutlined /> },
       {
         path: "/manage",
