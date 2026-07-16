@@ -1,8 +1,17 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
-import { Col, Flex, Row, Segmented, Statistic, Progress, Table, Typography } from "antd";
+import { Col, Flex, Row, Segmented, Statistic, Progress, Typography } from "antd";
+import { AppstoreOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from "@ant-design/icons";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { getStats, getTrend, type DashboardStats, type TrendDataPoint } from "@/api/dashboard";
+
+const TREND_SERIES = [
+  { key: "success", color: "#52c41a" },
+  { key: "failed", color: "#ff4d4f" },
+  { key: "running", color: "#faad14" },
+] as const;
 
 type TimeRange = "7d" | "14d" | "30d";
 
@@ -32,13 +41,18 @@ interface StatCardProps {
   title: string;
   value: number | string;
   gradient: string;
+  icon: ReactNode;
+  iconColor: string;
 }
 
-function StatCard({ title, value, gradient }: StatCardProps) {
+function StatCard({ title, value, gradient, icon, iconColor }: StatCardProps) {
   return (
     <Col xs={24} sm={12} lg={6}>
-      <div style={{ ...cardStyle, background: gradient }}>
+      <div style={{ ...cardStyle, background: gradient, position: "relative" }}>
         <Statistic title={title} value={value} />
+        <span style={{ position: "absolute", top: 18, right: 20, fontSize: 26, color: iconColor, opacity: 0.85 }}>
+          {icon}
+        </span>
       </div>
     </Col>
   );
@@ -94,13 +108,41 @@ function SuccessRateCard({ successRate, failRate }: SuccessRateCardProps) {
   );
 }
 
-interface ColoredCountProps {
-  value: number;
-  color: string;
-}
-
-function ColoredCount({ value, color }: ColoredCountProps) {
-  return <Typography.Text style={{ color }}>{value}</Typography.Text>;
+function TrendChart({ trend }: { trend: TrendDataPoint[] }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  // Drill-down: clicking a series jumps to Job Runs filtered by that status.
+  const drill = (status: string) => {
+    void navigate(`/runs/jobs?status=${status}`);
+  };
+  return (
+    <ResponsiveContainer width="100%" height={300}>
+      <LineChart data={trend} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--ant-color-border-secondary)" vertical={false} />
+        <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="var(--ant-color-text-tertiary)" />
+        <YAxis tick={{ fontSize: 12 }} stroke="var(--ant-color-text-tertiary)" allowDecimals={false} width={44} />
+        <Tooltip />
+        <Legend
+          onClick={(e) => drill(String(e.dataKey))}
+          wrapperStyle={{ cursor: "pointer" }}
+        />
+        {TREND_SERIES.map((s) => (
+          <Line
+            key={s.key}
+            type="monotone"
+            dataKey={s.key}
+            name={t(`dashboard.${s.key}`)}
+            stroke={s.color}
+            strokeWidth={2}
+            dot={{ r: 3, cursor: "pointer" }}
+            activeDot={{ r: 5, cursor: "pointer", onClick: () => drill(s.key) }}
+            onClick={() => drill(s.key)}
+            style={{ cursor: "pointer" }}
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
+  );
 }
 
 interface TaskTrendCardProps {
@@ -115,27 +157,6 @@ function TaskTrendCard({ trend, timeRange, onTimeRangeChange }: TaskTrendCardPro
     { label: t("dashboard.last7Days"), value: "7d" },
     { label: t("dashboard.last14Days"), value: "14d" },
     { label: t("dashboard.last30Days"), value: "30d" },
-  ];
-  const trendColumns = [
-    { title: t("dashboard.date"), dataIndex: "date", key: "date", width: 140 },
-    {
-      title: t("dashboard.success"),
-      dataIndex: "success",
-      key: "success",
-      render: (v: number) => <ColoredCount value={v} color="#52c41a" />,
-    },
-    {
-      title: t("dashboard.failed"),
-      dataIndex: "failed",
-      key: "failed",
-      render: (v: number) => <ColoredCount value={v} color="#ff4d4f" />,
-    },
-    {
-      title: t("dashboard.running"),
-      dataIndex: "running",
-      key: "running",
-      render: (v: number) => <ColoredCount value={v} color="#faad14" />,
-    },
   ];
 
   return (
@@ -152,14 +173,7 @@ function TaskTrendCard({ trend, timeRange, onTimeRangeChange }: TaskTrendCardPro
             size="small"
           />
         </Flex>
-        <Table
-          columns={trendColumns}
-          dataSource={trend}
-          rowKey="date"
-          pagination={false}
-          size="small"
-          scroll={{ y: 260 }}
-        />
+        <TrendChart trend={trend} />
       </div>
     </Col>
   );
@@ -188,21 +202,33 @@ export default function Dashboard() {
   return (
     <div style={{ padding: 24, height: "100%", overflow: "auto" }}>
       <Row gutter={[16, 16]}>
-        <StatCard title={t("dashboard.totalTasks")} value={stats?.totalTasks ?? "-"} gradient={STAT_GRADIENTS.total} />
+        <StatCard
+          title={t("dashboard.totalTasks")}
+          value={stats?.totalTasks ?? "-"}
+          gradient={STAT_GRADIENTS.total}
+          icon={<AppstoreOutlined />}
+          iconColor="#1677ff"
+        />
         <StatCard
           title={t("dashboard.successTasks")}
           value={stats?.successTasks ?? "-"}
           gradient={STAT_GRADIENTS.success}
+          icon={<CheckCircleOutlined />}
+          iconColor="#52c41a"
         />
         <StatCard
           title={t("dashboard.failedTasks")}
           value={stats?.failedTasks ?? "-"}
           gradient={STAT_GRADIENTS.failed}
+          icon={<CloseCircleOutlined />}
+          iconColor="#ff4d4f"
         />
         <StatCard
           title={t("dashboard.runningTasks")}
           value={stats?.runningTasks ?? "-"}
           gradient={STAT_GRADIENTS.running}
+          icon={<SyncOutlined />}
+          iconColor="#faad14"
         />
         <SuccessRateCard successRate={successRate} failRate={failRate} />
         <TaskTrendCard trend={trend} timeRange={timeRange} onTimeRangeChange={setTimeRange} />

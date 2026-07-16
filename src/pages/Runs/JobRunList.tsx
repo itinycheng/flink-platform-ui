@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useMemo } from "react";
 import { Button, Modal, Popconfirm, Space, message } from "antd";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import type { JobRun, RunListParams, RunLog } from "@/types/run";
 import { getJobRuns, killJobRun, getJobRunLog } from "@/api/run";
@@ -32,6 +33,8 @@ function TrackingCell({ run }: { run: JobRun }) {
 
 export default function JobRunList() {
   const { t } = useTranslation();
+  const [searchParams] = useSearchParams();
+  const initialStatus = searchParams.get("status") ?? undefined;
   const actionRef = useRef<ActionType>(null);
   const [logOpen, setLogOpen] = useState(false);
   const [logLoader, setLogLoader] = useState<(() => Promise<RunLog>) | null>(null);
@@ -91,6 +94,7 @@ export default function JobRunList() {
         rowKey="id"
         columns={columns}
         options={{ reload: true, density: false, setting: false }}
+        form={{ initialValues: { status: initialStatus } }}
         toolBarRender={() => [<Button key="refresh" onClick={() => void actionRef.current?.reload()}>{t("common.refresh")}</Button>]}
         request={async (params) => {
           const result = await getJobRuns(toParams(params));
