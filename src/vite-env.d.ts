@@ -8,9 +8,9 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string;
   /** HTTP request timeout in milliseconds (parsed as a number). */
   readonly VITE_API_TIMEOUT: string;
-  /** "true" to start MSW request mocking (development only). */
-  readonly VITE_ENABLE_MOCK: string;
-  /** Dev-only: backend origin to proxy API calls to (empty = use mocks). */
+  /** How the app talks to its API: MSW mocks / dev proxy / direct calls. */
+  readonly VITE_API_MODE: "mock" | "proxy" | "direct";
+  /** Backend origin to proxy API calls to when VITE_API_MODE=proxy (dev only). */
   readonly VITE_API_PROXY: string;
 }
 

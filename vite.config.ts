@@ -7,7 +7,8 @@ import pkg from "./package.json";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, import.meta.dirname, "");
   const apiBase = env.VITE_API_BASE_URL || "/api";
-  const proxyTarget = env.VITE_API_PROXY;
+  // Only proxy when explicitly in "proxy" mode and a target is given.
+  const proxyTarget = env.VITE_API_MODE === "proxy" ? env.VITE_API_PROXY : "";
 
   return {
     define: {
@@ -20,8 +21,7 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(import.meta.dirname, "./src"),
       },
     },
-    // When VITE_API_PROXY is set, forward API calls to a real backend in dev
-    // instead of using the MSW mocks (which turn off automatically — see src/config).
+    // In "proxy" mode, forward API calls to a real backend in dev (mocks are off — see src/config).
     server: proxyTarget
       ? {
           proxy: {

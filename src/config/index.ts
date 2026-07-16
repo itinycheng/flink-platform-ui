@@ -22,9 +22,12 @@ export const API = {
 } as const;
 
 /**
- * Whether to start MSW request mocking. Driven by VITE_ENABLE_MOCK, but forced
- * off when a real backend proxy is configured (VITE_API_PROXY) — pointing dev at
- * a live backend implies you want live requests, not mocks.
+ * How the app talks to its API:
+ * - "mock"   — in-browser MSW mocks, no backend (development only)
+ * - "proxy"  — dev server proxies VITE_API_BASE_URL to VITE_API_PROXY (real backend)
+ * - "direct" — call VITE_API_BASE_URL directly (staging / production)
  */
-export const ENABLE_MOCK =
-  import.meta.env.VITE_ENABLE_MOCK === "true" && !import.meta.env.VITE_API_PROXY;
+export const API_MODE = import.meta.env.VITE_API_MODE || "mock";
+
+/** Whether to start MSW request mocking (development only). Active only in "mock" mode. */
+export const ENABLE_MOCK = API_MODE === "mock";
