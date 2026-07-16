@@ -125,6 +125,8 @@ export function DAGCanvas({
         onInit={onInit}
         nodesDraggable={!readOnly}
         nodesConnectable={!readOnly}
+        elementsSelectable={!readOnly}
+        nodesFocusable={!readOnly}
         {...editHandlers}
         fitView
         fitViewOptions={{ maxZoom: 1, minZoom: 0.5 }}
