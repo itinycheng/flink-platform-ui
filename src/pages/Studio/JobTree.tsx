@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useJobStore } from "@/stores/jobStore";
 import { findNodeById } from "@/utils/tree";
 import type { JobTreeNode } from "@/types/job";
-import { TaskIcon } from "./TaskIcon";
+import { TaskIcon } from "@/components/TaskIcon";
 import { StatusDot } from "./StatusDot";
 import { RunStatusIcon } from "./RunStatusIcon";
 import { buildNodeMenuItems } from "./nodeMenu";

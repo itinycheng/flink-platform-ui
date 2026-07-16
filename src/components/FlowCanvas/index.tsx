@@ -1,5 +1,5 @@
-import { ConfigProvider, Dropdown } from "antd";
-import type { MessageInstance } from "antd/es/message/interface";
+import type React from "react";
+import { ConfigProvider, Dropdown, type MenuProps } from "antd";
 import {
   ReactFlow,
   Background,
@@ -15,30 +15,24 @@ import {
   type OnNodesChange,
   type OnEdgesChange,
 } from "@xyflow/react";
-import type { MenuProps } from "antd";
 import { compactMenuTheme } from "@/theme";
-import { StatusEdge, TaskNode } from "./DAGEditor.nodes";
-import { DAGToolbar } from "./DAGEditor.panels";
-import React from "react";
+import { StatusEdge, TaskNode } from "./nodes";
 
+/**
+ * Shared DAG canvas used by both the Studio editor and the read-only run graph.
+ * Node/edge styling is baked in (unified app-wide via {@link TaskNode}/{@link StatusEdge}).
+ * The orchestrating page drives it through controlled props (state in) + event
+ * callbacks (events out) + a `toolbar` slot; it never reaches into the canvas.
+ */
 const edgeTypes = { status: StatusEdge };
 const nodeTypes = { taskNode: TaskNode };
-
-function ToolbarPanel({ embedded, onSave, messageApi }: { embedded: boolean; onSave?: () => void; messageApi?: MessageInstance }) {
-  if (!onSave || !messageApi) return null;
-  return (
-    <Panel position="top-right">
-      <DAGToolbar embedded={embedded} onSave={onSave} messageApi={messageApi} />
-    </Panel>
-  );
-}
 
 function CanvasContextMenu({
   contextMenu,
   nodeMenuItems,
   edgeMenuItems,
   onMenuClick,
-}: Pick<DAGCanvasProps, "contextMenu" | "nodeMenuItems" | "edgeMenuItems" | "onMenuClick">) {
+}: Pick<FlowCanvasProps, "contextMenu" | "nodeMenuItems" | "edgeMenuItems" | "onMenuClick">) {
   if (!contextMenu) return null;
   return (
     <ConfigProvider theme={compactMenuTheme}>
@@ -56,13 +50,18 @@ function CanvasContextMenu({
   );
 }
 
-interface DAGCanvasProps {
+export interface FlowCanvasProps {
   nodes: Node[];
   edges: Edge[];
   /** Read-only mode disables editing (drag/connect/context menu/toolbar) — used by the run graph. */
   readOnly?: boolean;
   onNodeClick?: NodeMouseHandler;
-  embedded?: boolean;
+  /** On-canvas widgets (defaults on). */
+  showMiniMap?: boolean;
+  showControls?: boolean;
+  showBackground?: boolean;
+  /** Rendered top-right inside a ReactFlow Panel (editing mode only), e.g. a save toolbar. */
+  toolbar?: React.ReactNode;
   flowRef?: React.RefObject<HTMLDivElement | null>;
   onNodesChange?: OnNodesChange;
   onEdgesChange?: OnEdgesChange;
@@ -74,20 +73,21 @@ interface DAGCanvasProps {
   onInit?: (instance: ReactFlowInstance) => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent) => void;
-  onSave?: () => void;
-  messageApi?: MessageInstance;
   contextMenu?: { type: "node" | "edge"; id: string; x: number; y: number } | null;
   nodeMenuItems?: MenuProps["items"];
   edgeMenuItems?: MenuProps["items"];
   onMenuClick?: (key: string) => void;
 }
 
-export function DAGCanvas({
+export function FlowCanvas({
   nodes,
   edges,
   readOnly = false,
   onNodeClick,
-  embedded = false,
+  showMiniMap = true,
+  showControls = true,
+  showBackground = true,
+  toolbar,
   flowRef,
   onNodesChange,
   onEdgesChange,
@@ -99,13 +99,11 @@ export function DAGCanvas({
   onInit,
   onDragOver,
   onDrop,
-  onSave,
-  messageApi,
   contextMenu,
   nodeMenuItems,
   edgeMenuItems,
   onMenuClick,
-}: DAGCanvasProps) {
+}: FlowCanvasProps) {
   // Editing-only handlers — omitted entirely in read-only mode (run graph).
   const editHandlers = readOnly
     ? {}
@@ -132,10 +130,10 @@ export function DAGCanvas({
         fitViewOptions={{ maxZoom: 1, minZoom: 0.5 }}
         style={{ background: "#fff" }}
       >
-        <Background gap={16} size={1} />
-        <Controls showInteractive={!readOnly} />
-        <MiniMap nodeStrokeWidth={3} />
-        {!readOnly && <ToolbarPanel embedded={embedded} onSave={onSave} messageApi={messageApi} />}
+        {showBackground && <Background gap={16} size={1} />}
+        {showControls && <Controls showInteractive={!readOnly} />}
+        {showMiniMap && <MiniMap nodeStrokeWidth={3} />}
+        {!readOnly && toolbar && <Panel position="top-right">{toolbar}</Panel>}
       </ReactFlow>
       {!readOnly && (
         <CanvasContextMenu

@@ -5,7 +5,7 @@ import { FullscreenOutlined, FullscreenExitOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { type Edge, type Node } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { DAGCanvas } from "@/pages/Studio/DAGEditor.canvas";
+import { FlowCanvas } from "@/components/FlowCanvas";
 import type { RunGraph } from "@/types/run";
 
 interface RunFlowGraphProps {
@@ -36,7 +36,7 @@ export function RunFlowGraph({ graph, onNodeClick }: RunFlowGraphProps) {
 
   const canvas = (
     <div style={{ display: "flex", position: "relative", flex: 1, minHeight: 0 }}>
-      <DAGCanvas nodes={nodes} edges={edges} readOnly onNodeClick={(_, node) => onNodeClick?.(node.id)} />
+      <FlowCanvas nodes={nodes} edges={edges} readOnly onNodeClick={(_, node) => onNodeClick?.(node.id)} />
       <Tooltip title={t(full ? "runs.exitFullscreen" : "runs.fullscreen")}>
         <Button
           size="small"

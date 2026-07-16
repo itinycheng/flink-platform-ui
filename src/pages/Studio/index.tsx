@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useJobStore, findNodeById } from "@/stores/jobStore";
 import SiderPanel from "@/pages/Studio/Sider";
 import JobTabWrapper from "@/pages/Studio/JobTabWrapper";
-import { TaskIcon } from "@/pages/Studio/TaskIcon";
+import { TaskIcon } from "@/components/TaskIcon";
 import React from "react";
 
 const tabTheme: ThemeConfig = {

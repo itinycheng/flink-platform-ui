@@ -8,13 +8,8 @@ import {
   type EdgeProps,
   type NodeProps,
 } from "@xyflow/react";
-import {
-  EDGE_STATUS_COLORS,
-  EDGE_STATUS_LABELS,
-  handleStyle,
-  type EdgeStatus,
-} from "./DAGEditor.constants";
-import { TaskIcon } from "./TaskIcon";
+import { EDGE_STATUS_COLORS, EDGE_STATUS_LABELS, handleStyle, type EdgeStatus } from "./constants";
+import { TaskIcon } from "@/components/TaskIcon";
 
 /** Border/dot color when a node carries a run status (used by the read-only run graph). */
 const RUN_STATUS_COLOR: Record<string, string> = {

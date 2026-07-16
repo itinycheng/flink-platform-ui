@@ -1,7 +1,7 @@
 import { Flex, Tooltip } from "antd";
 import { SyncOutlined, ApiOutlined, CloudOutlined, ScheduleOutlined } from "@ant-design/icons";
 import { SIDEBAR_ICON_SIZE } from "./DAGEditor.constants";
-import { TaskIcon, getTaskIcon } from "./TaskIcon";
+import { TaskIcon, getTaskIcon } from "@/components/TaskIcon";
 import React from "react";
 
 /** SVG task icon for the palette, colored via the shared registry. */

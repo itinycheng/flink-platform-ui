@@ -13,7 +13,7 @@ import {
 } from "@xyflow/react";
 import type { TFunction } from "i18next";
 import type { TaskParams } from "@/types/job";
-import { EDGE_STATUS_COLORS, getEdgeStyle, type EdgeStatus } from "./DAGEditor.constants";
+import { EDGE_STATUS_COLORS, getEdgeStyle, type EdgeStatus } from "@/components/FlowCanvas/constants";
 
 type ContextMenuState = { type: "node" | "edge"; id: string; x: number; y: number } | null;
 

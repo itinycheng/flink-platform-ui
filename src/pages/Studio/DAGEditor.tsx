@@ -5,12 +5,13 @@ import { useNodesState, useEdgesState, type Connection, type ReactFlowInstance }
 import "@xyflow/react/dist/style.css";
 import { useTranslation } from "react-i18next";
 import { useJobStore } from "@/stores/jobStore";
-import { appendStatusEdge, type DAGEditorProps, getInitialEdges, getInitialNodes } from "./DAGEditor.constants";
+import { FlowCanvas } from "@/components/FlowCanvas";
+import { appendStatusEdge } from "@/components/FlowCanvas/constants";
+import { type DAGEditorProps, getInitialEdges, getInitialNodes } from "./DAGEditor.constants";
 import { useBottomPanel, useContextMenu, useDragAndDrop, useNodeEditModal } from "./DAGEditor.hooks";
 import { TaskSidebar } from "./DAGEditor.sidebar";
-import { BottomPanel } from "./DAGEditor.panels";
+import { BottomPanel, DAGToolbar } from "./DAGEditor.panels";
 import { NodeEditModal } from "./DAGEditor.modal";
-import { DAGCanvas } from "./DAGEditor.canvas";
 
 export default function DAGEditor({ embedded = false }: DAGEditorProps) {
   const { id: routeId } = useParams<{ id: string }>();
@@ -49,8 +50,7 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
       <Flex style={{ flex: 1, minHeight: 0 }}>
         <TaskSidebar />
         <Flex vertical style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
-          <DAGCanvas
-            embedded={embedded}
+          <FlowCanvas
             flowRef={flowRef}
             nodes={nodes}
             edges={edges}
@@ -64,8 +64,7 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
             onInit={setReactFlowInstance}
             onDragOver={dnd.onDragOver}
             onDrop={dnd.onDrop}
-            onSave={handleSave}
-            messageApi={messageApi}
+            toolbar={<DAGToolbar embedded={embedded} onSave={handleSave} messageApi={messageApi} />}
             contextMenu={ctx.contextMenu}
             nodeMenuItems={ctx.nodeMenuItems}
             edgeMenuItems={ctx.edgeMenuItems}
