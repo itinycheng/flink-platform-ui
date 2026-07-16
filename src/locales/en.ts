@@ -116,6 +116,14 @@ const en = {
     success: "Success",
     failed: "Failed",
     running: "Running",
+    statusBreakdown: "Status Breakdown",
+    other: "Other",
+    recentFailed: "Recent Failures",
+    runningNow: "Running Now",
+    viewAll: "View all",
+    noFailures: "No recent failures",
+    nothingRunning: "Nothing running right now",
+    listLoadError: "Failed to load list",
   },
 
   workflow: {

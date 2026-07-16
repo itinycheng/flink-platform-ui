@@ -1,11 +1,12 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
-import { Col, Flex, Row, Segmented, Statistic, Progress, Typography } from "antd";
+import { Col, Flex, Row, Segmented, Statistic, Typography } from "antd";
 import { AppstoreOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from "@ant-design/icons";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { getStats, getTrend, type DashboardStats, type TrendDataPoint } from "@/api/dashboard";
+import { StatusDonut, RunListCard } from "./panels";
 
 const TREND_SERIES = [
   { key: "success", color: "#52c41a" },
@@ -29,80 +30,29 @@ const cardStyle: CSSProperties = {
   border: "1px solid var(--ant-color-border)",
 };
 
-function computeRates(stats: DashboardStats | null): { successRate: number; failRate: number } {
-  if (!stats) return { successRate: 0, failRate: 0 };
-  return {
-    successRate: Math.round((stats.successTasks / stats.totalTasks) * 100),
-    failRate: Math.round((stats.failedTasks / stats.totalTasks) * 100),
-  };
-}
-
 interface StatCardProps {
   title: string;
   value: number | string;
   gradient: string;
   icon: ReactNode;
   iconColor: string;
+  onClick: () => void;
 }
 
-function StatCard({ title, value, gradient, icon, iconColor }: StatCardProps) {
+function StatCard({ title, value, gradient, icon, iconColor, onClick }: StatCardProps) {
   return (
     <Col xs={24} sm={12} lg={6}>
-      <div style={{ ...cardStyle, background: gradient, position: "relative" }}>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onClick()}
+        style={{ ...cardStyle, background: gradient, position: "relative", cursor: "pointer" }}
+      >
         <Statistic title={title} value={value} />
         <span style={{ position: "absolute", top: 18, right: 20, fontSize: 26, color: iconColor, opacity: 0.85 }}>
           {icon}
         </span>
-      </div>
-    </Col>
-  );
-}
-
-interface RateLabelProps {
-  text: string;
-  color: string;
-  percent: number;
-}
-
-function RateLabel({ text, color, percent }: RateLabelProps) {
-  return (
-    <Flex vertical align="center">
-      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        {text}
-      </Typography.Text>
-      <Typography.Text strong style={{ color }}>
-        {percent}%
-      </Typography.Text>
-    </Flex>
-  );
-}
-
-interface SuccessRateCardProps {
-  successRate: number;
-  failRate: number;
-}
-
-function SuccessRateCard({ successRate, failRate }: SuccessRateCardProps) {
-  const { t } = useTranslation();
-  return (
-    <Col xs={24} lg={8}>
-      <div style={cardStyle}>
-        <Typography.Text strong style={{ fontSize: 15 }}>
-          {t("dashboard.successRate")}
-        </Typography.Text>
-        <Flex vertical align="center" gap={12} style={{ padding: "16px 0 8px" }}>
-          <Progress
-            type="dashboard"
-            percent={successRate}
-            strokeColor="#52c41a"
-            railColor="var(--ant-color-bg-layout)"
-            size={150}
-          />
-          <Flex gap={24}>
-            <RateLabel text={t("dashboard.successTasks")} color="#52c41a" percent={successRate} />
-            <RateLabel text={t("dashboard.failedTasks")} color="#ff4d4f" percent={failRate} />
-          </Flex>
-        </Flex>
       </div>
     </Col>
   );
@@ -181,6 +131,7 @@ function TaskTrendCard({ trend, timeRange, onTimeRangeChange }: TaskTrendCardPro
 
 export default function Dashboard() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [trend, setTrend] = useState<TrendDataPoint[]>([]);
   const [timeRange, setTimeRange] = useState<TimeRange>("7d");
@@ -197,7 +148,7 @@ export default function Dashboard() {
       .catch((err) => console.error("[Dashboard] getTrend failed", err));
   }, [timeRange]);
 
-  const { successRate, failRate } = computeRates(stats);
+  const toRuns = (status?: string) => () => void navigate(status ? `/runs/jobs?status=${status}` : "/runs/jobs");
 
   return (
     <div style={{ padding: 24, height: "100%", overflow: "auto" }}>
@@ -208,6 +159,7 @@ export default function Dashboard() {
           gradient={STAT_GRADIENTS.total}
           icon={<AppstoreOutlined />}
           iconColor="#1677ff"
+          onClick={toRuns()}
         />
         <StatCard
           title={t("dashboard.successTasks")}
@@ -215,6 +167,7 @@ export default function Dashboard() {
           gradient={STAT_GRADIENTS.success}
           icon={<CheckCircleOutlined />}
           iconColor="#52c41a"
+          onClick={toRuns("success")}
         />
         <StatCard
           title={t("dashboard.failedTasks")}
@@ -222,6 +175,7 @@ export default function Dashboard() {
           gradient={STAT_GRADIENTS.failed}
           icon={<CloseCircleOutlined />}
           iconColor="#ff4d4f"
+          onClick={toRuns("failed")}
         />
         <StatCard
           title={t("dashboard.runningTasks")}
@@ -229,9 +183,20 @@ export default function Dashboard() {
           gradient={STAT_GRADIENTS.running}
           icon={<SyncOutlined />}
           iconColor="#faad14"
+          onClick={toRuns("running")}
         />
-        <SuccessRateCard successRate={successRate} failRate={failRate} />
+
+        <Col xs={24} lg={8}>
+          <StatusDonut stats={stats} />
+        </Col>
         <TaskTrendCard trend={trend} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
+
+        <Col xs={24} lg={12}>
+          <RunListCard status="failed" title={t("dashboard.recentFailed")} emptyText={t("dashboard.noFailures")} />
+        </Col>
+        <Col xs={24} lg={12}>
+          <RunListCard status="running" title={t("dashboard.runningNow")} emptyText={t("dashboard.nothingRunning")} />
+        </Col>
       </Row>
     </div>
   );

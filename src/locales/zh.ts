@@ -116,6 +116,14 @@ const zh = {
     success: "成功",
     failed: "失败",
     running: "运行中",
+    statusBreakdown: "状态构成",
+    other: "其他",
+    recentFailed: "最近失败",
+    runningNow: "正在运行",
+    viewAll: "查看全部",
+    noFailures: "近期无失败",
+    nothingRunning: "当前无运行中任务",
+    listLoadError: "列表加载失败",
   },
 
   workflow: {
