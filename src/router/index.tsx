@@ -6,18 +6,18 @@ import NotFound from "../pages/NotFound";
 import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import StudioPage from "../pages/Studio";
-import ManagePage from "../pages/Manage";
-import ResourceList from "../pages/Manage/ResourceList";
-import UserList from "../pages/Manage/UserList";
-import CustomParamList from "../pages/Manage/CustomParamList";
-import DataSourceList from "../pages/Manage/DataSourceList";
-import CatalogList from "../pages/Manage/CatalogList";
-import WorkerList from "../pages/Manage/WorkerList";
-import TagList from "../pages/Manage/TagList";
-import SysConfigList from "../pages/Manage/SysConfigList";
-import AlertRuleList from "../pages/Manage/AlertRuleList";
-import WorkspaceList from "../pages/Manage/WorkspaceList";
-import AuditLogList from "../pages/Manage/AuditLogList";
+import AdminPage from "../pages/Admin";
+import ResourceList from "../pages/Admin/ResourceList";
+import UserList from "../pages/Admin/UserList";
+import CustomParamList from "../pages/Admin/CustomParamList";
+import DataSourceList from "../pages/Admin/DataSourceList";
+import CatalogList from "../pages/Admin/CatalogList";
+import WorkerList from "../pages/Admin/WorkerList";
+import TagList from "../pages/Admin/TagList";
+import SysConfigList from "../pages/Admin/SysConfigList";
+import AlertRuleList from "../pages/Admin/AlertRuleList";
+import WorkspaceList from "../pages/Admin/WorkspaceList";
+import AuditLogList from "../pages/Admin/AuditLogList";
 import QueryConsole from "../pages/Query/QueryConsole";
 import MonitorPage from "../pages/Monitor";
 import RunsPage from "../pages/Runs";
@@ -31,7 +31,7 @@ import RunsPage from "../pages/Runs";
  * - /: Protected routes wrapped in MainLayout and AuthGuard
  *   - /dashboard: Dashboard module
  *   - /workflow: Workflow module
- *   - /manage: Manage module
+ *   - /admin: Admin module
  *   - /monitor: Monitor module
  * - *: 404 catch-all
  *
@@ -67,11 +67,11 @@ export default function AppRouter() {
           <Route path="/jobs" element={<Navigate to="/studio" replace />} />
           <Route path="/definitions" element={<Navigate to="/studio" replace />} />
           <Route path="/query" element={<QueryConsole />} />
-          <Route path="/manage" element={<ManagePage />}>
-            <Route index element={<Navigate to="/manage/resources" replace />} />
+          <Route path="/admin" element={<AdminPage />}>
+            <Route index element={<Navigate to="/admin/resources" replace />} />
             <Route path="resources" element={<ResourceList />} />
             <Route path="users" element={<UserList />} />
-            <Route path="configs" element={<Navigate to="/manage/sys-configs" replace />} />
+            <Route path="configs" element={<Navigate to="/admin/sys-configs" replace />} />
             <Route path="params" element={<CustomParamList />} />
             <Route path="datasources" element={<DataSourceList />} />
             <Route path="catalogs" element={<CatalogList />} />

@@ -117,29 +117,3 @@
 .sider-resizer:active {
   background: #168eff;
 }
-
-/* Workspace breadcrumb — borderless select beside the brand; subtle fill on hover
-   so it reads as an interactive context switcher without a heavy filled box. */
-.workspace-switcher .ant-select-selector {
-  border-radius: 4px;
-  transition: background 0.15s;
-}
-.workspace-switcher:hover .ant-select-selector {
-  background: var(--ant-color-fill-tertiary);
-}
-
-/* Query schema browser — full-height sider beside the SQL editor. */
-.schema-sidebar {
-  border-right: 1px solid var(--ant-color-border);
-}
-/* Lay the header/search/list as a column so the list can flex-scroll. */
-.schema-sidebar .ant-layout-sider-children {
-  display: flex;
-  flex-direction: column;
-}
-.schema-sidebar-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding-bottom: 8px;
-}

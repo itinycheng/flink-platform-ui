@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
-import type { ResourceFile, FolderNode } from "@/types/manage";
+import type { ResourceFile, FolderNode } from "@/types/admin";
 import { paginate, parsePagination } from "@/utils/pagination";
 
 const RESOURCE_MIME: Record<string, string> = {

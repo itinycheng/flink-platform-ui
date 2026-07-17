@@ -3,35 +3,34 @@ import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } f
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { CustomParam } from "@/types/manage";
-import { createParam, deleteParam, getParams, updateParam } from "@/api/manage";
+import type { Catalog, CatalogType } from "@/types/admin";
+import { createCatalog, deleteCatalog, getCatalogs, updateCatalog } from "@/api/admin";
 import RowActions from "@/components/RowActions";
+import CodeEditor from "@/components/CodeEditor";
 import { enumColor } from "@/utils/statusColor";
 
-function getParamTypeOptions(t: (k: string) => string) {
-  return [
-    { label: t("param.typeString"), value: "string" },
-    { label: t("param.typeNumber"), value: "number" },
-    { label: t("param.typeBoolean"), value: "boolean" },
-    { label: t("param.typeJson"), value: "json" },
-  ];
+const CATALOG_TYPE_OPTIONS: { label: string; value: CatalogType }[] = [
+  { label: "Hive", value: "hive" },
+  { label: "JDBC", value: "jdbc" },
+  { label: "Paimon", value: "paimon" },
+  { label: "Iceberg", value: "iceberg" },
+];
+
+interface CatalogTypeTagProps {
+  type: Catalog["type"];
 }
 
-interface ParamTypeTagProps {
-  type: CustomParam["type"];
-}
-
-function ParamTypeTag({ type }: ParamTypeTagProps) {
+function CatalogTypeTag({ type }: CatalogTypeTagProps) {
   return <Tag color={enumColor(type)}>{type}</Tag>;
 }
 
-interface ParamActionsCellProps {
-  record: CustomParam;
-  onEdit: (record: CustomParam) => void;
+interface CatalogActionsCellProps {
+  record: Catalog;
+  onEdit: (record: Catalog) => void;
   onDelete: (id: string) => void;
 }
 
-function ParamActionsCell({ record, onEdit, onDelete }: ParamActionsCellProps) {
+function CatalogActionsCell({ record, onEdit, onDelete }: CatalogActionsCellProps) {
   const { t } = useTranslation();
   return (
     <RowActions
@@ -47,7 +46,7 @@ function ParamActionsCell({ record, onEdit, onDelete }: ParamActionsCellProps) {
           tooltip: t("common.delete"),
           icon: <DeleteOutlined />,
           danger: true,
-          confirm: t("param.deleteConfirmDesc", { name: record.name }),
+          confirm: t("catalog.deleteConfirmDesc", { name: record.name }),
           onClick: () => onDelete(record.id),
         },
       ]}
@@ -55,7 +54,7 @@ function ParamActionsCell({ record, onEdit, onDelete }: ParamActionsCellProps) {
   );
 }
 
-interface ParamFormModalProps {
+interface CatalogFormModalProps {
   open: boolean;
   isEdit: boolean;
   form: FormInstance;
@@ -64,64 +63,85 @@ interface ParamFormModalProps {
   onCancel: () => void;
 }
 
-function ParamFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }: ParamFormModalProps) {
+/**
+ * Adapter so CodeEditor works as an Ant Design custom form control. Form.Item
+ * injects `value` (possibly undefined) and `onChange`; CodeEditor requires a
+ * string `value`, so we coerce here.
+ */
+function CreateSqlField({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value?: string;
+  onChange?: (value: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <CodeEditor
+      value={value ?? ""}
+      onChange={(next) => onChange?.(next)}
+      language="sql"
+      placeholder={placeholder}
+    />
+  );
+}
+
+function CatalogFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }: CatalogFormModalProps) {
   const { t } = useTranslation();
   return (
     <Modal
-      title={isEdit ? t("param.editTitle") : t("param.addTitle")}
+      title={isEdit ? t("catalog.editTitle") : t("catalog.addTitle")}
       open={open}
+      width={720}
       onOk={onOk}
       onCancel={onCancel}
       confirmLoading={confirmLoading}
       destroyOnHidden
-      data-testid="custom-param-modal"
+      data-testid="catalog-modal"
     >
-      <Form form={form} layout="vertical" data-testid="custom-param-form">
-        <Form.Item name="name" label={t("param.nameLabel")} rules={[{ required: true, message: t("param.namePlaceholder") }]}>
-          <Input placeholder={t("param.namePlaceholder")} data-testid="input-name" />
+      <Form form={form} layout="vertical" data-testid="catalog-form">
+        <Form.Item name="name" label={t("common.name")} rules={[{ required: true, message: t("catalog.namePlaceholder") }]}>
+          <Input placeholder={t("catalog.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
-        <Form.Item name="value" label={t("param.valueLabel")} rules={[{ required: true, message: t("param.valuePlaceholder") }]}>
-          <Input placeholder={t("param.valuePlaceholder")} data-testid="input-value" />
+        <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("catalog.typePlaceholder") }]}>
+          <Select placeholder={t("catalog.typePlaceholder")} options={CATALOG_TYPE_OPTIONS} data-testid="select-type" />
         </Form.Item>
-        <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("param.typePlaceholder") }]}>
-          <Select placeholder={t("param.typePlaceholder")} options={getParamTypeOptions(t)} data-testid="select-type" />
+        <Form.Item name="createSql" label={t("catalog.ddlLabel")} rules={[{ required: true, message: t("catalog.ddlPlaceholder") }]}>
+          <CreateSqlField placeholder={t("catalog.ddlPlaceholder")} />
         </Form.Item>
         <Form.Item name="description" label={t("common.description")}>
-          <Input.TextArea placeholder={t("param.descriptionPlaceholder")} rows={3} data-testid="input-description" />
+          <Input.TextArea placeholder={t("catalog.descriptionPlaceholder")} rows={3} data-testid="input-description" />
         </Form.Item>
       </Form>
     </Modal>
   );
 }
 
-// NOTE: This hook is structurally near-identical to useUserCrud in UserList.
-// If a third CRUD list page appears, consider extracting a generic
-// `useModalForm<T>()` hook.
-
 function isFormValidationError(error: unknown): boolean {
   return !!error && typeof error === "object" && "errorFields" in error;
 }
 
-function useParamCrud() {
+function useCatalogCrud() {
   const { t } = useTranslation();
   const actionRef = useRef<ActionType>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingParam, setEditingParam] = useState<CustomParam | null>(null);
+  const [editingCatalog, setEditingCatalog] = useState<Catalog | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [form] = Form.useForm();
 
   const handleAdd = () => {
-    setEditingParam(null);
+    setEditingCatalog(null);
     form.resetFields();
     setModalOpen(true);
   };
 
-  const handleEdit = (record: CustomParam) => {
-    setEditingParam(record);
+  const handleEdit = (record: Catalog) => {
+    setEditingCatalog(record);
     form.setFieldsValue({
       name: record.name,
-      value: record.value,
       type: record.type,
+      createSql: record.createSql,
       description: record.description ?? "",
     });
     setModalOpen(true);
@@ -131,20 +151,20 @@ function useParamCrud() {
     try {
       const values = await form.validateFields();
       setConfirmLoading(true);
-      if (editingParam) {
-        await updateParam(editingParam.id, values);
+      if (editingCatalog) {
+        await updateCatalog(editingCatalog.id, values);
         message.success(t("common.updateSuccess"));
       } else {
-        await createParam(values);
+        await createCatalog(values);
         message.success(t("common.createSuccess"));
       }
       setModalOpen(false);
       form.resetFields();
-      setEditingParam(null);
+      setEditingCatalog(null);
       void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
-      message.error(editingParam ? t("common.updateFailed") : t("common.createFailed"));
+      message.error(editingCatalog ? t("common.updateFailed") : t("common.createFailed"));
     } finally {
       setConfirmLoading(false);
     }
@@ -153,12 +173,12 @@ function useParamCrud() {
   const handleModalCancel = () => {
     setModalOpen(false);
     form.resetFields();
-    setEditingParam(null);
+    setEditingCatalog(null);
   };
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteParam(id);
+      await deleteCatalog(id);
       message.success(t("common.deleteSuccess"));
       void actionRef.current?.reload();
     } catch {
@@ -169,7 +189,7 @@ function useParamCrud() {
   return {
     actionRef,
     modalOpen,
-    editingParam,
+    editingCatalog,
     confirmLoading,
     form,
     handleAdd,
@@ -180,22 +200,22 @@ function useParamCrud() {
   };
 }
 
-export default function CustomParamList() {
+export default function CatalogList() {
   const { t } = useTranslation();
-  const crud = useParamCrud();
+  const crud = useCatalogCrud();
 
-  const columns = useMemo<ProColumns<CustomParam>[]>(
+  const columns = useMemo<ProColumns<Catalog>[]>(
     () => [
-      { title: t("param.nameLabel"), dataIndex: "name", key: "name", ellipsis: true },
-      { title: t("param.valueLabel"), dataIndex: "value", key: "value", ellipsis: true },
-      { title: t("common.type"), dataIndex: "type", key: "type", width: 100, render: (_, r) => <ParamTypeTag type={r.type} /> },
+      { title: t("common.name"), dataIndex: "name", key: "name", ellipsis: true },
+      { title: t("common.type"), dataIndex: "type", key: "type", width: 100, render: (_, r) => <CatalogTypeTag type={r.type} /> },
       { title: t("common.description"), dataIndex: "description", key: "description", ellipsis: true },
+      { title: t("common.updatedAt"), dataIndex: "updatedAt", key: "updatedAt", width: 200 },
       {
         title: t("common.operation"),
         key: "action",
         width: 150,
         render: (_, record) => (
-          <ParamActionsCell record={record} onEdit={crud.handleEdit} onDelete={crud.handleDelete} />
+          <CatalogActionsCell record={record} onEdit={crud.handleEdit} onDelete={crud.handleDelete} />
         ),
       },
     ],
@@ -203,9 +223,9 @@ export default function CustomParamList() {
   );
 
   return (
-    <div data-testid="custom-param-list">
-      <ProTable<CustomParam>
-        headerTitle={t("param.title")}
+    <div data-testid="catalog-list">
+      <ProTable<Catalog>
+        headerTitle="Catalog"
         actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
@@ -216,20 +236,20 @@ export default function CustomParamList() {
             type="primary"
             icon={<PlusOutlined />}
             onClick={crud.handleAdd}
-            data-testid="add-param-button"
+            data-testid="add-catalog-button"
           >
-            {t("param.addButton")}
+            {t("catalog.add")}
           </Button>,
         ]}
         request={async (params) => {
-          const result = await getParams({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
+          const result = await getCatalogs({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
           return { data: result.data, total: result.total, success: true };
         }}
         pagination={{ defaultPageSize: 10, showSizeChanger: true }}
       />
-      <ParamFormModal
+      <CatalogFormModal
         open={crud.modalOpen}
-        isEdit={!!crud.editingParam}
+        isEdit={!!crud.editingCatalog}
         form={crud.form}
         confirmLoading={crud.confirmLoading}
         onOk={crud.handleModalOk}

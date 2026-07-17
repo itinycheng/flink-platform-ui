@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
 
-export default function ManagePage() {
+export default function AdminPage() {
   return <Outlet />;
 }

@@ -10,8 +10,8 @@ import {
   getResourcePath,
   renameResource,
   moveResource,
-} from "@/api/manage";
-import type { ResourcePathItem } from "@/types/manage";
+} from "@/api/admin";
+import type { ResourcePathItem } from "@/types/admin";
 
 /** Folder navigation, upload, create-folder and delete actions for the resource browser. */
 export function useResourceActions() {

@@ -3,14 +3,14 @@ import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } f
 import { ApiOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { DataSource, DataSourceType } from "@/types/manage";
+import type { DataSource, DataSourceType } from "@/types/admin";
 import {
   createDataSource,
   deleteDataSource,
   getDataSources,
   testDataSourceConnection,
   updateDataSource,
-} from "@/api/manage";
+} from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import { enumColor } from "@/utils/statusColor";
 import i18n from "@/i18n";

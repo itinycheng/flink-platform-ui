@@ -12,8 +12,8 @@ import {
 } from "@ant-design/icons";
 import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { FolderNode, ResourceFile, ResourcePathItem } from "@/types/manage";
-import { getFolderTree, getResources } from "@/api/manage";
+import type { FolderNode, ResourceFile, ResourcePathItem } from "@/types/admin";
+import { getFolderTree, getResources } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import { MAX_FILE_SIZE, validateFileSize } from "@/utils/file";
 import { formatFileSize, useResourceActions, useResourcePath } from "./ResourceList.hooks";

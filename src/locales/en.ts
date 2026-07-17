@@ -50,7 +50,7 @@ const en = {
     runs: "Runs",
     flowInstances: "Flow Instances",
     jobRuns: "Job Runs",
-    manage: "Manage",
+    admin: "Admin",
     monitor: "Monitor",
     resources: "Resources",
     dataSources: "DataSources",
@@ -84,7 +84,7 @@ const en = {
   nav: {
     dashboard: "Dashboard",
     workflow: "Jobs",
-    manage: "Manage",
+    admin: "Admin",
     monitor: "Monitor",
   },
 
@@ -240,7 +240,7 @@ const en = {
     running: "Running",
   },
 
-  manage: {
+  admin: {
     resources: "Resources",
     users: "Users",
     envConfig: "Env Config",
@@ -294,8 +294,8 @@ const en = {
     dashboardView: "Dashboard View",
     workflowView: "Workflow View",
     workflowEdit: "Workflow Edit",
-    manageView: "Manage View",
-    manageEdit: "Manage Edit",
+    adminView: "Admin View",
+    adminEdit: "Admin Edit",
     monitorView: "Monitor View",
     monitorEdit: "Monitor Edit",
   },

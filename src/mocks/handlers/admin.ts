@@ -11,7 +11,7 @@ import type {
   Tag,
   SysConfig,
   SysConfigType,
-} from "@/types/manage";
+} from "@/types/admin";
 import { paginate, parsePagination } from "@/utils/pagination";
 
 // ---- Seed data generated with faker ----
@@ -170,7 +170,7 @@ const mockWorkers: Worker[] = generateWorkers(5);
 const mockTags: Tag[] = generateTags(8);
 const mockSysConfigs: SysConfig[] = generateSysConfigs(6);
 
-export const manageHandlers: RequestHandler[] = [
+export const adminHandlers: RequestHandler[] = [
   // ---- Users ----
 
   // GET /api/users

@@ -23,8 +23,8 @@ export const routeConfigs: RouteConfig[] = [
     permission: "workflow:view",
   },
   {
-    path: "/manage",
-    permission: "manage:view",
+    path: "/admin",
+    permission: "admin:view",
   },
   {
     path: "/runs",

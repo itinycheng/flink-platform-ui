@@ -13,7 +13,7 @@ import type {
   SysConfig,
   AuditLog,
   AuditResult,
-} from "@/types/manage";
+} from "@/types/admin";
 import type { PaginatedResponse, PaginationParams } from "@/types/common";
 
 // ---- Resource Management ----

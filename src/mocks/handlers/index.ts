@@ -2,7 +2,7 @@ import type { RequestHandler } from "msw";
 import { authHandlers } from "./auth";
 import { dashboardHandlers } from "./dashboard";
 import { workflowHandlers } from "./job";
-import { manageHandlers } from "./manage";
+import { adminHandlers } from "./admin";
 import { resourceHandlers } from "./resource";
 import { auditHandlers } from "./audit";
 import { monitorHandlers } from "./monitor";
@@ -16,7 +16,7 @@ export const handlers: RequestHandler[] = [
   ...dashboardHandlers,
   ...workflowHandlers,
   ...resourceHandlers,
-  ...manageHandlers,
+  ...adminHandlers,
   ...auditHandlers,
   ...monitorHandlers,
   ...runHandlers,

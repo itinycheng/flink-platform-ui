@@ -97,35 +97,38 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
     <Layout.Sider
       width={240}
       theme="light"
-      className="schema-sidebar"
+      style={{ borderRight: "1px solid var(--ant-color-border)" }}
       collapsible
       collapsed={collapsed}
       onCollapse={setCollapsed}
       collapsedWidth={0}
       zeroWidthTriggerStyle={{ top: 8 }}
     >
-      <SchemaHeader />
-      <div style={{ padding: "0 10px 8px" }}>
-        <Input.Search
-          size="small"
-          allowClear
-          placeholder={t("query.searchTable")}
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          disabled={!datasourceId}
-        />
-      </div>
-      <div className="schema-sidebar-list">
-        <SchemaBody
-          datasourceId={datasourceId}
-          loading={loading}
-          empty={treeData.length === 0}
-          treeData={shown}
-          expandedKeys={searchExpand ?? expandedKeys}
-          onExpand={setExpandedKeys}
-          onLoadData={onLoadData}
-          onInsert={onInsert}
-        />
+      {/* Column layout so the list flex-scrolls beneath the fixed header + search. */}
+      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <SchemaHeader />
+        <div style={{ padding: "0 10px 8px" }}>
+          <Input.Search
+            size="small"
+            allowClear
+            placeholder={t("query.searchTable")}
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            disabled={!datasourceId}
+          />
+        </div>
+        <div style={{ flex: 1, minHeight: 0, overflowY: "auto", paddingBottom: 8 }}>
+          <SchemaBody
+            datasourceId={datasourceId}
+            loading={loading}
+            empty={treeData.length === 0}
+            treeData={shown}
+            expandedKeys={searchExpand ?? expandedKeys}
+            onExpand={setExpandedKeys}
+            onLoadData={onLoadData}
+            onInsert={onInsert}
+          />
+        </div>
       </div>
     </Layout.Sider>
   );

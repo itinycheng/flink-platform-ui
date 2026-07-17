@@ -1,6 +1,6 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
-import type { AuditLog } from "@/types/manage";
+import type { AuditLog } from "@/types/admin";
 import { paginate, parsePagination } from "@/utils/pagination";
 
 function generateAuditLogs(count: number): AuditLog[] {

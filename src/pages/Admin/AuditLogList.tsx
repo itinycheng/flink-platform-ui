@@ -3,8 +3,8 @@ import { Button, Descriptions, Drawer, Tag, Typography } from "antd";
 import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { AuditLog, AuditResult } from "@/types/manage";
-import { getAuditLogs } from "@/api/manage";
+import type { AuditLog, AuditResult } from "@/types/admin";
+import { getAuditLogs } from "@/api/admin";
 
 const ACTIONS = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "RUN", "ONLINE", "OFFLINE"];
 const MODULES = ["user", "resource", "workflow", "task", "datasource", "config", "tag"];

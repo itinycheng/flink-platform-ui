@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal, Select } from "antd";
 import { useTranslation } from "react-i18next";
-import { getTags } from "@/api/manage";
+import { getTags } from "@/api/admin";
 
 interface TagEditModalProps {
   open: boolean;

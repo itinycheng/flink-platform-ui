@@ -3,8 +3,8 @@ import { Button, Form, Input, InputNumber, Modal, Select, Tag, message, type For
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { Worker } from "@/types/manage";
-import { createWorker, deleteWorker, getWorkers, updateWorker } from "@/api/manage";
+import type { Worker } from "@/types/admin";
+import { createWorker, deleteWorker, getWorkers, updateWorker } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import { enumColor, statusColor } from "@/utils/statusColor";
 

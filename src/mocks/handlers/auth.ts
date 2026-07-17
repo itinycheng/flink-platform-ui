@@ -28,8 +28,8 @@ export const authHandlers = [
               "dashboard:view",
               "workflow:view",
               "workflow:edit",
-              "manage:view",
-              "manage:edit",
+              "admin:view",
+              "admin:edit",
               "monitor:view",
               "monitor:edit",
             ]

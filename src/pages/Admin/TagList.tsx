@@ -3,8 +3,8 @@ import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } f
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { Tag as TagModel, TagStatus } from "@/types/manage";
-import { createTag, deleteTag, getTags, updateTag } from "@/api/manage";
+import type { Tag as TagModel, TagStatus } from "@/types/admin";
+import { createTag, deleteTag, getTags, updateTag } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import { statusColor } from "@/utils/statusColor";
 

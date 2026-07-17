@@ -3,8 +3,8 @@ import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } f
 import { CheckCircleOutlined, EditOutlined, PlusOutlined, StopOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { ManagedUser } from "@/types/manage";
-import { createUser, getUsers, updateUser } from "@/api/manage";
+import type { ManagedUser } from "@/types/admin";
+import { createUser, getUsers, updateUser } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import { statusColor } from "@/utils/statusColor";
 

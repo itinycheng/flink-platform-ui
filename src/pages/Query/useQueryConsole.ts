@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { message } from "antd";
 import { format } from "sql-formatter";
 import type { CodeEditorHandle } from "@/components/CodeEditor";
-import { getDataSources } from "@/api/manage";
+import { getDataSources } from "@/api/admin";
 import { execQuery } from "@/api/query";
 import { downloadCsv } from "@/utils/file";
 import type { QueryResult } from "@/types/query";

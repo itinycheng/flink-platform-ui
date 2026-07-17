@@ -50,7 +50,7 @@ const zh = {
     runs: "运行记录",
     flowInstances: "工作流实例",
     jobRuns: "作业运行",
-    manage: "管理",
+    admin: "管理",
     monitor: "监控",
     resources: "资源",
     dataSources: "数据源",
@@ -84,7 +84,7 @@ const zh = {
   nav: {
     dashboard: "仪表盘",
     workflow: "作业",
-    manage: "管理",
+    admin: "管理",
     monitor: "监控",
   },
 
@@ -240,7 +240,7 @@ const zh = {
     running: "运行中",
   },
 
-  manage: {
+  admin: {
     resources: "资源管理",
     users: "用户管理",
     envConfig: "环境配置",
@@ -293,8 +293,8 @@ const zh = {
     dashboardView: "Dashboard 查看",
     workflowView: "Workflow 查看",
     workflowEdit: "Workflow 编辑",
-    manageView: "Manage 查看",
-    manageEdit: "Manage 编辑",
+    adminView: "Admin 查看",
+    adminEdit: "Admin 编辑",
     monitorView: "Monitor 查看",
     monitorEdit: "Monitor 编辑",
   },

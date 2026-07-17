@@ -3,8 +3,8 @@ import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } f
 import { ClearOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { SysConfig, SysConfigStatus, SysConfigType } from "@/types/manage";
-import { createSysConfig, deleteSysConfig, getSysConfigs, purgeSysConfig, updateSysConfig } from "@/api/manage";
+import type { SysConfig, SysConfigStatus, SysConfigType } from "@/types/admin";
+import { createSysConfig, deleteSysConfig, getSysConfigs, purgeSysConfig, updateSysConfig } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import CodeEditor from "@/components/CodeEditor";
 import { enumColor, statusColor } from "@/utils/statusColor";

@@ -9,8 +9,8 @@ const PERMISSION_KEYS: Record<string, string> = {
   "dashboard:view": "user.dashboardView",
   "workflow:view": "user.workflowView",
   "workflow:edit": "user.workflowEdit",
-  "manage:view": "user.manageView",
-  "manage:edit": "user.manageEdit",
+  "admin:view": "user.adminView",
+  "admin:edit": "user.adminEdit",
   "monitor:view": "user.monitorView",
   "monitor:edit": "user.monitorEdit",
 };

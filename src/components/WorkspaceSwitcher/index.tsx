@@ -26,7 +26,6 @@ export default function WorkspaceSwitcher({ breadcrumb = false }: WorkspaceSwitc
         <span style={{ color: "var(--ant-color-split)", fontSize: 18, fontWeight: 300, userSelect: "none" }}>/</span>
       )}
       <Select
-        className="workspace-switcher"
         size="small"
         variant="borderless"
         style={{ width: 180 }}
