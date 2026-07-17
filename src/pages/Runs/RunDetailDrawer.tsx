@@ -143,7 +143,6 @@ export default function RunDetailDrawer({ runId, open, onClose }: RunDetailDrawe
     };
   }, [open, runId]);
 
-  const isFlow = detail?.type === "flow";
   return (
     <Drawer
       open={open}
@@ -151,7 +150,7 @@ export default function RunDetailDrawer({ runId, open, onClose }: RunDetailDrawe
       title={t("runs.detail")}
       destroyOnHidden
       data-testid="run-detail"
-      styles={{ wrapper: { width: isFlow ? "min(1120px, 92vw)" : 640 } }}
+      styles={{ wrapper: { width: "min(1120px, 92vw)" } }}
     >
       {loading || !detail ? (
         <Flex justify="center" style={{ paddingTop: 80 }}>

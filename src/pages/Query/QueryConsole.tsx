@@ -10,7 +10,6 @@ import {
   HistoryOutlined,
   PlayCircleOutlined,
 } from "@ant-design/icons";
-import { PageContainer } from "@ant-design/pro-components";
 import CodeEditor from "@/components/CodeEditor";
 import type { QueryResult } from "@/types/query";
 import ResultPanel from "./ResultPanel";
@@ -47,8 +46,7 @@ export default function QueryConsole() {
   const canExport = !!result?.success && result.rows.length > 0;
 
   return (
-    <PageContainer header={{ title: false }} data-testid="query-console">
-      <Flex gap={12} align="flex-start">
+    <Flex gap={12} align="flex-start" data-testid="query-console">
         <SchemaSidebar datasourceId={datasourceId} onInsert={insertToken} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <Card size="small" style={{ marginBottom: 12 }}>
@@ -90,7 +88,6 @@ export default function QueryConsole() {
           </Card>
         </div>
       </Flex>
-    </PageContainer>
   );
 }
 

@@ -25,6 +25,7 @@ import UserAvatar from "@/components/UserAvatar";
 import LangSwitcher from "@/components/LangSwitcher";
 import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
 import { APP } from "@/config";
+import { PAGE_PADDING } from "@/constants/layout";
 
 type TFunc = (key: string) => string;
 
@@ -165,7 +166,17 @@ export default function MainLayout() {
           margin: 0,
         }}
       >
-        <div id="page-container-wrapper" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+        <div
+          id="page-container-wrapper"
+          style={{
+            flex: 1,
+            minHeight: 0,
+            // Studio is a full-bleed IDE surface — no outer padding, no page scroll.
+            // Every other page shares one uniform margin + a single scroll container.
+            overflow: isStudioPage ? "hidden" : "auto",
+            padding: isStudioPage ? 0 : PAGE_PADDING,
+          }}
+        >
           <Outlet />
         </div>
       </ProLayout>

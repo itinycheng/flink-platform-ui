@@ -39,6 +39,12 @@ const themeConfig: ThemeConfig = {
     Card: {
       lineWidth: 0,
     },
+    // Uniform table row height + header across every list in the app.
+    Table: {
+      cellPaddingBlock: 12,
+      cellPaddingBlockSM: 8,
+      headerBg: "var(--ant-color-fill-quaternary)",
+    },
   },
 };
 

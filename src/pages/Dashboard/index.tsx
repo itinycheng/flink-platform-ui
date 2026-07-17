@@ -151,7 +151,7 @@ export default function Dashboard() {
   const toRuns = (status?: string) => () => void navigate(status ? `/runs?status=${status}` : "/runs");
 
   return (
-    <div style={{ padding: 24, height: "100%", overflow: "auto" }}>
+    <div>
       <Row gutter={[16, 16]}>
         <StatCard
           title={t("dashboard.totalTasks")}
