@@ -1,16 +1,87 @@
 import { useMemo, useState } from "react";
-import { Button } from "antd";
+import { Button, Descriptions, Drawer, Tag, Typography } from "antd";
+import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { AuditLog } from "@/types/manage";
+import type { AuditLog, AuditResult } from "@/types/manage";
 import { getAuditLogs } from "@/api/manage";
-import { AuditActionTag, AuditResultTag } from "./AuditLogList.cells";
-import { AuditDetailDrawer } from "./AuditLogList.drawer";
 
 const ACTIONS = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "RUN", "ONLINE", "OFFLINE"];
 const MODULES = ["user", "resource", "workflow", "task", "datasource", "config", "tag"];
 
 const toValueEnum = (values: string[]) => Object.fromEntries(values.map((v) => [v, { text: v }]));
+
+// Known action → tag color; unknown actions fall back to default (no color).
+const ACTION_COLOR: Record<string, string> = {
+  CREATE: "green",
+  UPDATE: "blue",
+  DELETE: "red",
+  LOGIN: "geekblue",
+  LOGOUT: "default",
+  RUN: "purple",
+  ONLINE: "cyan",
+  OFFLINE: "orange",
+};
+
+function AuditActionTag({ action }: { action: string }) {
+  return <Tag color={ACTION_COLOR[action]}>{action}</Tag>;
+}
+
+function AuditResultTag({ result }: { result: AuditResult }) {
+  const { t } = useTranslation();
+  return result === "success" ? (
+    <Tag icon={<CheckCircleOutlined />} color="success">
+      {t("audit.resultSuccess")}
+    </Tag>
+  ) : (
+    <Tag icon={<CloseCircleOutlined />} color="error">
+      {t("audit.resultFailed")}
+    </Tag>
+  );
+}
+
+/** Pretty-print a JSON detail string; fall back to the raw text if not JSON. */
+function formatDetail(detail: string): string {
+  try {
+    return JSON.stringify(JSON.parse(detail), null, 2);
+  } catch {
+    return detail;
+  }
+}
+
+function AuditDetailDrawer({ record, onClose }: { record: AuditLog | null; onClose: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <Drawer title={t("audit.detailTitle")} width={520} open={!!record} onClose={onClose} destroyOnHidden>
+      {record && (
+        <Descriptions column={1} bordered size="small">
+          <Descriptions.Item label={t("audit.time")}>{new Date(record.createdAt).toLocaleString()}</Descriptions.Item>
+          <Descriptions.Item label={t("audit.operator")}>{record.operator}</Descriptions.Item>
+          <Descriptions.Item label={t("audit.action")}>
+            <AuditActionTag action={record.action} />
+          </Descriptions.Item>
+          <Descriptions.Item label={t("audit.module")}>{record.module}</Descriptions.Item>
+          <Descriptions.Item label={t("audit.target")}>{record.target || "-"}</Descriptions.Item>
+          <Descriptions.Item label={t("audit.result")}>
+            <AuditResultTag result={record.result} />
+          </Descriptions.Item>
+          <Descriptions.Item label={t("audit.ip")}>{record.ip || "-"}</Descriptions.Item>
+          <Descriptions.Item label={t("audit.detail")}>
+            {record.detail ? (
+              <Typography.Paragraph>
+                <pre style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+                  {formatDetail(record.detail)}
+                </pre>
+              </Typography.Paragraph>
+            ) : (
+              <Typography.Text type="secondary">{t("audit.noDetail")}</Typography.Text>
+            )}
+          </Descriptions.Item>
+        </Descriptions>
+      )}
+    </Drawer>
+  );
+}
 
 function useAuditColumns(t: ReturnType<typeof useTranslation>["t"], setDetail: (record: AuditLog) => void) {
   return useMemo<ProColumns<AuditLog>[]>(
