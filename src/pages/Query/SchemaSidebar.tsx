@@ -36,12 +36,26 @@ function filterTree(nodes: TreeDataNode[], q: string): TreeDataNode[] {
   return out;
 }
 
+/** Sider header: database icon + "Schema" label. */
+function SchemaHeader() {
+  const { t } = useTranslation();
+  return (
+    <Flex align="center" gap={6} style={{ padding: "8px 10px" }}>
+      <DatabaseOutlined style={{ color: "var(--ant-color-text-tertiary)" }} />
+      <Typography.Text strong style={{ fontSize: 13 }}>
+        {t("query.schema")}
+      </Typography.Text>
+    </Flex>
+  );
+}
+
 export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarProps) {
   const { t } = useTranslation();
   const [treeData, setTreeData] = useState<TreeDataNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState("");
   const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,13 +94,17 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
   const searchExpand = useMemo(() => (q ? shown.map((db) => db.key) : null), [q, shown]);
 
   return (
-    <Layout.Sider width={240} theme="light" className="schema-sidebar">
-      <Flex align="center" gap={6} style={{ padding: "8px 10px" }}>
-        <DatabaseOutlined style={{ color: "var(--ant-color-text-tertiary)" }} />
-        <Typography.Text strong style={{ fontSize: 13 }}>
-          {t("query.schema")}
-        </Typography.Text>
-      </Flex>
+    <Layout.Sider
+      width={240}
+      theme="light"
+      className="schema-sidebar"
+      collapsible
+      collapsed={collapsed}
+      onCollapse={setCollapsed}
+      collapsedWidth={0}
+      zeroWidthTriggerStyle={{ top: 8 }}
+    >
+      <SchemaHeader />
       <div style={{ padding: "0 10px 8px" }}>
         <Input.Search
           size="small"
