@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Button, Card, Dropdown, Flex, Select, Space, Tooltip, Typography } from "antd";
+import { Button, Card, Dropdown, Flex, Layout, Select, Space, Tooltip, Typography } from "antd";
 import type { MenuProps } from "antd";
 import {
   CheckCircleFilled,
@@ -11,6 +11,7 @@ import {
   PlayCircleOutlined,
 } from "@ant-design/icons";
 import CodeEditor from "@/components/CodeEditor";
+import { PAGE_PADDING, SECTION_GAP } from "@/constants/layout";
 import type { QueryResult } from "@/types/query";
 import ResultPanel from "./ResultPanel";
 import SchemaSidebar from "./SchemaSidebar";
@@ -46,48 +47,48 @@ export default function QueryConsole() {
   const canExport = !!result?.success && result.rows.length > 0;
 
   return (
-    <Flex gap={12} align="flex-start" data-testid="query-console">
-        <SchemaSidebar datasourceId={datasourceId} onInsert={insertToken} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <Card size="small" style={{ marginBottom: 12 }}>
-            <Toolbar
-              options={options}
-              datasourceId={datasourceId}
-              onDatasourceChange={setDatasourceId}
-              running={running}
-              onRun={run}
-              onFormat={formatSql}
-              onClear={clear}
-              history={history.entries}
-              onPickHistory={pickHistory}
-              onClearHistory={history.clear}
-            />
-            <CodeEditor
-              ref={editorRef}
-              value={sql}
-              onChange={setSql}
-              language="sql"
-              placeholder={t("query.sqlPlaceholder")}
-              onRun={run}
-            />
-          </Card>
-          <Card size="small">
-            <Flex justify="space-between" align="center" style={{ marginBottom: 8, minHeight: 24 }}>
-              <ResultMeta result={result} />
-              <Button
-                size="small"
-                icon={<DownloadOutlined />}
-                disabled={!canExport}
-                onClick={exportCsv}
-                data-testid="export-csv-button"
-              >
-                {t("query.exportCsv")}
-              </Button>
-            </Flex>
-            <ResultPanel result={result} />
-          </Card>
-        </div>
-      </Flex>
+    <Layout hasSider style={{ height: "100%", background: "transparent" }} data-testid="query-console">
+      <SchemaSidebar datasourceId={datasourceId} onInsert={insertToken} />
+      <Layout.Content style={{ minWidth: 0, padding: PAGE_PADDING, overflow: "auto" }}>
+        <Card size="small" style={{ marginBottom: SECTION_GAP }}>
+          <Toolbar
+            options={options}
+            datasourceId={datasourceId}
+            onDatasourceChange={setDatasourceId}
+            running={running}
+            onRun={run}
+            onFormat={formatSql}
+            onClear={clear}
+            history={history.entries}
+            onPickHistory={pickHistory}
+            onClearHistory={history.clear}
+          />
+          <CodeEditor
+            ref={editorRef}
+            value={sql}
+            onChange={setSql}
+            language="sql"
+            placeholder={t("query.sqlPlaceholder")}
+            onRun={run}
+          />
+        </Card>
+        <Card size="small">
+          <Flex justify="space-between" align="center" style={{ marginBottom: 8, minHeight: 24 }}>
+            <ResultMeta result={result} />
+            <Button
+              size="small"
+              icon={<DownloadOutlined />}
+              disabled={!canExport}
+              onClick={exportCsv}
+              data-testid="export-csv-button"
+            >
+              {t("query.exportCsv")}
+            </Button>
+          </Flex>
+          <ResultPanel result={result} />
+        </Card>
+      </Layout.Content>
+    </Layout>
   );
 }
 

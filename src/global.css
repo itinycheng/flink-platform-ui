@@ -51,7 +51,7 @@
 .react-flow__node.selected,
 .react-flow__node:focus {
   box-shadow:
-    0 0 0 2.5px var(--ant-color-primary),
+    0 0 0 3px var(--ant-color-primary),
     0 2px 8px color-mix(in srgb, var(--ant-color-primary) 25%, transparent);
   border-color: var(--ant-color-primary) !important;
 }
@@ -128,37 +128,18 @@
   background: var(--ant-color-fill-tertiary);
 }
 
-/* Query schema browser — lite table list beside the SQL editor. */
+/* Query schema browser — full-height sider beside the SQL editor. */
 .schema-sidebar {
-  width: 240px;
-  flex-shrink: 0;
+  border-right: 1px solid var(--ant-color-border);
+}
+/* Lay the header/search/list as a column so the list can flex-scroll. */
+.schema-sidebar .ant-layout-sider-children {
   display: flex;
   flex-direction: column;
-  background: #fff;
-  border: 1px solid var(--ant-color-border);
-  max-height: calc(100vh - 96px);
-  position: sticky;
-  top: 0;
 }
 .schema-sidebar-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   padding-bottom: 8px;
-}
-.schema-table-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 12px;
-  font-size: 13px;
-  color: var(--ant-color-text-secondary);
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.schema-table-row:hover {
-  background: var(--ant-color-fill-tertiary);
-  color: var(--ant-color-text);
 }

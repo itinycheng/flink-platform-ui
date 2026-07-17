@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Key } from "react";
 import { useTranslation } from "react-i18next";
-import { Empty, Flex, Input, Spin, Tree, Typography, type TreeDataNode } from "antd";
+import { Empty, Flex, Input, Layout, Spin, Tree, Typography, type TreeDataNode } from "antd";
 import { DatabaseOutlined, TableOutlined } from "@ant-design/icons";
 import { getDatabases, getTables } from "@/api/query";
 
@@ -80,7 +80,7 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
   const searchExpand = useMemo(() => (q ? shown.map((db) => db.key) : null), [q, shown]);
 
   return (
-    <div className="schema-sidebar">
+    <Layout.Sider width={240} theme="light" className="schema-sidebar">
       <Flex align="center" gap={6} style={{ padding: "8px 10px" }}>
         <DatabaseOutlined style={{ color: "var(--ant-color-text-tertiary)" }} />
         <Typography.Text strong style={{ fontSize: 13 }}>
@@ -109,7 +109,7 @@ export default function SchemaSidebar({ datasourceId, onInsert }: SchemaSidebarP
           onInsert={onInsert}
         />
       </div>
-    </div>
+    </Layout.Sider>
   );
 }
 

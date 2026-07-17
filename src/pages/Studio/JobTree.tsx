@@ -88,7 +88,7 @@ function JobTreeNodeTitle({ displayName, node, count, menuItems, onMenuAction }:
       </span>
       <Flex align="center" gap={6} style={{ flexShrink: 0 }}>
         {typeof count === "number" && count > 0 ? (
-          <span style={{ fontSize: NODE_FONT_SIZE - 1, color: "var(--ant-color-text-quaternary)" }}>{count}</span>
+          <span style={{ fontSize: NODE_FONT_SIZE - 1, color: "var(--ant-color-text-tertiary)" }}>{count}</span>
         ) : (
           <>
             <span style={slotStyle(7)}>{node.lifecycleStatus && <StatusDot status={node.lifecycleStatus} />}</span>

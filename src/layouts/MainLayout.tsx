@@ -127,6 +127,9 @@ export default function MainLayout() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
   const isStudioPage = location.pathname.startsWith("/studio");
+  // Studio (IDE tree) and Query (schema sider + editor) are full-bleed surfaces:
+  // no outer page padding, no page scroll — they manage their own regions.
+  const isFullBleed = isStudioPage || location.pathname.startsWith("/query");
   const isDashboard = location.pathname === "/dashboard" || location.pathname === "/";
   const title = t("app.title", { appName: APP.name });
   const layoutRoutes = buildLayoutRoutes(t);
@@ -171,10 +174,10 @@ export default function MainLayout() {
           style={{
             flex: 1,
             minHeight: 0,
-            // Studio is a full-bleed IDE surface — no outer padding, no page scroll.
-            // Every other page shares one uniform margin + a single scroll container.
-            overflow: isStudioPage ? "hidden" : "auto",
-            padding: isStudioPage ? 0 : PAGE_PADDING,
+            // Full-bleed pages own their scroll; every other page shares one
+            // uniform margin + a single scroll container.
+            overflow: isFullBleed ? "hidden" : "auto",
+            padding: isFullBleed ? 0 : PAGE_PADDING,
           }}
         >
           <Outlet />
