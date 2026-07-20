@@ -14,4 +14,6 @@ export const STORAGE_KEYS = {
   lang: "lang",
   /** Recent query-console statements. */
   queryHistory: "dtail.query.history",
+  /** Schema version of the persisted auth (token+user). Bump to invalidate stale sessions. */
+  authVersion: "dtail.auth.version",
 } as const;
