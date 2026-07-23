@@ -35,7 +35,7 @@ const jobTreeTheme: ThemeConfig = {
 
 const moreButtonStyle: React.CSSProperties = {
   fontSize: 14,
-  padding: "0 4px",
+  padding: "0 2px",
   cursor: "pointer",
   color: "var(--ant-color-text-tertiary)",
   opacity: 0,
@@ -67,11 +67,18 @@ interface JobTreeNodeTitleProps {
   displayName: string;
   node: JobTreeNode;
   count?: number;
-  menuItems: MenuProps["items"];
-  onMenuAction: (key: string, node: JobTreeNode) => void;
+  onMore: (event: React.MouseEvent, node: JobTreeNode) => void;
 }
 
-function JobTreeNodeTitle({ displayName, node, count, menuItems, onMenuAction }: JobTreeNodeTitleProps) {
+// Memoized so unchanged rows skip re-render when the tree data is rebuilt.
+// The "..." button opens a single shared menu (see contextMenu) instead of
+// mounting an antd Dropdown per row and building its items eagerly.
+const JobTreeNodeTitle = React.memo(function JobTreeNodeTitle({
+  displayName,
+  node,
+  count,
+  onMore,
+}: JobTreeNodeTitleProps) {
   return (
     <Flex align="center" justify="space-between" className="job-tree-title">
       <span
@@ -86,7 +93,7 @@ function JobTreeNodeTitle({ displayName, node, count, menuItems, onMenuAction }:
       >
         {displayName}
       </span>
-      <Flex align="center" gap={6} style={{ flexShrink: 0 }}>
+      <Flex align="center" gap={4} style={{ flexShrink: 0 }}>
         {typeof count === "number" && count > 0 ? (
           <span style={{ fontSize: NODE_FONT_SIZE - 1, color: "var(--ant-color-text-tertiary)" }}>{count}</span>
         ) : (
@@ -95,22 +102,11 @@ function JobTreeNodeTitle({ displayName, node, count, menuItems, onMenuAction }:
             <span style={slotStyle(12)}>{node.type !== "group" && <RunStatusIcon status={node.status} />}</span>
           </>
         )}
-        <Dropdown
-          menu={{
-            items: menuItems,
-            onClick: ({ key, domEvent }) => {
-              domEvent.stopPropagation();
-              onMenuAction(key, node);
-            },
-          }}
-          trigger={["click"]}
-        >
-          <EllipsisOutlined className="job-tree-more" style={moreButtonStyle} onClick={(e) => e.stopPropagation()} />
-        </Dropdown>
+        <EllipsisOutlined className="job-tree-more" style={moreButtonStyle} onClick={(e) => onMore(e, node)} />
       </Flex>
     </Flex>
   );
-}
+});
 
 // ---------- hooks: data ----------
 
@@ -287,10 +283,7 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
 
 // ---------- hooks: tree data mapping ----------
 
-function useBuiltTreeData(
-  getMenuItems: (node: JobTreeNode) => MenuProps["items"],
-  handleMenuAction: (key: string, node: JobTreeNode) => void,
-): TreeDataNode[] {
+function useBuiltTreeData(onMore: (event: React.MouseEvent, node: JobTreeNode) => void): TreeDataNode[] {
   const treeData = useJobStore((s) => s.treeData);
   const loadingGroups = useJobStore((s) => s.loadingGroups);
   const loadedGroups = useJobStore((s) => s.loadedGroups);
@@ -304,8 +297,7 @@ function useBuiltTreeData(
           displayName={loadingGroups.has(node.id) ? `${node.name} ...` : node.name}
           node={node}
           count={node.type === "group" ? (node.childCount ?? node.children?.length) : undefined}
-          menuItems={getMenuItems(node)}
-          onMenuAction={handleMenuAction}
+          onMore={onMore}
         />
       );
       if (node.type !== "group") {
@@ -322,7 +314,7 @@ function useBuiltTreeData(
       };
     };
     return (Array.isArray(treeData) ? treeData : []).map(buildNode);
-  }, [treeData, loadingGroups, loadedGroups, getMenuItems, handleMenuAction]);
+  }, [treeData, loadingGroups, loadedGroups, onMore]);
 }
 
 // ---------- hooks: virtual-scroll height ----------
@@ -378,18 +370,27 @@ export default function JobTree({
 
   const getMenuItems = useCallback((node: JobTreeNode): MenuProps["items"] => buildNodeMenuItems(node, t), [t]);
 
+  const { handleLifecycle } = lifecycle;
   const handleMenuAction = useCallback(
     (key: string, node: JobTreeNode) => {
       if (key === "addWorkflow") handleAddWorkflow(node.id);
       else if (key === "addTask") handleAddTask(node.id);
       else if (key === "rename") setRenameNode(node);
       else if (key === "delete") handleDelete(node);
-      else void lifecycle.handleLifecycle(key, node);
+      else void handleLifecycle(key, node);
     },
-    [handleAddWorkflow, handleAddTask, handleDelete, lifecycle],
+    [handleAddWorkflow, handleAddTask, handleDelete, handleLifecycle],
   );
 
-  const builtTreeData = useBuiltTreeData(getMenuItems, handleMenuAction);
+  const onMore = useCallback(
+    (event: React.MouseEvent, node: JobTreeNode) => {
+      event.stopPropagation();
+      setContextMenu({ visible: true, x: event.clientX, y: event.clientY, node });
+    },
+    [setContextMenu],
+  );
+
+  const builtTreeData = useBuiltTreeData(onMore);
   const { ref: containerRef, height } = useContainerHeight();
 
   return (

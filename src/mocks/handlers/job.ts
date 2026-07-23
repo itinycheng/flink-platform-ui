@@ -149,7 +149,7 @@ export const workflowHandlers: RequestHandler[] = [
 
   // GET /api/jobs/groups/:groupId/children — children of a specific group
   http.get("/api/jobs/groups/:groupId/children", async ({ params }) => {
-    await delay(200);
+    await delay(50);
     const { groupId } = params as { groupId: string };
     const group = mockTree.find((g) => g.id === groupId);
     if (!group) {
