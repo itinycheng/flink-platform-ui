@@ -9,7 +9,15 @@ import { getAuditLogs } from "@/api/admin";
 const ACTIONS = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "RUN", "ONLINE", "OFFLINE"];
 const MODULES = ["user", "resource", "workflow", "task", "datasource", "config", "tag"];
 
-const toValueEnum = (values: string[]) => Object.fromEntries(values.map((v) => [v, { text: v }]));
+type TFunc = (key: string, opts?: Record<string, unknown>) => string;
+
+// Raw backend enums (ALLCAPS actions, lowercase modules) → localized labels; the raw
+// value stays the filter/query value and tag-color key, only the display text is translated.
+const actionLabel = (t: TFunc, action: string) => t(`audit.actions.${action}`, { defaultValue: action });
+const moduleLabel = (t: TFunc, module: string) => t(`audit.modules.${module}`, { defaultValue: module });
+
+const toValueEnum = (values: string[], label: (v: string) => string) =>
+  Object.fromEntries(values.map((v) => [v, { text: label(v) }]));
 
 // Known action → tag color; unknown actions fall back to default (no color).
 const ACTION_COLOR: Record<string, string> = {
@@ -24,7 +32,8 @@ const ACTION_COLOR: Record<string, string> = {
 };
 
 function AuditActionTag({ action }: { action: string }) {
-  return <Tag color={ACTION_COLOR[action]}>{action}</Tag>;
+  const { t } = useTranslation();
+  return <Tag color={ACTION_COLOR[action]}>{actionLabel(t, action)}</Tag>;
 }
 
 function AuditResultTag({ result }: { result: AuditResult }) {
@@ -107,7 +116,7 @@ function useAuditColumns(t: ReturnType<typeof useTranslation>["t"], setDetail: (
         key: "action",
         width: 120,
         valueType: "select",
-        valueEnum: toValueEnum(ACTIONS),
+        valueEnum: toValueEnum(ACTIONS, (v) => actionLabel(t, v)),
         render: (_, r) => <AuditActionTag action={r.action} />,
       },
       {
@@ -116,7 +125,8 @@ function useAuditColumns(t: ReturnType<typeof useTranslation>["t"], setDetail: (
         key: "module",
         width: 120,
         valueType: "select",
-        valueEnum: toValueEnum(MODULES),
+        valueEnum: toValueEnum(MODULES, (v) => moduleLabel(t, v)),
+        render: (_, r) => moduleLabel(t, r.module),
       },
       { title: t("audit.target"), dataIndex: "target", key: "target", width: 140, ellipsis: true, hideInSearch: true },
       {
