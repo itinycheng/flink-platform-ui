@@ -152,7 +152,16 @@ export default function Dashboard() {
 
   return (
     <div>
-      <Row gutter={[16, 16]}>
+      {/* One block title + inline scope, so the four cards read as "last 24h runs". */}
+      <Flex align="baseline" gap={8} style={{ marginBottom: 12 }}>
+        <Typography.Text strong style={{ fontSize: 15 }}>
+          {t("dashboard.overview")}
+        </Typography.Text>
+        <Typography.Text type="secondary" style={{ fontSize: 13 }}>
+          {t("dashboard.last24h")}
+        </Typography.Text>
+      </Flex>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         <StatCard
           title={t("dashboard.totalTasks")}
           value={stats?.totalTasks ?? "-"}
@@ -185,7 +194,9 @@ export default function Dashboard() {
           iconColor="#faad14"
           onClick={toRuns("running")}
         />
+      </Row>
 
+      <Row gutter={[16, 16]}>
         <Col xs={24} lg={8}>
           <StatusDonut stats={stats} />
         </Col>

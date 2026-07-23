@@ -2,13 +2,13 @@ import { http, HttpResponse, delay } from "msw";
 import { faker } from "@faker-js/faker";
 
 export const dashboardHandlers = [
-  // GET /api/dashboard/stats
+  // GET /api/dashboard/stats — last-24h run counts by status (totalTasks = the sum).
   http.get("/api/dashboard/stats", async () => {
     await delay(200);
 
-    const success = faker.number.int({ min: 800, max: 1200 });
-    const failed = faker.number.int({ min: 20, max: 80 });
-    const running = faker.number.int({ min: 5, max: 30 });
+    const success = faker.number.int({ min: 80, max: 200 });
+    const failed = faker.number.int({ min: 2, max: 15 });
+    const running = faker.number.int({ min: 1, max: 8 });
 
     return HttpResponse.json({
       totalTasks: success + failed + running,
