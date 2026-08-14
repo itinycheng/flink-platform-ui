@@ -2,7 +2,6 @@
    Icon registry + helper are colocated with the component on purpose; this file
    is a leaf module, so losing Fast Refresh for it (full reload on edit) is fine. */
 import flinkIcon from "@/assets/flink.svg";
-import sparkIcon from "@/assets/spark.svg";
 import sqlIcon from "@/assets/sql.svg";
 import shellIcon from "@/assets/command.svg";
 import hiveIcon from "@/assets/hive.svg";
@@ -23,23 +22,26 @@ export interface TaskIconDef {
 }
 
 export const TASK_ICON_REGISTRY: Record<string, TaskIconDef> = {
-  sql: { color: "#2f6fdb", src: sqlIcon },
-  shell: { color: "#2e9e4f", src: shellIcon },
-  spark: { color: "#e25a1c", src: sparkIcon },
-  flink: { color: "#e6526f", src: flinkIcon },
-  hive: { color: "#e8a317", src: hiveIcon },
+  FLINK_SQL: { color: "#e6526f", src: flinkIcon },
+  FLINK_JAR: { color: "#e6526f", src: flinkIcon },
+  COMMON_JAR: { color: "#6f42c1", src: joinIcon },
+  CLICKHOUSE_SQL: { color: "#e8a317", src: sqlIcon },
+  MYSQL_SQL: { color: "#2f6fdb", src: sqlIcon },
+  HIVE_SQL: { color: "#e8a317", src: hiveIcon },
+  SHELL: { color: "#2e9e4f", src: shellIcon },
+  CONDITION: { color: "#d48806", src: joinIcon },
+  DEPENDENT: { color: "#13a8a8", src: dependIcon },
+  SUB_FLOW: { color: "#7b4fe0", src: flowIcon },
   workflow: { color: "#7b4fe0", src: flowIcon },
-  depend: { color: "#13a8a8", src: dependIcon },
-  condition: { color: "#d48806", src: joinIcon },
-  subflow: { color: "#7b4fe0", src: flowIcon },
+  group: { color: "#8c8c8c", src: flowIcon },
 };
 
 const FALLBACK: TaskIconDef = { color: "#7b4fe0", src: flowIcon };
 
-/** Resolve a type key (case-insensitive) to its icon definition. */
+/** Resolve a type key to its icon (exact, case-insensitive on the key). */
 export function getTaskIcon(type: string | undefined | null): TaskIconDef {
   if (!type) return FALLBACK;
-  return TASK_ICON_REGISTRY[type.toLowerCase()] ?? FALLBACK;
+  return TASK_ICON_REGISTRY[type] ?? TASK_ICON_REGISTRY[type.toUpperCase()] ?? FALLBACK;
 }
 
 export interface TaskIconProps {
