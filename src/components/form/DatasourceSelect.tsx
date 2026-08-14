@@ -18,6 +18,7 @@ export default function DatasourceSelect({ value, onChange, jobType }: Props) {
   const { data, loading } = useRemoteOptions(fetcher, [jobType]);
   return (
     <Select
+      allowClear
       loading={loading}
       value={value}
       onChange={onChange}

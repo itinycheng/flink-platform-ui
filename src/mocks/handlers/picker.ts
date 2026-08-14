@@ -4,14 +4,24 @@ import { ok } from "@/mocks/lib/response";
 import type { Worker, Datasource, CatalogInfo, Resource } from "@/types/entities";
 import { DB_TYPES, CATALOG_TYPES, JOB_TYPE_DBTYPE, type JobType } from "@/constants/enums";
 
-const workers: Worker[] = Array.from({ length: 5 }, (_, i) => ({
-  id: i + 1,
-  name: `worker-${faker.word.noun()}`,
-  ip: faker.internet.ip(),
-  port: String(faker.internet.port()),
-  grpcPort: faker.internet.port(),
-  status: "ACTIVE",
-}));
+const workers: Worker[] = [
+  ...Array.from({ length: 5 }, (_, i) => ({
+    id: i + 1,
+    name: `worker-${faker.word.noun()}`,
+    ip: faker.internet.ip(),
+    port: String(faker.internet.port()),
+    grpcPort: faker.internet.port(),
+    status: "ACTIVE" as const,
+  })),
+  {
+    id: 99,
+    name: "worker-retired",
+    ip: faker.internet.ip(),
+    port: String(faker.internet.port()),
+    grpcPort: faker.internet.port(),
+    status: "DELETED" as const,
+  },
+];
 
 const datasources: Datasource[] = DB_TYPES.flatMap((type, ti) =>
   Array.from({ length: 2 }, (_, i) => ({
@@ -56,7 +66,7 @@ export const pickerHandlers: RequestHandler[] = [
     const ext = url.searchParams.get("ext");
     let out = resources;
     if (type) out = out.filter((r) => r.type === type);
-    if (ext) out = out.filter((r) => r.name.endsWith(ext));
+    if (ext) out = out.filter((r) => r.name.endsWith("." + ext));
     return ok(out);
   }),
 ];

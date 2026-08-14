@@ -18,6 +18,12 @@ describe("picker API + mocks", () => {
     expect(typeof w.name).toBe("string");
     expect(typeof w.ip).toBe("string");
     expect(w.status).not.toBe("DELETED"); // list excludes deleted
+    // Assert no DELETED workers in result
+    expect(workers.some((w) => w.status === "DELETED")).toBe(false);
+    // Assert DELETED worker fixture (id 99) is filtered out
+    expect(workers.some((w) => w.id === 99)).toBe(false);
+    // Assert returned length is less than total fixture count (6 total, 5 returned)
+    expect(workers.length).toBeLessThan(6);
   });
 
   it("listDatasources filters by the JobType's dbType", async () => {
