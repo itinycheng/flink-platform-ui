@@ -10,6 +10,7 @@ import { runHandlers } from "./run";
 import { alertRuleHandlers } from "./alert";
 import { queryHandlers } from "./query";
 import { workspaceHandlers } from "./workspace";
+import { pickerHandlers } from "./picker";
 
 export const handlers: RequestHandler[] = [
   ...authHandlers,
@@ -23,4 +24,5 @@ export const handlers: RequestHandler[] = [
   ...alertRuleHandlers,
   ...queryHandlers,
   ...workspaceHandlers,
+  ...pickerHandlers,
 ];
