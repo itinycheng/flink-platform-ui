@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import JobForm from "./JobForm";
+import { typeChangeFields } from "./JobForm.typeChange";
 import { useJobStore } from "@/stores/jobStore";
 
 vi.mock("@/api/picker", () => ({
@@ -46,5 +47,56 @@ describe("JobForm", () => {
     await screen.findByDisplayValue("job-b");
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
     await waitFor(() => expect(useJobStore.getState().saveJobInfo).not.toHaveBeenCalled());
+  });
+
+  it("resets config and execMode when the user switches type, dropping stale cross-type fields", async () => {
+    (useJobStore.getState().loadJobInfo as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 12,
+      name: "job-c",
+      type: "MYSQL_SQL",
+      execMode: "STREAMING",
+      routeUrl: [1],
+      subject: "SELECT 1",
+      config: { type: "MYSQL_SQL", retryTimes: 0, retryInterval: "5s", dsId: 5 },
+    });
+    render(<JobForm nodeId="12" />);
+    await screen.findByDisplayValue("job-c");
+
+    // Switch `type` from MYSQL_SQL to SHELL via the real Select control.
+    fireEvent.mouseDown(document.getElementById("type")!);
+    fireEvent.click(await screen.findByText("Shell"));
+    // Wait for the ConfigFields swap (SqlConfigFields -> ShellConfigFields) to
+    // actually commit before saving, otherwise the stale, now-unmounted-but-
+    // not-yet-rerendered `dsId` field (with its required rule) can still be
+    // the one `validateFields()` sees, hiding the bug this test guards.
+    await screen.findByText("Timeout");
+
+    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    await waitFor(() => expect(useJobStore.getState().saveJobInfo).toHaveBeenCalled());
+
+    const saveJobInfo = useJobStore.getState().saveJobInfo as ReturnType<typeof vi.fn>;
+    const savedInfo = saveJobInfo.mock.calls[0][1] as { config: Record<string, unknown>; execMode: string };
+    expect(savedInfo.config).not.toHaveProperty("dsId");
+    expect(savedInfo.config.type).toBe("SHELL");
+    expect(savedInfo.execMode).toBe("BATCH");
+  });
+});
+
+describe("typeChangeFields", () => {
+  it("drops the old type's config entirely and resets retry defaults", () => {
+    const fields = typeChangeFields("SHELL");
+    const config = fields.find((f) => f.name === "config")?.value as Record<string, unknown>;
+    expect(config).toEqual({ type: "SHELL", retryTimes: 0, retryInterval: "5s", timeout: "60s" });
+    expect(config).not.toHaveProperty("dsId");
+  });
+
+  it("clears execMode to BATCH for non-Flink types, preserves it for Flink types", () => {
+    expect(typeChangeFields("SHELL", "STREAMING").find((f) => f.name === "execMode")?.value).toBe("BATCH");
+    expect(typeChangeFields("FLINK_SQL", "STREAMING").find((f) => f.name === "execMode")?.value).toBe("STREAMING");
+  });
+
+  it("clears subject for types that don't need one, leaves it alone otherwise", () => {
+    expect(typeChangeFields("CONDITION").some((f) => f.name === "subject" && f.value === undefined)).toBe(true);
+    expect(typeChangeFields("SHELL").some((f) => f.name === "subject")).toBe(false);
   });
 });

@@ -9,6 +9,7 @@ import { WorkerSelect, KeyValueEditor } from "@/components/form";
 import CodeEditor from "@/components/CodeEditor";
 import { DEPLOY_MODES, EXECUTION_MODES, JOB_TYPE_CLASSIFICATION, enumOptions, type JobType } from "@/constants/enums";
 import type { JobInfo } from "@/types/entities";
+import { typeChangeFields } from "@/pages/Studio/JobForm.typeChange";
 
 /**
  * Thin adapter: `CodeEditor` requires `value`/`onChange`/`minHeight` (not
@@ -27,6 +28,10 @@ function CodeField({
   return <CodeEditor value={value ?? ""} onChange={onChange ?? (() => {})} language={language} minHeight={200} />;
 }
 
+function resetForType(form: FormInstance, nextType: JobType) {
+  form.setFields(typeChangeFields(nextType, form.getFieldValue("execMode") as string | undefined));
+}
+
 interface CommonFieldsProps {
   form: FormInstance;
   isFlink: boolean;
@@ -40,10 +45,7 @@ function CommonFields({ form, isFlink }: CommonFieldsProps) {
         <Input />
       </Form.Item>
       <Form.Item name="type" label={t("common.type")} rules={[{ required: true }]}>
-        <Select
-          options={taskTypeOptions(t)}
-          onChange={(v: JobType) => form.setFieldValue(["config", "type"], v)}
-        />
+        <Select options={taskTypeOptions(t)} onChange={(v: JobType) => resetForType(form, v)} />
       </Form.Item>
       <Form.Item name="execMode" label={t("taskForm.execMode")} rules={[{ required: true }]}>
         <Select options={enumOptions(isFlink ? EXECUTION_MODES : (["BATCH"] as const), "ExecutionMode", t)} />
