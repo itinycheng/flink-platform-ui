@@ -1,5 +1,6 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
+import { ok } from "@/mocks/lib/response";
 import type {
   JobTreeNode,
   WorkflowFormData,
@@ -7,6 +8,8 @@ import type {
   JobStatus,
   WorkflowLifecycleStatus,
 } from "@/types/job";
+import type { JobInfo } from "@/types/entities";
+import type { JobType } from "@/constants/enums";
 
 // ---- Seed data generated with faker ----
 
@@ -20,7 +23,7 @@ const GROUP_SPECS: { name: string; size: number }[] = [
 ];
 
 function generateChild(gi: number, groupId: string): JobTreeNode {
-  const jobType = faker.helpers.arrayElement(["SQL", "SHELL", "SPARK", "FLINK", "workflow"]);
+  const jobType = faker.helpers.arrayElement(["MYSQL_SQL", "SHELL", "FLINK_SQL", "FLINK_JAR", "workflow"]);
   return {
     id: jobType === "workflow" ? `wf-${faker.string.nanoid(6)}` : `task-${faker.string.nanoid(6)}`,
     name:
@@ -137,6 +140,31 @@ function generateRuns(workflowId: string): WorkflowRunRecord[] {
     });
   }
   return runs;
+}
+
+// ---- JobInfo (backend-shaped task entity) store ----
+
+const jobInfoStore = new Map<number, JobInfo>();
+let jobInfoSeq = 1000;
+
+function defaultConfig(type: JobType) {
+  const base = { type, retryTimes: 0, retryInterval: "5s" };
+  if (type === "SHELL") return { ...base, timeout: "60s" };
+  if (type === "MYSQL_SQL" || type === "HIVE_SQL" || type === "CLICKHOUSE_SQL") return { ...base, dsId: 1 };
+  return base;
+}
+
+function defaultJobInfo(id: number): JobInfo {
+  return {
+    id,
+    name: `job-${id}`,
+    type: "MYSQL_SQL",
+    execMode: "BATCH",
+    routeUrl: [1],
+    subject: "SELECT 1",
+    config: defaultConfig("MYSQL_SQL") as JobInfo["config"],
+    status: "ONLINE",
+  };
 }
 
 export const workflowHandlers: RequestHandler[] = [
@@ -307,5 +335,41 @@ export const workflowHandlers: RequestHandler[] = [
     if (!found) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
     found.node.alertRuleIds = alertRuleIds;
     return HttpResponse.json(found.node);
+  }),
+
+  // ---- JobInfo (backend-shaped task entity) ----
+
+  // GET /api/jobInfo/get/:id — tolerates numeric ids (stored) and non-numeric
+  // seeded tree-node ids like `task-xxx` (synthesizes a default so they open).
+  http.get("/api/jobInfo/get/:id", async ({ params }) => {
+    await delay(150);
+    const { id } = params as { id: string };
+    const numericId = Number(id);
+    if (Number.isFinite(numericId) && jobInfoStore.has(numericId)) {
+      return ok(jobInfoStore.get(numericId));
+    }
+    return ok(defaultJobInfo(Number.isFinite(numericId) ? numericId : ++jobInfoSeq));
+  }),
+
+  // POST /api/jobInfo/create
+  http.post("/api/jobInfo/create", async ({ request }) => {
+    await delay(200);
+    const body = (await request.json()) as JobInfo;
+    const id = ++jobInfoSeq;
+    const stored: JobInfo = { ...body, id, status: "ONLINE" };
+    jobInfoStore.set(id, stored);
+    return ok(stored, { status: 201 });
+  }),
+
+  // POST /api/jobInfo/update
+  http.post("/api/jobInfo/update", async ({ request }) => {
+    await delay(200);
+    const body = (await request.json()) as JobInfo;
+    if (typeof body.id !== "number") {
+      return ok(body);
+    }
+    const merged: JobInfo = { ...jobInfoStore.get(body.id), ...body };
+    jobInfoStore.set(body.id, merged);
+    return ok(merged);
   }),
 ];

@@ -1,5 +1,6 @@
 import { http } from "@/utils/request";
 import type { JobTreeNode, WorkflowFormData, WorkflowRunRecord, WorkflowLifecycleStatus } from "@/types/job";
+import type { JobInfo } from "@/types/entities";
 
 /** 获取所有分组（不含子节点） */
 export function getJobGroups(): Promise<JobTreeNode[]> {
@@ -69,4 +70,18 @@ export function updateJobTags(id: string, tags: string[]): Promise<JobTreeNode> 
 
 export function updateJobAlertRules(id: string, alertRuleIds: string[]): Promise<JobTreeNode> {
   return http.put<JobTreeNode>(`/jobs/${id}/alert-rules`, { alertRuleIds });
+}
+
+// ---- JobInfo (backend-shaped task entity) ----
+
+export function getJobInfo(id: string | number): Promise<JobInfo> {
+  return http.get<JobInfo>(`/jobInfo/get/${id}`);
+}
+
+export function createJobInfo(data: JobInfo): Promise<JobInfo> {
+  return http.post<JobInfo>("/jobInfo/create", data);
+}
+
+export function updateJobInfo(data: JobInfo): Promise<JobInfo> {
+  return http.post<JobInfo>("/jobInfo/update", data);
 }
