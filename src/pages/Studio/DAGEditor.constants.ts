@@ -14,7 +14,7 @@ export function getInitialNodes(workflowId: string, t: (key: string) => string):
       data: {
         label: t("dag.dataExtract"),
         nodeType: "task",
-        taskType: "sql",
+        taskType: "MYSQL_SQL",
         description: t("dag.extractDesc"),
         priority: "medium",
       },
@@ -26,7 +26,7 @@ export function getInitialNodes(workflowId: string, t: (key: string) => string):
       data: {
         label: t("dag.dataClean"),
         nodeType: "task",
-        taskType: "shell",
+        taskType: "SHELL",
         description: t("dag.cleanDesc"),
         priority: "medium",
       },
@@ -38,7 +38,7 @@ export function getInitialNodes(workflowId: string, t: (key: string) => string):
       data: {
         label: t("dag.dataAggregate"),
         nodeType: "task",
-        taskType: "spark",
+        taskType: "FLINK_SQL",
         description: t("dag.aggregateDesc"),
         priority: "high",
       },

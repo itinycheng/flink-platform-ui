@@ -18,11 +18,10 @@ function generateId(prefix: string): string {
 }
 
 const JOB_TYPE_FILTERS = [
+  { label: "Flink SQL", value: "FLINK_SQL" },
+  { label: "MySQL", value: "MYSQL_SQL" },
+  { label: "Shell", value: "SHELL" },
   { label: "FLOW", value: "workflow" },
-  { label: "SQL", value: "sql" },
-  { label: "Shell", value: "shell" },
-  { label: "Spark", value: "spark" },
-  { label: "Flink", value: "flink" },
 ];
 
 const STATUS_FILTERS = [
@@ -235,7 +234,12 @@ function FilterPopoverContent({
         onToggleStatus,
       )}
       {types.length + statuses.length > 0 && (
-        <Button type="link" size="small" style={{ padding: 0, height: "auto", alignSelf: "flex-start" }} onClick={onClear}>
+        <Button
+          type="link"
+          size="small"
+          style={{ padding: 0, height: "auto", alignSelf: "flex-start" }}
+          onClick={onClear}
+        >
           {t("sider.clearFilter")}
         </Button>
       )}

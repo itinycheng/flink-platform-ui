@@ -1,13 +1,7 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import { ok } from "@/mocks/lib/response";
-import type {
-  JobTreeNode,
-  WorkflowFormData,
-  WorkflowRunRecord,
-  JobStatus,
-  WorkflowLifecycleStatus,
-} from "@/types/job";
+import type { JobTreeNode, WorkflowFormData, WorkflowRunRecord, JobStatus, WorkflowLifecycleStatus } from "@/types/job";
 import type { JobInfo } from "@/types/entities";
 import type { JobType } from "@/constants/enums";
 
@@ -193,7 +187,9 @@ export const workflowHandlers: RequestHandler[] = [
     const keyword = (url.searchParams.get("keyword") ?? "").toLowerCase().trim();
     const splitParam = (key: string) =>
       url.searchParams.get(key) ? url.searchParams.get(key)!.toLowerCase().split(",") : [];
-    const types = splitParam("types");
+    // Task types are backend JobType values (e.g. FLINK_SQL) and are matched
+    // case-sensitively — unlike keyword/status, they must not be lowercased.
+    const types = url.searchParams.get("types") ? url.searchParams.get("types")!.split(",") : [];
     const statuses = splitParam("statuses");
 
     const results: JobTreeNode[] = [];
@@ -201,7 +197,7 @@ export const workflowHandlers: RequestHandler[] = [
       const matched = (group.children ?? []).filter((child) => {
         const matchKeyword =
           !keyword || child.name.toLowerCase().includes(keyword) || child.id.toLowerCase().includes(keyword);
-        const matchType = types.length === 0 || types.includes(child.type.toLowerCase());
+        const matchType = types.length === 0 || types.includes(child.type);
         const matchStatus = statuses.length === 0 || (child.status ? statuses.includes(child.status) : false);
         return matchKeyword && matchType && matchStatus;
       });
