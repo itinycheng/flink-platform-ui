@@ -41,6 +41,7 @@ const en = {
     deleteFailed: "Delete failed, please retry",
     actionSuccess: "Operation succeeded",
     actionFailed: "Operation failed, please retry",
+    invalidJson: "Invalid JSON",
   },
 
   menu: {

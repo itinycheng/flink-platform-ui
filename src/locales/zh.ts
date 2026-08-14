@@ -41,6 +41,7 @@ const zh = {
     deleteFailed: "删除失败，请重试",
     actionSuccess: "操作成功",
     actionFailed: "操作失败，请重试",
+    invalidJson: "JSON 格式不正确",
   },
 
   menu: {

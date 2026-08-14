@@ -1,4 +1,5 @@
 export { default as KeyValueEditor } from "./KeyValueEditor";
 export { default as DurationInput } from "./DurationInput";
 export { default as DynamicListEditor } from "./DynamicListEditor";
+export { default as JsonTextArea } from "./JsonTextArea";
 export { isValidDuration } from "./validators";
