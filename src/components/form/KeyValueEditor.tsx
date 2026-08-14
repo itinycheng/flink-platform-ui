@@ -42,6 +42,7 @@ export default function KeyValueEditor({ value, onChange, keyPlaceholder, valueP
   return (
     <Flex vertical gap={8}>
       {rows.map((row, i) => (
+        // eslint-disable-next-line react/no-array-index-key
         <Space key={i} align="baseline">
           <Input
             placeholder={keyPlaceholder ?? t("common.key", "Key")}

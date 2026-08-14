@@ -48,6 +48,6 @@ Object.defineProperty(window, "matchMedia", {
 });
 
 // Import and initialize i18n after polyfills
-import("@/i18n").then((module) => {
-  module.default.init();
+void import("@/i18n").then((module) => {
+  void module.default.init();
 });
