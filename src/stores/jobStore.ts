@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { JobTreeNode, WorkflowFormData, WorkflowLifecycleStatus } from "@/types/job";
+import type { JobInfo } from "@/types/entities";
 import {
   findNodeById,
   updateNodeById,
@@ -20,6 +21,9 @@ import {
   copyJob,
   updateJobTags,
   updateJobAlertRules,
+  getJobInfo,
+  createJobInfo,
+  updateJobInfo,
 } from "@/api/job";
 
 export interface OpenTab {
@@ -58,6 +62,8 @@ export interface WorkflowState {
   openTab: (node: JobTreeNode) => void;
   closeTab: (key: string) => void;
   setActiveTab: (key: string) => void;
+  loadJobInfo: (nodeId: string) => Promise<JobInfo | null>;
+  saveJobInfo: (nodeId: string, info: JobInfo) => Promise<void>;
 }
 
 // Re-exported so existing imports (`@/stores/jobStore`) keep working; the tree
@@ -263,5 +269,18 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     const { openTabs } = get();
     const tab = openTabs.find((t) => t.key === key);
     set({ activeTabKey: key, selectedNode: tab?.node ?? null });
+  },
+
+  loadJobInfo: async (nodeId) => {
+    try {
+      return await getJobInfo(nodeId);
+    } catch {
+      return null;
+    }
+  },
+
+  saveJobInfo: async (nodeId, info) => {
+    const saved = info.id ? await updateJobInfo(info) : await createJobInfo(info);
+    get().patchNode(nodeId, { name: saved.name });
   },
 }));
