@@ -7,3 +7,4 @@ export { useRemoteOptions } from "./useRemoteOptions";
 export { default as WorkerSelect } from "./WorkerSelect";
 export { default as DatasourceSelect } from "./DatasourceSelect";
 export { default as CatalogSelect } from "./CatalogSelect";
+export { default as ResourceSelect } from "./ResourceSelect";
