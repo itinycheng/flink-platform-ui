@@ -66,14 +66,37 @@ request.interceptors.response.use(
 );
 
 /**
+ * Unwrap the backend response envelope `{ code, desc, data }`.
+ *
+ * Transitional shim: real-backend responses always carry the envelope, but
+ * not-yet-migrated MSW mocks return plain bodies. A body is treated as an
+ * envelope only when it has a numeric `code` and a `data` property; anything
+ * else is returned untouched so legacy mocks keep working.
+ */
+export function unwrapEnvelope<T>(body: unknown): T {
+  if (body !== null && typeof body === "object" && "code" in body && "data" in body) {
+    const env = body as { code: number; desc?: string; data: T };
+    if (typeof env.code === "number") {
+      if (env.code !== 0) {
+        throw new Error(env.desc || i18n.t("http.requestFailed", { status: env.code }));
+      }
+      return env.data;
+    }
+  }
+  return body as T;
+}
+
+/**
  * Thin wrapper around axios that returns `response.data` directly.
  * Use this in api/*.ts to avoid repeating `.then((r) => r.data)`.
  */
 export const http = {
-  get: <T>(url: string, config?: AxiosRequestConfig) => request.get<T>(url, config).then((r) => r.data),
+  get: <T>(url: string, config?: AxiosRequestConfig) =>
+    request.get<T>(url, config).then((r) => unwrapEnvelope<T>(r.data)),
   post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
-    request.post<T>(url, data, config).then((r) => r.data),
+    request.post<T>(url, data, config).then((r) => unwrapEnvelope<T>(r.data)),
   put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
-    request.put<T>(url, data, config).then((r) => r.data),
-  delete: <T = void>(url: string, config?: AxiosRequestConfig) => request.delete<T>(url, config).then((r) => r.data),
+    request.put<T>(url, data, config).then((r) => unwrapEnvelope<T>(r.data)),
+  delete: <T = void>(url: string, config?: AxiosRequestConfig) =>
+    request.delete<T>(url, config).then((r) => unwrapEnvelope<T>(r.data)),
 };

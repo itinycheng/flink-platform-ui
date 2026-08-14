@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom/vitest";
 
+// Global defines for tests (matching vite.config.ts)
+// @ts-expect-error vite-defined global
+globalThis.__APP_NAME__ = "dtail";
+// @ts-expect-error vite-defined global
+globalThis.__APP_VERSION__ = "0.0.1";
+
 // Polyfill ResizeObserver for Ant Design components in jsdom
 global.ResizeObserver = class ResizeObserver {
   observe() {}
