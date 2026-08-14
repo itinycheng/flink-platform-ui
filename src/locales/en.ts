@@ -597,6 +597,13 @@ const en = {
     statusDisabled: "Disabled",
   },
 
+  picker: {
+    selectWorker: "Select worker(s)",
+    selectDatasource: "Select a datasource",
+    selectCatalog: "Select catalog(s)",
+    selectResource: "Select jar resource(s)",
+  },
+
   runs: {
     title: "Runs",
     type: "Type",

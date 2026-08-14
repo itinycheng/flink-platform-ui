@@ -595,6 +595,13 @@ const zh = {
     statusDisabled: "禁用",
   },
 
+  picker: {
+    selectWorker: "选择 Worker",
+    selectDatasource: "选择数据源",
+    selectCatalog: "选择 Catalog",
+    selectResource: "选择 Jar 资源",
+  },
+
   runs: {
     title: "运行记录",
     type: "类型",
