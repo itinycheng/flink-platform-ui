@@ -87,8 +87,10 @@ export function unwrapEnvelope<T>(body: unknown): T {
 }
 
 /**
- * Thin wrapper around axios that returns `response.data` directly.
- * Use this in api/*.ts to avoid repeating `.then((r) => r.data)`.
+ * Thin wrapper around axios that returns unwrapped response data.
+ * Automatically unwraps backend response envelopes `{ code, desc, data }`,
+ * while maintaining backward compatibility with plain-body legacy MSW mocks.
+ * Use this in api/*.ts to avoid repeating `.then((r) => unwrapEnvelope(r.data))`.
  */
 export const http = {
   get: <T>(url: string, config?: AxiosRequestConfig) =>
