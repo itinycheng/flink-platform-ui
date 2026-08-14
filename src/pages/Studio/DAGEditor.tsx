@@ -74,10 +74,8 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
             <BottomPanel
               node={bottom.bottomPanelNode}
               panelHeight={bottom.bottomPanelHeight}
-              taskParamsMap={bottom.taskParamsMap}
               onResizeMouseDown={bottom.onResizeMouseDown}
               onClose={bottom.closeBottomPanel}
-              onParamsChange={bottom.handleBottomTaskParamsChange}
               messageApi={messageApi}
             />
           )}

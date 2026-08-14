@@ -12,7 +12,6 @@ import {
   MarkerType,
 } from "@xyflow/react";
 import type { TFunction } from "i18next";
-import type { TaskParams } from "@/types/job";
 import { EDGE_STATUS_COLORS, getEdgeStyle, type EdgeStatus } from "@/components/FlowCanvas/constants";
 
 type ContextMenuState = { type: "node" | "edge"; id: string; x: number; y: number } | null;
@@ -128,7 +127,6 @@ interface UseBottomPanelOpts {
 export function useBottomPanel({ flowRef }: UseBottomPanelOpts) {
   const [bottomPanelNode, setBottomPanelNode] = useState<Node | null>(null);
   const [bottomPanelHeight, setBottomPanelHeight] = useState(480);
-  const [taskParamsMap, setTaskParamsMap] = useState<Record<string, TaskParams>>({});
   const [isResizing, setIsResizing] = useState(false);
   const dragging = useRef(false);
   const dragStartY = useRef(0);
@@ -168,14 +166,6 @@ export function useBottomPanel({ flowRef }: UseBottomPanelOpts) {
     };
   }, [flowRef]);
 
-  const handleBottomTaskParamsChange = useCallback(
-    (params: TaskParams) => {
-      if (!bottomPanelNode) return;
-      setTaskParamsMap((prev) => ({ ...prev, [bottomPanelNode.id]: params }));
-    },
-    [bottomPanelNode],
-  );
-
   const closeBottomPanel = useCallback(() => setBottomPanelNode(null), []);
 
   return {
@@ -185,8 +175,6 @@ export function useBottomPanel({ flowRef }: UseBottomPanelOpts) {
     bottomPanelHeight,
     isResizing,
     onResizeMouseDown,
-    taskParamsMap,
-    handleBottomTaskParamsChange,
   };
 }
 

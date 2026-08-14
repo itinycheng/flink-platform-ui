@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Button, Flex, Tooltip, Typography } from "antd";
 import {
   ArrowLeftOutlined,
@@ -11,8 +11,8 @@ import type { MessageInstance } from "antd/es/message/interface";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import type { Node } from "@xyflow/react";
-import { getTaskTypeDefinition } from "@/pages/Studio/tasks/registry";
-import type { TaskParams } from "@/types/job";
+import { getTaskTypeDef } from "@/pages/Studio/tasks/registry";
+import type { JobType } from "@/constants/enums";
 
 interface DAGToolbarProps {
   embedded: boolean;
@@ -56,14 +56,14 @@ export function DAGToolbar({ embedded, onSave, messageApi }: DAGToolbarProps) {
 
 interface BottomPanelHeaderProps {
   label: string;
-  taskType: string | undefined;
+  typeLabel: string;
   onSave: () => void;
   onClose: () => void;
   saveLabel: string;
   closeLabel: string;
 }
 
-function BottomPanelHeader({ label, taskType, onSave, onClose, saveLabel, closeLabel }: BottomPanelHeaderProps) {
+function BottomPanelHeader({ label, typeLabel, onSave, onClose, saveLabel, closeLabel }: BottomPanelHeaderProps) {
   return (
     <Flex
       align="center"
@@ -77,7 +77,7 @@ function BottomPanelHeader({ label, taskType, onSave, onClose, saveLabel, closeL
       <Flex align="center" gap={8}>
         <Typography.Text strong>{label}</Typography.Text>
         <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-          {taskType?.toUpperCase()}
+          {typeLabel}
         </Typography.Text>
       </Flex>
       <Flex align="center" gap={4}>
@@ -95,29 +95,18 @@ function BottomPanelHeader({ label, taskType, onSave, onClose, saveLabel, closeL
 interface BottomPanelProps {
   node: Node;
   panelHeight: number;
-  taskParamsMap: Record<string, TaskParams>;
   onResizeMouseDown: (e: React.MouseEvent) => void;
   onClose: () => void;
-  onParamsChange: (params: TaskParams) => void;
   messageApi: MessageInstance;
 }
 
-export function BottomPanel({
-  node,
-  panelHeight,
-  taskParamsMap,
-  onResizeMouseDown,
-  onClose,
-  onParamsChange,
-  messageApi,
-}: BottomPanelProps) {
+// Inline per-node config editing (backed by the real ConfigFields registry)
+// is deferred to Phase 2 DAG↔JobFlow authoring; this panel currently shows
+// the node's resolved task type and a placeholder message.
+export function BottomPanel({ node, panelHeight, onResizeMouseDown, onClose, messageApi }: BottomPanelProps) {
   const { t } = useTranslation();
   const taskType = node.data.taskType as string | undefined;
-  const TaskForm = useMemo(() => {
-    if (!taskType) return null;
-    const def = getTaskTypeDefinition(taskType);
-    return def?.formComponent ?? null;
-  }, [taskType]);
+  const typeLabel = t(getTaskTypeDef(taskType as JobType)?.labelKey ?? "");
 
   return (
     <>
@@ -136,18 +125,14 @@ export function BottomPanel({
       >
         <BottomPanelHeader
           label={node.data.label as string}
-          taskType={taskType}
+          typeLabel={typeLabel}
           onSave={() => void messageApi.success(t("dag.flowSaved"))}
           onClose={onClose}
           saveLabel={t("common.save")}
           closeLabel={t("common.close")}
         />
         <div style={{ padding: 16 }}>
-          {TaskForm ? (
-            <TaskForm value={taskParamsMap[node.id]} onChange={onParamsChange} />
-          ) : (
-            <Typography.Text type="secondary">{t("dag.noFormForType")}</Typography.Text>
-          )}
+          <Typography.Text type="secondary">{t("dag.noFormForType")}</Typography.Text>
         </div>
       </div>
     </>

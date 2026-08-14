@@ -70,7 +70,7 @@ export default function JobTabWrapper({ node }: { node: JobTreeNode }) {
           overflow: "hidden",
         }}
       >
-        {node.type === "workflow" ? <DAGEditor embedded /> : <JobForm taskType={node.type} />}
+        {node.type === "workflow" ? <DAGEditor embedded /> : <JobForm nodeId={node.id} />}
         <Drawer
           title={activePanel ? t(`sidePanel.${activePanel}`) : ""}
           placement="right"
