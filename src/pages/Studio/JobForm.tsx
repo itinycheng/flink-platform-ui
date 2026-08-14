@@ -114,9 +114,18 @@ export default function JobForm({ nodeId }: { nodeId: string }) {
   const onSave = async () => {
     try {
       const values = await form.validateFields();
+      // `id`/`status` aren't rendered as inputs, so `validateFields()` never
+      // returns them — pull them back from form state (set on load via
+      // `form.setFieldsValue(info)`) so an edit updates the existing row
+      // instead of always taking the create branch in `saveJobInfo`.
       // `config.type` must always mirror the top-level `type` on save, even
       // though the ConfigFields components don't manage it directly.
-      const jobInfo: JobInfo = { ...values, config: { ...values.config, type: values.type } };
+      const jobInfo: JobInfo = {
+        ...values,
+        id: form.getFieldValue("id"),
+        status: form.getFieldValue("status"),
+        config: { ...values.config, type: values.type },
+      };
       setSaving(true);
       await saveJobInfo(nodeId, jobInfo);
       void messageApi.success(t("common.saveSuccess"));

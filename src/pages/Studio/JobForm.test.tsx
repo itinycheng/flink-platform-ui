@@ -21,6 +21,7 @@ describe("JobForm", () => {
         execMode: "BATCH",
         routeUrl: [1],
         subject: "SELECT 1",
+        status: "ONLINE",
         config: { type: "MYSQL_SQL", retryTimes: 0, retryInterval: "5s", dsId: 1 },
       } as never),
       saveJobInfo: vi.fn().mockResolvedValue(undefined as never),
@@ -31,6 +32,21 @@ describe("JobForm", () => {
     render(<JobForm nodeId="10" />);
     await waitFor(() => expect(useJobStore.getState().loadJobInfo).toHaveBeenCalledWith("10"));
     expect(await screen.findByDisplayValue("job-a")).toBeInTheDocument();
+  });
+
+  it("carries the loaded id/status through onSave, so an edit updates instead of creating", async () => {
+    render(<JobForm nodeId="10" />);
+    const nameInput = await screen.findByDisplayValue("job-a");
+    fireEvent.change(nameInput, { target: { value: "job-a-edited" } });
+
+    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    await waitFor(() => expect(useJobStore.getState().saveJobInfo).toHaveBeenCalled());
+
+    const saveJobInfo = useJobStore.getState().saveJobInfo as ReturnType<typeof vi.fn>;
+    const savedInfo = saveJobInfo.mock.calls[0][1] as { id: number; status: string; name: string };
+    expect(savedInfo.id).toBe(10);
+    expect(savedInfo.status).toBe("ONLINE");
+    expect(savedInfo.name).toBe("job-a-edited");
   });
 
   it("validates required routeUrl before saving", async () => {
@@ -62,14 +78,26 @@ describe("JobForm", () => {
     render(<JobForm nodeId="12" />);
     await screen.findByDisplayValue("job-c");
 
-    // Switch `type` from MYSQL_SQL to SHELL via the real Select control.
+    // Switch `type` from MYSQL_SQL to CONDITION via the real Select control.
+    // CONDITION has `needsSubject: false`, so — unlike SHELL — Save doesn't
+    // require filling in the (Monaco-backed, hard-to-drive-in-jsdom) subject
+    // field, letting this test prove the reset all the way through a real
+    // save instead of just asserting on `validateFields()` rejecting it.
     fireEvent.mouseDown(document.getElementById("type")!);
-    fireEvent.click(await screen.findByText("Shell"));
-    // Wait for the ConfigFields swap (SqlConfigFields -> ShellConfigFields) to
-    // actually commit before saving, otherwise the stale, now-unmounted-but-
-    // not-yet-rerendered `dsId` field (with its required rule) can still be
-    // the one `validateFields()` sees, hiding the bug this test guards.
-    await screen.findByText("Timeout");
+    fireEvent.click(await screen.findByText("Condition"));
+    // Wait for the ConfigFields swap (SqlConfigFields -> ConditionConfigFields)
+    // to actually commit before saving, otherwise the stale, now-unmounted-
+    // but-not-yet-rerendered `dsId` field (with its required rule) can still
+    // be the one `validateFields()` sees, hiding the bug this test guards.
+    // Both the selected option text and `taskForm.condition`'s field label
+    // render as "Condition" once the switch lands, so a plain `findByText`
+    // would be ambiguous — wait on the field's element id instead.
+    await waitFor(() => expect(document.getElementById("config_condition")).toBeInTheDocument());
+
+    // `config.condition` is itself required by `ConditionConfigFields`, so it
+    // must be filled in for `validateFields()` to let Save through.
+    fireEvent.mouseDown(document.getElementById("config_condition")!);
+    fireEvent.click(await screen.findByText("All matched"));
 
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
     await waitFor(() => expect(useJobStore.getState().saveJobInfo).toHaveBeenCalled());
@@ -77,7 +105,7 @@ describe("JobForm", () => {
     const saveJobInfo = useJobStore.getState().saveJobInfo as ReturnType<typeof vi.fn>;
     const savedInfo = saveJobInfo.mock.calls[0][1] as { config: Record<string, unknown>; execMode: string };
     expect(savedInfo.config).not.toHaveProperty("dsId");
-    expect(savedInfo.config.type).toBe("SHELL");
+    expect(savedInfo.config.type).toBe("CONDITION");
     expect(savedInfo.execMode).toBe("BATCH");
   });
 });
@@ -95,8 +123,9 @@ describe("typeChangeFields", () => {
     expect(typeChangeFields("FLINK_SQL", "STREAMING").find((f) => f.name === "execMode")?.value).toBe("STREAMING");
   });
 
-  it("clears subject for types that don't need one, leaves it alone otherwise", () => {
-    expect(typeChangeFields("CONDITION").some((f) => f.name === "subject" && f.value === undefined)).toBe(true);
-    expect(typeChangeFields("SHELL").some((f) => f.name === "subject")).toBe(false);
+  it("always clears subject on a type change, even between two subject-bearing types", () => {
+    expect(typeChangeFields("CONDITION").find((f) => f.name === "subject")?.value).toBeUndefined();
+    expect(typeChangeFields("SHELL").find((f) => f.name === "subject")?.value).toBeUndefined();
+    expect(typeChangeFields("MYSQL_SQL").find((f) => f.name === "subject")?.value).toBeUndefined();
   });
 });
