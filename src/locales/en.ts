@@ -14,6 +14,8 @@ const en = {
     noDescription: "No description",
     loading: "Loading...",
     add: "Add",
+    key: "Key",
+    value: "Value",
     reset: "Reset",
     query: "Search",
     refresh: "Refresh",

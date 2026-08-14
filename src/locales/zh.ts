@@ -14,6 +14,8 @@ const zh = {
     noDescription: "暂无描述",
     loading: "加载中...",
     add: "新增",
+    key: "键",
+    value: "值",
     reset: "重置",
     query: "查询",
     refresh: "刷新",
