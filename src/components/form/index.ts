@@ -5,3 +5,4 @@ export { default as JsonTextArea } from "./JsonTextArea";
 export { isValidDuration } from "./validators";
 export { useRemoteOptions } from "./useRemoteOptions";
 export { default as WorkerSelect } from "./WorkerSelect";
+export { default as DatasourceSelect } from "./DatasourceSelect";
