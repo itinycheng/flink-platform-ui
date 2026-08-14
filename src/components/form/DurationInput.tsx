@@ -12,7 +12,7 @@ export default function DurationInput({ value, onChange, placeholder }: Props) {
   return (
     <Input
       value={value}
-      placeholder={placeholder ?? t("common.durationHint", "e.g. 5s / 1m / 2h / 1d")}
+      placeholder={placeholder ?? t("common.durationHint")}
       onChange={(e) => onChange?.(e.target.value)}
     />
   );

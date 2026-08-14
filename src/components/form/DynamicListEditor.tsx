@@ -25,6 +25,7 @@ export default function DynamicListEditor<T>({
   return (
     <Flex vertical gap={8}>
       {items.map((item, i) => (
+        // eslint-disable-next-line react/no-array-index-key
         <Space key={i} align="baseline" style={{ width: "100%" }}>
           {renderItem(
             item,

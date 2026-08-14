@@ -42,6 +42,7 @@ const zh = {
     actionSuccess: "操作成功",
     actionFailed: "操作失败，请重试",
     invalidJson: "JSON 格式不正确",
+    durationHint: "例如 5s / 1m / 2h / 1d",
   },
 
   menu: {

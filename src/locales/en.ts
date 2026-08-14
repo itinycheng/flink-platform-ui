@@ -42,6 +42,7 @@ const en = {
     actionSuccess: "Operation succeeded",
     actionFailed: "Operation failed, please retry",
     invalidJson: "Invalid JSON",
+    durationHint: "e.g. 5s / 1m / 2h / 1d",
   },
 
   menu: {
