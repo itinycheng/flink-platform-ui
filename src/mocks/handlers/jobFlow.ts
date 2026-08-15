@@ -88,4 +88,13 @@ export const jobFlowHandlers: RequestHandler[] = [
     await delay(200);
     return ok(++seq); // fake flowRunId
   }),
+
+  mswHttp.post("/api/jobFlow/updateFlow", async ({ request }) => {
+    await delay(200);
+    const body = (await request.json()) as { id: string | number; flow: unknown };
+    const flow = ensureFlow(numId(String(body.id)));
+    // New-UI FlowGraph stored on the flow's `flow` field (backend accepts both shapes).
+    (flow as { flow?: unknown }).flow = body.flow;
+    return ok(flow.id);
+  }),
 ];

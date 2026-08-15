@@ -196,6 +196,7 @@ const en = {
     addTaskNode: "Add Task Node",
     saveFlow: "Save Flow",
     flowSaved: "Flow saved",
+    flowSaveFailed: "Failed to save flow",
     editNode: "Edit Node",
     deleteNode: "Delete Node",
     nodeDeleted: "Node deleted",

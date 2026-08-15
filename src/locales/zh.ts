@@ -196,6 +196,7 @@ const zh = {
     addTaskNode: "添加任务节点",
     saveFlow: "保存流程",
     flowSaved: "调度流程已保存",
+    flowSaveFailed: "流程保存失败",
     editNode: "编辑节点",
     deleteNode: "删除节点",
     nodeDeleted: "节点已删除",

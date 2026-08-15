@@ -8,6 +8,7 @@ import { useJobStore } from "@/stores/jobStore";
 import { FlowCanvas } from "@/components/FlowCanvas";
 import { appendStatusEdge } from "@/components/FlowCanvas/constants";
 import { type DAGEditorProps, getInitialEdges, getInitialNodes } from "./DAGEditor.constants";
+import { serializeFlow } from "./dagSerialize";
 import { useBottomPanel, useContextMenu, useDragAndDrop, useNodeEditModal } from "./DAGEditor.hooks";
 import { TaskSidebar } from "./DAGEditor.sidebar";
 import { BottomPanel, DAGToolbar } from "./DAGEditor.panels";
@@ -16,6 +17,7 @@ import { NodeEditModal } from "./DAGEditor.modal";
 export default function DAGEditor({ embedded = false }: DAGEditorProps) {
   const { id: routeId } = useParams<{ id: string }>();
   const selectedNode = useJobStore((s) => s.selectedNode);
+  const saveFlowGraph = useJobStore((s) => s.saveFlowGraph);
   const [messageApi, contextHolder] = message.useMessage();
   const { t } = useTranslation();
 
@@ -41,7 +43,14 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
   const dnd = useDragAndDrop({ reactFlowInstance, workflowId, setNodes });
 
   const onConnect = useCallback((params: Connection) => setEdges((eds) => appendStatusEdge(params, eds)), [setEdges]);
-  const handleSave = useCallback(() => void messageApi.success(t("dag.flowSaved")), [messageApi, t]);
+  const handleSave = useCallback(async () => {
+    try {
+      await saveFlowGraph(workflowId, serializeFlow(nodes, edges));
+      void messageApi.success(t("dag.flowSaved"));
+    } catch {
+      void messageApi.error(t("dag.flowSaveFailed"));
+    }
+  }, [saveFlowGraph, workflowId, nodes, edges, messageApi, t]);
 
   return (
     <Flex vertical style={{ height: "100%" }} onClick={ctx.closeContextMenu}>
@@ -64,7 +73,7 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
             onInit={setReactFlowInstance}
             onDragOver={dnd.onDragOver}
             onDrop={dnd.onDrop}
-            toolbar={<DAGToolbar embedded={embedded} onSave={handleSave} messageApi={messageApi} />}
+            toolbar={<DAGToolbar embedded={embedded} onSave={() => void handleSave()} messageApi={messageApi} />}
             contextMenu={ctx.contextMenu}
             nodeMenuItems={ctx.nodeMenuItems}
             edgeMenuItems={ctx.edgeMenuItems}

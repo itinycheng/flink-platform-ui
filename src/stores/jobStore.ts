@@ -22,7 +22,17 @@ import {
   createJobInfo,
   updateJobInfo,
 } from "@/api/job";
-import { getJobFlow, createJobFlow, updateJobFlow, copyJobFlow, startSchedule, stopSchedule, runFlowOnce } from "@/api/jobFlow";
+import {
+  getJobFlow,
+  createJobFlow,
+  updateJobFlow,
+  copyJobFlow,
+  startSchedule,
+  stopSchedule,
+  runFlowOnce,
+  updateFlowGraph,
+} from "@/api/jobFlow";
+import type { FlowGraph } from "@/types/flow";
 
 export interface OpenTab {
   key: string;
@@ -64,6 +74,7 @@ export interface WorkflowState {
   saveJobInfo: (nodeId: string, info: JobInfo) => Promise<void>;
   loadJobFlow: (nodeId: string) => Promise<JobFlow | null>;
   saveJobFlow: (nodeId: string, flow: JobFlow) => Promise<void>;
+  saveFlowGraph: (nodeId: string, flow: FlowGraph) => Promise<void>;
 }
 
 // Re-exported so existing imports (`@/stores/jobStore`) keep working; the tree
@@ -310,5 +321,9 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
       await createJobFlow(flow);
     }
     get().patchNode(nodeId, { name: flow.name });
+  },
+
+  saveFlowGraph: async (nodeId, flow) => {
+    await updateFlowGraph(nodeId, flow);
   },
 }));
