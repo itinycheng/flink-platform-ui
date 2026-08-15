@@ -533,6 +533,8 @@ const en = {
     addTitle: "Add Tag",
     editTitle: "Edit Tag",
     namePlaceholder: "Please enter the tag name",
+    code: "Code",
+    codePlaceholder: "Please enter the tag code (optional)",
     typePlaceholder: "Please select the tag type",
     statusPlaceholder: "Please select a status",
     typeBusiness: "Business",

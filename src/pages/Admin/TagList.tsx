@@ -3,55 +3,20 @@ import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } f
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { Tag as TagModel, TagStatus } from "@/types/admin";
+import type { Tag as TagModel } from "@/types/admin";
 import { createTag, deleteTag, getTags, updateTag } from "@/api/admin";
 import RowActions from "@/components/RowActions";
+import { TAG_TYPES, STATUSES, enumOptions } from "@/constants/enums";
 import { statusColor } from "@/utils/statusColor";
 
-function getTagTypeOptions(t: (k: string) => string) {
-  return [
-    { label: t("tag.typeBusiness"), value: "business" },
-    { label: t("tag.typeSystem"), value: "system" },
-    { label: t("tag.typeCustom"), value: "custom" },
-  ];
-}
-
-function getTagStatusOptions(t: (k: string) => string) {
-  return [
-    { label: t("tag.statusActive"), value: "active" },
-    { label: t("tag.statusDisabled"), value: "disabled" },
-  ];
-}
-
-const TYPE_LABEL_KEYS: Record<string, string> = {
-  business: "tag.typeBusiness",
-  system: "tag.typeSystem",
-  custom: "tag.typeCustom",
-};
-
-const STATUS_LABEL_KEYS: Record<TagStatus, string> = {
-  active: "tag.statusActive",
-  disabled: "tag.statusDisabled",
-};
-
-interface TagTypeTagProps {
-  type: TagModel["type"];
-}
-
-function TagTypeTag({ type }: TagTypeTagProps) {
+function TagTypeTag({ type }: { type: TagModel["type"] }) {
   const { t } = useTranslation();
-  const key = TYPE_LABEL_KEYS[type];
-  return <Tag>{key ? t(key) : type}</Tag>;
+  return <Tag>{t(`enums.TagType.${type}`)}</Tag>;
 }
 
-interface TagStatusTagProps {
-  status: TagModel["status"];
-}
-
-function TagStatusTag({ status }: TagStatusTagProps) {
+function TagStatusTag({ status }: { status: TagModel["status"] }) {
   const { t } = useTranslation();
-  const key = STATUS_LABEL_KEYS[status];
-  return <Tag color={statusColor(status)}>{key ? t(key) : status}</Tag>;
+  return <Tag color={statusColor(status)}>{t(`enums.Status.${status}`)}</Tag>;
 }
 
 interface TagActionsCellProps {
@@ -109,11 +74,14 @@ function TagFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }: Ta
         <Form.Item name="name" label={t("common.name")} rules={[{ required: true, message: t("tag.namePlaceholder") }]}>
           <Input placeholder={t("tag.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
+        <Form.Item name="code" label={t("tag.code")}>
+          <Input placeholder={t("tag.codePlaceholder")} data-testid="input-code" />
+        </Form.Item>
         <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("tag.typePlaceholder") }]}>
-          <Select placeholder={t("tag.typePlaceholder")} options={getTagTypeOptions(t)} data-testid="select-type" />
+          <Select placeholder={t("tag.typePlaceholder")} options={enumOptions(TAG_TYPES, "TagType", t)} data-testid="select-type" />
         </Form.Item>
         <Form.Item name="status" label={t("common.status")} rules={[{ required: true, message: t("tag.statusPlaceholder") }]}>
-          <Select placeholder={t("tag.statusPlaceholder")} options={getTagStatusOptions(t)} data-testid="select-status" />
+          <Select placeholder={t("tag.statusPlaceholder")} options={enumOptions(STATUSES, "Status", t)} data-testid="select-status" />
         </Form.Item>
       </Form>
     </Modal>
@@ -142,6 +110,7 @@ function useTagCrud() {
     setEditingTag(record);
     form.setFieldsValue({
       name: record.name,
+      code: record.code ?? "",
       type: record.type,
       status: record.status,
     });

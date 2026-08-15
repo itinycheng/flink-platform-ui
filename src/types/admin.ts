@@ -1,4 +1,4 @@
-import type { DbType, WorkerStatus, CatalogType } from "@/constants/enums";
+import type { DbType, WorkerStatus, CatalogType, TagType, Status } from "@/constants/enums";
 import type { DatasourceParam, EnvironmentSpec } from "@/types/entities";
 
 export type { CatalogType };
@@ -98,13 +98,13 @@ export interface Worker {
 
 // ---- Tag ----
 
-export type TagStatus = "active" | "disabled";
 
 export interface Tag {
   id: string;
+  code?: string;
   name: string;
-  type: string;
-  status: TagStatus;
+  type: TagType;
+  status: Status;
   createdAt: string;
   updatedAt: string;
 }

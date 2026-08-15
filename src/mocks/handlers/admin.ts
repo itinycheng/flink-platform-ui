@@ -131,9 +131,10 @@ function generateTags(count: number): Tag[] {
     const now = faker.date.recent({ days: 60 }).toISOString();
     return {
       id: `tag-${faker.string.nanoid(6)}`,
+      code: `tag_${faker.string.alphanumeric(6)}`,
       name: faker.word.noun(),
-      type: faker.helpers.arrayElement(["business", "system", "custom"]),
-      status: faker.helpers.arrayElement(["active", "disabled"] as const),
+      type: "JOB_FLOW",
+      status: faker.helpers.arrayElement(["ENABLE", "DISABLE", "DELETED"] as const),
       createdAt: now,
       updatedAt: now,
     };

@@ -532,6 +532,8 @@ const zh = {
     addTitle: "新增标签",
     editTitle: "编辑标签",
     namePlaceholder: "请输入标签名称",
+    code: "编码",
+    codePlaceholder: "请输入标签编码（可选）",
     typePlaceholder: "请选择标签类型",
     statusPlaceholder: "请选择状态",
     typeBusiness: "业务",
