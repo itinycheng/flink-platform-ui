@@ -145,6 +145,7 @@ const zh = {
     groupNameDuplicate: "已存在同名分组",
     addWorkflow: "新增工作流",
     addTask: "新增任务",
+    addSubgroup: "添加子分组",
     editName: "编辑名称",
     newGroup: "新分组",
     newWorkflow: "新工作流",

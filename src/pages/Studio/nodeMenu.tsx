@@ -11,20 +11,25 @@ import {
   ClockCircleOutlined,
   PauseCircleOutlined,
   EditOutlined,
+  FolderAddOutlined,
 } from "@ant-design/icons";
 import type { TFunction } from "i18next";
 import type { JobTreeNode } from "@/types/job";
 
 type MenuItem = Required<MenuProps>["items"][number];
 
-function groupMenu(t: TFunction): MenuItem[] {
-  return [
+function groupMenu(node: JobTreeNode, t: TFunction): MenuItem[] {
+  const items: MenuItem[] = [
     { key: "addWorkflow", icon: <PlusOutlined />, label: t("workflow.addWorkflow") },
     { key: "addTask", icon: <PlusOutlined />, label: t("workflow.addTask") },
+  ];
+  if (node.pid === "") items.push({ key: "addSubgroup", icon: <FolderAddOutlined />, label: t("workflow.addSubgroup") });
+  items.push(
     { type: "divider" },
     { key: "rename", icon: <EditOutlined />, label: t("workflow.editName") },
     { key: "delete", icon: <DeleteOutlined />, label: t("common.delete"), danger: true },
-  ];
+  );
+  return items;
 }
 
 /** Lifecycle menu for a definition node (Task or Workflow), driven by its status. */
@@ -58,5 +63,5 @@ function definitionMenu(node: JobTreeNode, t: TFunction): MenuItem[] {
 }
 
 export function buildNodeMenuItems(node: JobTreeNode, t: TFunction): MenuProps["items"] {
-  return node.kind === "group" ? groupMenu(t) : definitionMenu(node, t);
+  return node.kind === "group" ? groupMenu(node, t) : definitionMenu(node, t);
 }

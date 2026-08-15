@@ -145,6 +145,7 @@ const en = {
     groupNameDuplicate: "A group with this name already exists",
     addWorkflow: "Add Workflow",
     addTask: "Add Task",
+    addSubgroup: "Add Subgroup",
     editName: "Edit Name",
     newGroup: "New Group",
     newWorkflow: "New Workflow",

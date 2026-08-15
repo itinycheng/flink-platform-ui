@@ -4,6 +4,7 @@ import { DownOutlined, EllipsisOutlined } from "@ant-design/icons";
 import type { MenuProps, ThemeConfig, TreeDataNode } from "antd";
 import { compactMenuTheme } from "@/theme";
 import type { MessageInstance } from "antd/es/message/interface";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { useJobStore } from "@/stores/jobStore";
 import { findNodeById } from "@/utils/tree";
@@ -248,7 +249,8 @@ function buildDeleteContent(node: JobTreeNode, t: (k: string, opts?: Record<stri
 function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
   const { t } = useTranslation();
   const addNode = useJobStore((s) => s.addNode);
-  const removeNode = useJobStore((s) => s.removeNode);
+  const createGroup = useJobStore((s) => s.createGroup);
+  const deleteNode = useJobStore((s) => s.deleteNode);
 
   const handleAddWorkflow = useCallback(
     (parentId: string) =>
@@ -260,6 +262,10 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
       addNode({ id: generateId("task"), name: t("workflow.newTask"), kind: "task", pid: parentId }),
     [addNode, t],
   );
+  const handleAddSubgroup = useCallback(
+    (parentId: string) => void createGroup(t("workflow.newGroup"), parentId),
+    [createGroup, t],
+  );
 
   const handleDelete = useCallback(
     (node: JobTreeNode) => {
@@ -270,15 +276,43 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
         okType: "danger",
         cancelText: t("common.cancel"),
         onOk: () => {
-          removeNode(node.id);
+          void deleteNode(node);
           void messageApi.success(t("workflow.deleted"));
         },
       });
     },
-    [removeNode, messageApi, t],
+    [deleteNode, messageApi, t],
   );
 
-  return { handleAddWorkflow, handleAddTask, handleDelete };
+  return { handleAddWorkflow, handleAddTask, handleAddSubgroup, handleDelete };
+}
+
+/** Builds the per-node menu and routes clicks to the right action/handler. */
+function useMenuActions({
+  t,
+  actions,
+  handleLifecycle,
+  setRenameNode,
+}: {
+  t: TFunction;
+  actions: Pick<ReturnType<typeof useJobTreeActions>, "handleAddWorkflow" | "handleAddTask" | "handleAddSubgroup" | "handleDelete">;
+  handleLifecycle: (key: string, node: JobTreeNode) => Promise<void> | void;
+  setRenameNode: (node: JobTreeNode) => void;
+}) {
+  const { handleAddWorkflow, handleAddTask, handleAddSubgroup, handleDelete } = actions;
+  const getMenuItems = useCallback((node: JobTreeNode): MenuProps["items"] => buildNodeMenuItems(node, t), [t]);
+  const handleMenuAction = useCallback(
+    (key: string, node: JobTreeNode) => {
+      if (key === "addWorkflow") handleAddWorkflow(node.id);
+      else if (key === "addTask") handleAddTask(node.id);
+      else if (key === "addSubgroup") handleAddSubgroup(node.id);
+      else if (key === "rename") setRenameNode(node);
+      else if (key === "delete") handleDelete(node);
+      else void handleLifecycle(key, node);
+    },
+    [handleAddWorkflow, handleAddTask, handleAddSubgroup, handleDelete, handleLifecycle, setRenameNode],
+  );
+  return { getMenuItems, handleMenuAction };
 }
 
 // ---------- hooks: tree data mapping ----------
@@ -364,23 +398,16 @@ export default function JobTree({
     typeFilter,
     statusFilter,
   });
-  const { handleAddWorkflow, handleAddTask, handleDelete } = useJobTreeActions({ messageApi });
+  const actions = useJobTreeActions({ messageApi });
   const lifecycle = useDefinitionLifecycle(messageApi);
   const [renameNode, setRenameNode] = useState<JobTreeNode | null>(null);
 
-  const getMenuItems = useCallback((node: JobTreeNode): MenuProps["items"] => buildNodeMenuItems(node, t), [t]);
-
-  const { handleLifecycle } = lifecycle;
-  const handleMenuAction = useCallback(
-    (key: string, node: JobTreeNode) => {
-      if (key === "addWorkflow") handleAddWorkflow(node.id);
-      else if (key === "addTask") handleAddTask(node.id);
-      else if (key === "rename") setRenameNode(node);
-      else if (key === "delete") handleDelete(node);
-      else void handleLifecycle(key, node);
-    },
-    [handleAddWorkflow, handleAddTask, handleDelete, handleLifecycle],
-  );
+  const { getMenuItems, handleMenuAction } = useMenuActions({
+    t,
+    actions,
+    handleLifecycle: lifecycle.handleLifecycle,
+    setRenameNode,
+  });
 
   const onMore = useCallback(
     (event: React.MouseEvent, node: JobTreeNode) => {
@@ -445,7 +472,7 @@ function groupSiblingNames(treeData: JobTreeNode[], node: JobTreeNode): string[]
 /** Rename modal for a group node; reads the store so JobTree only holds the target. */
 function GroupRenameModal({ node, onClose }: { node: JobTreeNode | null; onClose: () => void }) {
   const treeData = useJobStore((s) => s.treeData);
-  const updateNodeName = useJobStore((s) => s.updateNodeName);
+  const renameNode = useJobStore((s) => s.renameNode);
   return (
     <GroupEditModal
       open={!!node}
@@ -453,7 +480,7 @@ function GroupRenameModal({ node, onClose }: { node: JobTreeNode | null; onClose
       initialName={node?.name}
       siblingNames={node ? groupSiblingNames(treeData, node) : undefined}
       onOk={(name) => {
-        if (node) updateNodeName(node.id, name);
+        if (node) void renameNode(node, name);
         onClose();
       }}
       onCancel={onClose}

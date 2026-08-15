@@ -13,10 +13,6 @@ import { Badge, Button, Divider, Flex, Input, Popover, Tag, Tooltip, Typography 
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-function generateId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 const JOB_TYPE_FILTERS = [
   { label: "Flink SQL", value: "FLINK_SQL" },
   { label: "MySQL", value: "MYSQL_SQL" },
@@ -334,13 +330,13 @@ function TreeFilterBar({ onChange }: { onChange: (filter: FilterState) => void }
 /** Tree panel — job tree with add group button and a collapsible inline filter */
 function TreePanel() {
   const { t } = useTranslation();
-  const addNode = useJobStore((s) => s.addNode);
+  const createGroup = useJobStore((s) => s.createGroup);
   const treeData = useJobStore((s) => s.treeData);
   const [filter, setFilter] = useState<FilterState>({ keyword: "", types: [], statuses: [] });
   const [addOpen, setAddOpen] = useState(false);
 
   const handleCreateGroup = (name: string) => {
-    addNode({ id: generateId("group"), name, kind: "group", pid: "", children: [] });
+    void createGroup(name, "");
     setAddOpen(false);
   };
 
