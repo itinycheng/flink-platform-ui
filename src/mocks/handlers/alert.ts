@@ -1,21 +1,16 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
-import type { AlertRule, AlertChannelType } from "@/types/alert";
+import type { AlertRule, AlertChannelType, AlertRuleConfig } from "@/types/alert";
 import { paginate } from "@/utils/pagination";
 
-const CHANNELS: AlertChannelType[] = ["email", "sms", "dingtalk", "wechat", "webhook"];
+const CHANNELS: AlertChannelType[] = ["EMAIL", "FEI_SHU", "DING_DING", "SMS"];
 
-function configFor(type: AlertChannelType): string {
-  switch (type) {
-    case "email":
-      return JSON.stringify({ recipients: [faker.internet.email()] }, null, 2);
-    case "sms":
-      return JSON.stringify({ phones: [faker.phone.number()] }, null, 2);
-    case "webhook":
-      return JSON.stringify({ url: faker.internet.url() }, null, 2);
-    default:
-      return JSON.stringify({ webhook: faker.internet.url(), atAll: false }, null, 2);
+function configFor(type: AlertChannelType): AlertRuleConfig | undefined {
+  // Only FeiShu carries extra config (webhook + content); other channels are configless.
+  if (type === "FEI_SHU") {
+    return { webhook: faker.internet.url(), content: { msg_type: "text", text: faker.lorem.sentence() } };
   }
+  return undefined;
 }
 
 function generateAlertRules(count: number): AlertRule[] {
@@ -24,7 +19,7 @@ function generateAlertRules(count: number): AlertRule[] {
     const now = faker.date.recent({ days: 90 }).toISOString();
     return {
       id: `ar-${faker.string.nanoid(6)}`,
-      name: `${type}-${faker.word.noun()}`,
+      name: `${type.toLowerCase()}-${faker.word.noun()}`,
       type,
       config: configFor(type),
       description: faker.lorem.sentence({ min: 3, max: 8 }),

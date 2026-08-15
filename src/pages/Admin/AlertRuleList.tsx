@@ -6,26 +6,13 @@ import { useTranslation } from "react-i18next";
 import type { AlertChannelType, AlertRule } from "@/types/alert";
 import { createAlertRule, deleteAlertRule, getAlertRules, updateAlertRule } from "@/api/alert";
 import RowActions from "@/components/RowActions";
+import { JsonTextArea } from "@/components/form";
+import { ALERT_TYPES, enumOptions } from "@/constants/enums";
 import { enumColor } from "@/utils/statusColor";
 
-function getAlertChannelOptions(t: (k: string) => string) {
-  return [
-    { label: t("alertRule.channelEmail"), value: "email" },
-    { label: t("alertRule.channelSms"), value: "sms" },
-    { label: t("alertRule.channelDingtalk"), value: "dingtalk" },
-    { label: t("alertRule.channelWechat"), value: "wechat" },
-    { label: t("alertRule.channelWebhook"), value: "webhook" },
-  ];
-}
-
-interface AlertChannelTagProps {
-  type: AlertChannelType;
-}
-
-function AlertChannelTag({ type }: AlertChannelTagProps) {
+function AlertChannelTag({ type }: { type: AlertChannelType }) {
   const { t } = useTranslation();
-  const labels = Object.fromEntries(getAlertChannelOptions(t).map((o) => [o.value, o.label]));
-  return <Tag color={enumColor(type)}>{labels[type] ?? type}</Tag>;
+  return <Tag color={enumColor(type)}>{t(`enums.AlertType.${type}`)}</Tag>;
 }
 
 interface AlertRuleActionsCellProps {
@@ -76,6 +63,7 @@ function AlertRuleFormModal({
   onCancel,
 }: AlertRuleFormModalProps) {
   const { t } = useTranslation();
+  const type = Form.useWatch("type", form) as string | undefined;
   return (
     <Modal
       title={isEdit ? t("alertRule.editTitle") : t("alertRule.addTitle")}
@@ -91,11 +79,18 @@ function AlertRuleFormModal({
           <Input placeholder={t("alertRule.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
         <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("alertRule.typePlaceholder") }]}>
-          <Select placeholder={t("alertRule.typePlaceholder")} options={getAlertChannelOptions(t)} data-testid="select-type" />
+          <Select placeholder={t("alertRule.typePlaceholder")} options={enumOptions(ALERT_TYPES, "AlertType", t)} data-testid="select-type" />
         </Form.Item>
-        <Form.Item name="config" label={t("alertRule.configLabel")}>
-          <Input.TextArea placeholder={t("alertRule.configPlaceholder")} rows={6} data-testid="input-config" />
-        </Form.Item>
+        {type === "FEI_SHU" && (
+          <>
+            <Form.Item name={["config", "webhook"]} label={t("alertRule.webhookLabel")} rules={[{ required: true, message: t("alertRule.webhookPlaceholder") }]}>
+              <Input placeholder={t("alertRule.webhookPlaceholder")} data-testid="input-webhook" />
+            </Form.Item>
+            <Form.Item name={["config", "content"]} label={t("alertRule.contentLabel")}>
+              <JsonTextArea />
+            </Form.Item>
+          </>
+        )}
         <Form.Item name="description" label={t("common.description")}>
           <Input.TextArea placeholder={t("alertRule.descriptionPlaceholder")} rows={3} data-testid="input-description" />
         </Form.Item>
@@ -127,7 +122,7 @@ function useAlertRuleCrud() {
     form.setFieldsValue({
       name: record.name,
       type: record.type,
-      config: record.config,
+      config: record.config ?? {},
       description: record.description ?? "",
     });
     setModalOpen(true);
