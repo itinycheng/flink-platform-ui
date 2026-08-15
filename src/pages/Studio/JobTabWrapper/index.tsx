@@ -55,6 +55,8 @@ function PanelBarItem({ label, isActive, onClick }: PanelBarItemProps) {
 export default function JobTabWrapper({ node }: { node: JobTreeNode }) {
   const { t } = useTranslation();
   const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
+  // Schedule/params live on the workflow (JobFlow); the drawer only applies to workflow nodes.
+  const isWorkflow = node.type === "workflow";
 
   const toggle = (key: PanelKey) => {
     setActivePanel((prev) => (prev === key ? null : key));
@@ -70,52 +72,56 @@ export default function JobTabWrapper({ node }: { node: JobTreeNode }) {
           overflow: "hidden",
         }}
       >
-        {node.type === "workflow" ? <DAGEditor embedded /> : <JobForm nodeId={node.id} />}
-        <Drawer
-          title={activePanel ? t(`sidePanel.${activePanel}`) : ""}
-          placement="right"
-          open={activePanel !== null}
-          onClose={() => setActivePanel(null)}
-          getContainer={false}
-          closable={false}
-          mask={false}
-          size={320}
-          styles={{
-            body: { padding: "12px 16px" },
-            header: { padding: "12px 16px" },
-            wrapper: {
-              boxShadow: "var(--ant-box-shadow-secondary)",
-              borderLeft: "1px solid var(--ant-color-border-secondary)",
-            },
-          }}
-        >
-          {activePanel === "schedule" && <SchedulePanel />}
-          {activePanel === "params" && <ParamsPanel />}
-        </Drawer>
+        {isWorkflow ? <DAGEditor embedded /> : <JobForm nodeId={node.id} />}
+        {isWorkflow && (
+          <Drawer
+            title={activePanel ? t(`sidePanel.${activePanel}`) : ""}
+            placement="right"
+            open={activePanel !== null}
+            onClose={() => setActivePanel(null)}
+            getContainer={false}
+            closable={false}
+            mask={false}
+            size={320}
+            styles={{
+              body: { padding: "12px 16px" },
+              header: { padding: "12px 16px" },
+              wrapper: {
+                boxShadow: "var(--ant-box-shadow-secondary)",
+                borderLeft: "1px solid var(--ant-color-border-secondary)",
+              },
+            }}
+          >
+            {activePanel === "schedule" && <SchedulePanel nodeId={node.id} />}
+            {activePanel === "params" && <ParamsPanel nodeId={node.id} />}
+          </Drawer>
+        )}
       </div>
 
-      {/* Right text bar */}
-      <Flex
-        vertical
-        align="center"
-        style={{
-          width: BAR_WIDTH,
-          flexShrink: 0,
-          borderLeft: "1px solid var(--ant-color-border-secondary)",
-          background: "var(--ant-color-bg-layout)",
-          paddingTop: 8,
-          gap: 0,
-        }}
-      >
-        {PANELS.map((panel) => (
-          <PanelBarItem
-            key={panel.key}
-            label={t(panel.titleKey)}
-            isActive={activePanel === panel.key}
-            onClick={() => toggle(panel.key)}
-          />
-        ))}
-      </Flex>
+      {/* Right text bar — schedule/params only apply to workflow definitions */}
+      {isWorkflow && (
+        <Flex
+          vertical
+          align="center"
+          style={{
+            width: BAR_WIDTH,
+            flexShrink: 0,
+            borderLeft: "1px solid var(--ant-color-border-secondary)",
+            background: "var(--ant-color-bg-layout)",
+            paddingTop: 8,
+            gap: 0,
+          }}
+        >
+          {PANELS.map((panel) => (
+            <PanelBarItem
+              key={panel.key}
+              label={t(panel.titleKey)}
+              isActive={activePanel === panel.key}
+              onClick={() => toggle(panel.key)}
+            />
+          ))}
+        </Flex>
+      )}
     </Flex>
   );
 }

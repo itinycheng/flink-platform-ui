@@ -1,57 +1,87 @@
-import { useState } from "react";
-import { Form, Input, InputNumber, Select, Switch } from "antd";
+import { useEffect, useState } from "react";
+import { Button, Form, Input, InputNumber, Select, Spin, Switch, message } from "antd";
+import { SaveOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
+import { useJobStore } from "@/stores/jobStore";
+import { DurationInput } from "@/components/form";
+import { enumOptions, TIMEOUT_STRATEGIES } from "@/constants/enums";
+import type { JobFlow } from "@/types/entities";
 import CronPreview from "./CronPreview";
 
-export default function SchedulePanel() {
+/** Schedule settings for a workflow (JobFlow): cron, parallelism, timeout, priority. */
+export default function SchedulePanel({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation();
-  const [cron, setCron] = useState("");
+  // Untyped form: Ant's strict Store typing rejects JobFlow.params (Record<string, unknown>).
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [messageApi, ctx] = message.useMessage();
+  const loadJobFlow = useJobStore((s) => s.loadJobFlow);
+  const saveJobFlow = useJobStore((s) => s.saveJobFlow);
+  const cron = Form.useWatch("cronExpr", form) as string | undefined;
+  const timeoutEnabled = Form.useWatch(["timeout", "enable"], form) as boolean | undefined;
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    void loadJobFlow(nodeId)
+      .then((flow) => {
+        if (alive && flow) form.setFieldsValue(flow);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [nodeId, loadJobFlow, form]);
+
+  const onSave = async () => {
+    const values = await form.validateFields();
+    setSaving(true);
+    try {
+      await saveJobFlow(nodeId, {
+        ...values,
+        id: form.getFieldValue("id"),
+        name: form.getFieldValue("name"),
+      } as JobFlow);
+      void messageApi.success(t("common.saveSuccess"));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <Form layout="vertical" size="small" style={{ padding: "0 4px" }}>
-      <Form.Item label={t("sidePanel.cronExpression")}>
-        <Input placeholder="0 0 * * *" value={cron} onChange={(e) => setCron(e.target.value)} />
-      </Form.Item>
-      <CronPreview expression={cron} />
-      <Form.Item label={t("sidePanel.timezone")}>
-        <Select
-          placeholder={t("sidePanel.timezonePlaceholder")}
-          options={[
-            { label: "Asia/Shanghai (UTC+8)", value: "Asia/Shanghai" },
-            { label: "America/New_York (UTC-5)", value: "America/New_York" },
-            { label: "Europe/London (UTC+0)", value: "Europe/London" },
-            { label: "Asia/Tokyo (UTC+9)", value: "Asia/Tokyo" },
-            { label: "UTC", value: "UTC" },
-          ]}
-        />
-      </Form.Item>
-      <Form.Item label={t("sidePanel.timeout")}>
-        <InputNumber
-          min={0}
-          max={86400}
-          placeholder={t("sidePanel.timeoutPlaceholder")}
-          style={{ width: "100%" }}
-          suffix={t("sidePanel.seconds")}
-        />
-      </Form.Item>
-      <Form.Item label={t("sidePanel.retryCount")}>
-        <InputNumber min={0} max={10} defaultValue={0} style={{ width: "100%" }} />
-      </Form.Item>
-      <Form.Item label={t("sidePanel.retryInterval")}>
-        <InputNumber min={0} max={3600} placeholder="60" style={{ width: "100%" }} suffix={t("sidePanel.seconds")} />
-      </Form.Item>
-      <Form.Item label={t("sidePanel.failureStrategy")}>
-        <Select
-          defaultValue="continue"
-          options={[
-            { label: t("sidePanel.continueOnFailure"), value: "continue" },
-            { label: t("sidePanel.stopOnFailure"), value: "stop" },
-          ]}
-        />
-      </Form.Item>
-      <Form.Item label={t("sidePanel.enabled")} valuePropName="checked">
-        <Switch defaultChecked />
-      </Form.Item>
-    </Form>
+    <Spin spinning={loading}>
+      {ctx}
+      <Form form={form} layout="vertical" size="small" style={{ padding: "0 4px" }}>
+        <Form.Item name="cronExpr" label={t("sidePanel.cronExpression")}>
+          <Input placeholder="0 0 * * *" />
+        </Form.Item>
+        <CronPreview expression={cron ?? ""} />
+        <Form.Item name={["config", "parallelism"]} label={t("sidePanel.parallelism")} initialValue={1}>
+          <InputNumber min={1} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item name="priority" label={t("sidePanel.priority")}>
+          <InputNumber min={0} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item name={["timeout", "enable"]} label={t("sidePanel.timeoutEnable")} valuePropName="checked">
+          <Switch />
+        </Form.Item>
+        {timeoutEnabled && (
+          <>
+            <Form.Item name={["timeout", "strategies"]} label={t("sidePanel.timeoutStrategies")}>
+              <Select mode="multiple" options={enumOptions(TIMEOUT_STRATEGIES, "TimeoutStrategy", t)} />
+            </Form.Item>
+            <Form.Item name={["timeout", "threshold"]} label={t("sidePanel.timeoutThreshold")}>
+              <DurationInput />
+            </Form.Item>
+          </>
+        )}
+        <Button type="primary" size="small" icon={<SaveOutlined />} loading={saving} onClick={() => void onSave()}>
+          {t("common.save")}
+        </Button>
+      </Form>
+    </Spin>
   );
 }

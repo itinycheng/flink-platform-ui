@@ -1,66 +1,68 @@
-import { Button, Flex, Form, Input, Typography } from "antd";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Button, Flex, Form, Spin, Typography, message } from "antd";
+import { SaveOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
+import { useJobStore } from "@/stores/jobStore";
+import { KeyValueEditor } from "@/components/form";
+import type { JobFlow } from "@/types/entities";
 
-interface ParamRow {
-  id: string;
-  key: string;
-  value: string;
-}
-
-let nextRowId = 0;
-const newRow = (): ParamRow => ({ id: `p-${++nextRowId}`, key: "", value: "" });
-
-export default function ParamsPanel() {
+/** Workflow-level parameters (JobFlow.params) as a key/value map. */
+export default function ParamsPanel({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation();
-  const [params, setParams] = useState<ParamRow[]>([]);
+  // Untyped form: Ant's strict Store typing rejects JobFlow.params (Record<string, unknown>).
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [messageApi, ctx] = message.useMessage();
+  const loadJobFlow = useJobStore((s) => s.loadJobFlow);
+  const saveJobFlow = useJobStore((s) => s.saveJobFlow);
 
-  const addParam = () => setParams([...params, newRow()]);
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    void loadJobFlow(nodeId)
+      .then((flow) => {
+        if (alive && flow) form.setFieldsValue(flow);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [nodeId, loadJobFlow, form]);
 
-  const removeParam = (id: string) => setParams(params.filter((p) => p.id !== id));
-
-  const updateParam = (id: string, field: "key" | "value", val: string) => {
-    setParams(params.map((p) => (p.id === id ? { ...p, [field]: val } : p)));
+  const onSave = async () => {
+    const values = await form.validateFields();
+    setSaving(true);
+    try {
+      await saveJobFlow(nodeId, {
+        ...values,
+        id: form.getFieldValue("id"),
+        name: form.getFieldValue("name"),
+      } as JobFlow);
+      void messageApi.success(t("common.saveSuccess"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <Flex vertical gap={12} style={{ padding: "0 4px" }}>
-      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-        {t("sidePanel.paramsDescription")}
-      </Typography.Text>
-
-      <Form layout="vertical" size="small">
-        {params.map((param, index) => (
-          <Flex key={param.id} gap={6} align="start" style={{ marginBottom: 8 }}>
-            <Form.Item style={{ flex: 1, marginBottom: 0 }} label={index === 0 ? t("sidePanel.paramKey") : undefined}>
-              <Input
-                placeholder={t("sidePanel.paramKeyPlaceholder")}
-                value={param.key}
-                onChange={(e) => updateParam(param.id, "key", e.target.value)}
-              />
-            </Form.Item>
-            <Form.Item style={{ flex: 1, marginBottom: 0 }} label={index === 0 ? t("sidePanel.paramValue") : undefined}>
-              <Input
-                placeholder={t("sidePanel.paramValuePlaceholder")}
-                value={param.value}
-                onChange={(e) => updateParam(param.id, "value", e.target.value)}
-              />
-            </Form.Item>
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => removeParam(param.id)}
-              style={{ marginTop: index === 0 ? 30 : 0 }}
-            />
-          </Flex>
-        ))}
-      </Form>
-
-      <Button type="dashed" icon={<PlusOutlined />} onClick={addParam} block size="small">
-        {t("sidePanel.addParam")}
-      </Button>
-    </Flex>
+    <Spin spinning={loading}>
+      {ctx}
+      <Flex vertical gap={12} style={{ padding: "0 4px" }}>
+        <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+          {t("sidePanel.paramsDescription")}
+        </Typography.Text>
+        <Form form={form} layout="vertical" size="small">
+          <Form.Item name="params">
+            <KeyValueEditor />
+          </Form.Item>
+        </Form>
+        <Button type="primary" size="small" icon={<SaveOutlined />} loading={saving} onClick={() => void onSave()}>
+          {t("common.save")}
+        </Button>
+      </Flex>
+    </Spin>
   );
 }
