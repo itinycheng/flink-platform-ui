@@ -13,6 +13,7 @@ import { TaskIcon } from "@/components/TaskIcon";
 import { StatusDot } from "./StatusDot";
 import { RunStatusIcon } from "./RunStatusIcon";
 import { buildNodeMenuItems } from "./nodeMenu";
+import { performDelete } from "./performDelete";
 import { useDefinitionLifecycle } from "./useDefinitionLifecycle";
 import { TagEditModal } from "./TagEditModal";
 import { AlertBindModal } from "./AlertBindModal";
@@ -275,10 +276,7 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
         okText: t("common.delete"),
         okType: "danger",
         cancelText: t("common.cancel"),
-        onOk: () => {
-          void deleteNode(node);
-          void messageApi.success(t("workflow.deleted"));
-        },
+        onOk: () => performDelete(node, deleteNode, messageApi, t),
       });
     },
     [deleteNode, messageApi, t],
