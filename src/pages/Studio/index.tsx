@@ -21,7 +21,7 @@ const tabTheme: ThemeConfig = {
   },
 };
 
-function getTabIcon(jobType: string): React.ReactNode {
+function getTabIcon(jobType: string | undefined): React.ReactNode {
   return <TaskIcon type={jobType} size={16} style={{ marginRight: 4 }} />;
 }
 
@@ -30,11 +30,11 @@ export default function StudioPage() {
   const { t } = useTranslation();
 
   const breadcrumbItems = [{ title: t("nav.workflow") }];
-  if (selectedNode?.group) {
-    const parent = findNodeById(treeData, selectedNode.group);
+  if (selectedNode?.pid) {
+    const parent = findNodeById(treeData, selectedNode.pid);
     if (parent) breadcrumbItems.push({ title: parent.name });
   }
-  if (selectedNode && selectedNode.type !== "group") {
+  if (selectedNode && selectedNode.kind !== "group") {
     breadcrumbItems.push({ title: selectedNode.name });
   }
 
@@ -42,7 +42,7 @@ export default function StudioPage() {
     key: tab.key,
     label: (
       <span style={{ display: "inline-flex", alignItems: "center", paddingInline: 4 }}>
-        {getTabIcon(tab.node.type)}
+        {getTabIcon(tab.node.jobType ?? tab.node.kind)}
         <span
           style={{
             maxWidth: 120,
@@ -93,7 +93,7 @@ export default function StudioPage() {
           <Flex vertical align="center" justify="center" style={{ flex: 1 }}>
             <InboxOutlined style={{ fontSize: 32, color: "var(--ant-color-text-quaternary)" }} />
             <Typography.Text type="secondary" style={{ marginTop: 8 }}>
-              {selectedNode?.type === "group" ? t("workflow.selectGroupHint") : t("workflow.selectWorkflowHint")}
+              {selectedNode?.kind === "group" ? t("workflow.selectGroupHint") : t("workflow.selectWorkflowHint")}
             </Typography.Text>
           </Flex>
         )}

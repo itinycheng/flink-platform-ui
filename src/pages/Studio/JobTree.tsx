@@ -51,8 +51,8 @@ const slotStyle = (width: number): React.CSSProperties => ({
   justifyContent: "center",
 });
 
-function getNodeIcon(node: { type: string }): React.ReactNode {
-  return <TaskIcon type={node.type} size={ICON_SIZE} />;
+function getNodeIcon(node: JobTreeNode): React.ReactNode {
+  return <TaskIcon type={node.jobType ?? node.kind} size={ICON_SIZE} />;
 }
 
 // ---------- utils ----------
@@ -99,7 +99,7 @@ const JobTreeNodeTitle = React.memo(function JobTreeNodeTitle({
         ) : (
           <>
             <span style={slotStyle(7)}>{node.lifecycleStatus && <StatusDot status={node.lifecycleStatus} />}</span>
-            <span style={slotStyle(12)}>{node.type !== "group" && <RunStatusIcon status={node.status} />}</span>
+            <span style={slotStyle(12)}>{node.kind !== "group" && <RunStatusIcon status={node.status} />}</span>
           </>
         )}
         <EllipsisOutlined className="job-tree-more" style={moreButtonStyle} onClick={(e) => onMore(e, node)} />
@@ -217,7 +217,7 @@ function useJobTreeData({
       const nodeId = String(selectedKeys[0]);
       const node = findNodeById(treeData, nodeId);
       if (!node) return;
-      if (node.type !== "group") {
+      if (node.kind !== "group") {
         void selectNode(node);
         return;
       }
@@ -234,13 +234,13 @@ function useJobTreeData({
 // ---------- hooks: actions ----------
 
 function buildDeleteContent(node: JobTreeNode, t: (k: string, opts?: Record<string, unknown>) => string): string {
-  if (node.type === "group") {
+  if (node.kind === "group") {
     const count = node.children?.length ?? 0;
     return count > 0
       ? t("workflow.confirmDeleteGroup", { name: node.name, count })
       : t("workflow.confirmDeleteGroupEmpty", { name: node.name });
   }
-  return node.type === "task"
+  return node.kind === "task"
     ? t("workflow.confirmDeleteTask", { name: node.name })
     : t("workflow.confirmDeleteWorkflow", { name: node.name });
 }
@@ -252,12 +252,12 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
 
   const handleAddWorkflow = useCallback(
     (parentId: string) =>
-      addNode({ id: generateId("wf"), name: t("workflow.newWorkflow"), type: "workflow", group: parentId }),
+      addNode({ id: generateId("wf"), name: t("workflow.newWorkflow"), kind: "workflow", pid: parentId }),
     [addNode, t],
   );
   const handleAddTask = useCallback(
     (parentId: string) =>
-      addNode({ id: generateId("task"), name: t("workflow.newTask"), type: "task", group: parentId }),
+      addNode({ id: generateId("task"), name: t("workflow.newTask"), kind: "task", pid: parentId }),
     [addNode, t],
   );
 
@@ -296,11 +296,11 @@ function useBuiltTreeData(onMore: (event: React.MouseEvent, node: JobTreeNode) =
         <JobTreeNodeTitle
           displayName={loadingGroups.has(node.id) ? `${node.name} ...` : node.name}
           node={node}
-          count={node.type === "group" ? (node.childCount ?? node.children?.length) : undefined}
+          count={node.kind === "group" ? (node.childCount ?? node.children?.length) : undefined}
           onMore={onMore}
         />
       );
-      if (node.type !== "group") {
+      if (node.kind !== "group") {
         return { key: node.id, title, icon: getNodeIcon(node), isLeaf: true };
       }
       // Show the expand arrow before children are fetched; map them once loaded.
@@ -438,8 +438,8 @@ export default function JobTree({
 
 /** Names of a node's same-level groups (excluding itself), for duplicate checks. */
 function groupSiblingNames(treeData: JobTreeNode[], node: JobTreeNode): string[] {
-  const siblings = node.group ? (findNodeById(treeData, node.group)?.children ?? []) : treeData;
-  return siblings.filter((n) => n.type === "group" && n.id !== node.id).map((n) => n.name);
+  const siblings = node.pid ? (findNodeById(treeData, node.pid)?.children ?? []) : treeData;
+  return siblings.filter((n) => n.kind === "group" && n.id !== node.id).map((n) => n.name);
 }
 
 /** Rename modal for a group node; reads the store so JobTree only holds the target. */

@@ -58,5 +58,5 @@ function definitionMenu(node: JobTreeNode, t: TFunction): MenuItem[] {
 }
 
 export function buildNodeMenuItems(node: JobTreeNode, t: TFunction): MenuProps["items"] {
-  return node.type === "group" ? groupMenu(t) : definitionMenu(node, t);
+  return node.kind === "group" ? groupMenu(t) : definitionMenu(node, t);
 }

@@ -17,11 +17,12 @@ const GROUP_SPECS: { name: string; size: number }[] = [
 ];
 
 function generateChild(gi: number, groupId: string): JobTreeNode {
-  const jobType = faker.helpers.arrayElement(["MYSQL_SQL", "SHELL", "FLINK_SQL", "FLINK_JAR", "workflow"]);
+  const isWorkflow = faker.datatype.boolean();
+  const jobType = faker.helpers.arrayElement<JobType>(["MYSQL_SQL", "SHELL", "FLINK_SQL", "FLINK_JAR"]);
   return {
-    id: jobType === "workflow" ? `wf-${faker.string.nanoid(6)}` : `task-${faker.string.nanoid(6)}`,
+    id: isWorkflow ? `wf-${faker.string.nanoid(6)}` : `task-${faker.string.nanoid(6)}`,
     name:
-      jobType === "workflow"
+      isWorkflow
         ? faker.helpers.arrayElement(["日报汇总", "数据同步流程", "ETL Pipeline", "报表生成流程"]) +
           ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`
         : faker.helpers.arrayElement([
@@ -32,8 +33,9 @@ function generateChild(gi: number, groupId: string): JobTreeNode {
             "Hive 分区整理",
             "Flink CDC 实时同步",
           ]) + ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`,
-    type: jobType,
-    group: groupId,
+    kind: isWorkflow ? "workflow" : "task",
+    jobType: isWorkflow ? undefined : jobType,
+    pid: groupId,
     // Latest-run status (run outcome), shown as an icon on the definition node.
     status: faker.helpers.arrayElement(["success", "failed", "running", "pending", "stopped"] as JobStatus[]),
     lifecycleStatus: faker.helpers.arrayElement(["OFFLINE", "ONLINE", "SCHEDULING"] as WorkflowLifecycleStatus[]),
@@ -49,8 +51,8 @@ function generateWorkflowTree(): JobTreeNode[] {
     return {
       id: groupId,
       name,
-      type: "group" as const,
-      group: "",
+      kind: "group" as const,
+      pid: "",
       childCount: children.length,
       children,
     };
@@ -151,7 +153,7 @@ export const workflowHandlers: RequestHandler[] = [
       const matched = (group.children ?? []).filter((child) => {
         const matchKeyword =
           !keyword || child.name.toLowerCase().includes(keyword) || child.id.toLowerCase().includes(keyword);
-        const matchType = types.length === 0 || types.includes(child.type);
+        const matchType = types.length === 0 || (child.jobType ? types.includes(child.jobType) : false);
         const matchStatus = statuses.length === 0 || (child.status ? statuses.includes(child.status) : false);
         return matchKeyword && matchType && matchStatus;
       });

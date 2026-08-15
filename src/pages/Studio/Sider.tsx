@@ -340,7 +340,7 @@ function TreePanel() {
   const [addOpen, setAddOpen] = useState(false);
 
   const handleCreateGroup = (name: string) => {
-    addNode({ id: generateId("group"), name, type: "group", group: "", children: [] });
+    addNode({ id: generateId("group"), name, kind: "group", pid: "", children: [] });
     setAddOpen(false);
   };
 
@@ -359,7 +359,7 @@ function TreePanel() {
       <GroupEditModal
         open={addOpen}
         mode="create"
-        siblingNames={treeData.filter((n) => n.type === "group").map((n) => n.name)}
+        siblingNames={treeData.filter((n) => n.kind === "group").map((n) => n.name)}
         onOk={handleCreateGroup}
         onCancel={() => setAddOpen(false)}
       />

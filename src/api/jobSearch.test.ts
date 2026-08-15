@@ -12,7 +12,7 @@ describe("searchJobs", () => {
     const results = await searchJobs({ types: ["FLINK_SQL"] });
     const allChildren = results.flatMap((group) => group.children ?? []);
     expect(allChildren.length).toBeGreaterThan(0);
-    expect(allChildren.every((child) => child.type === "FLINK_SQL")).toBe(true);
+    expect(allChildren.every((child) => child.jobType === "FLINK_SQL")).toBe(true);
   });
 
   it("returns no matches for a type filter that isn't a real JobType value", async () => {

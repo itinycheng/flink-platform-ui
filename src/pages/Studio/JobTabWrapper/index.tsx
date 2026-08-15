@@ -56,7 +56,7 @@ export default function JobTabWrapper({ node }: { node: JobTreeNode }) {
   const { t } = useTranslation();
   const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
   // Schedule/params live on the workflow (JobFlow); the drawer only applies to workflow nodes.
-  const isWorkflow = node.type === "workflow";
+  const isWorkflow = node.kind === "workflow";
 
   const toggle = (key: PanelKey) => {
     setActivePanel((prev) => (prev === key ? null : key));

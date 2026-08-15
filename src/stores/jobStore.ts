@@ -137,18 +137,18 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
 
   selectNode: async (node) => {
     set({ selectedNode: node });
-    if (!node || node.type === "group") return;
+    if (!node || node.kind === "group") return;
     get().openTab(node);
   },
 
   addNode: (node) => {
     const { treeData } = get();
-    // A node with no parent (empty/null `group`) is a root node; otherwise it is
+    // A node with no parent (empty `pid`) is a root node; otherwise it is
     // appended to its parent's children, at whatever depth the parent lives.
-    if (!node.group) {
+    if (!node.pid) {
       set({ treeData: [...treeData, node] });
     } else {
-      set({ treeData: insertChild(treeData, node.group, node) });
+      set({ treeData: insertChild(treeData, node.pid, node) });
     }
   },
 

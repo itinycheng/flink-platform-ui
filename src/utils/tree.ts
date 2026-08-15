@@ -3,7 +3,7 @@ import type { JobTreeNode } from "@/types/job";
 /**
  * Depth-agnostic, immutable helpers for the job tree.
  *
- * The tree is arbitrarily nested: any node with `type === "group"` may hold
+ * The tree is arbitrarily nested: any node with `kind === "group"` may hold
  * `children` (further groups and/or leaf definitions). These helpers recurse to
  * any depth, so the store never has to assume a fixed two-level shape.
  *

@@ -1,12 +1,19 @@
+import type { JobType } from "@/constants/enums";
+
 export type JobStatus = "success" | "failed" | "running" | "scheduling" | "stopped" | "pending";
 
-export type JobType = "SQL" | "SHELL" | "JDBC" | "FLINK" | "SPARK" | (string & {});
+export type TreeNodeKind = "group" | "task" | "workflow";
 
 export interface JobTreeNode {
   id: string;
   name: string;
-  type: JobType;
-  group: string;
+  kind: TreeNodeKind;
+  /** Backend JobType, leaf only — drives the icon for task nodes. */
+  jobType?: JobType;
+  /** jobInfo/jobFlow backend id (leaf). */
+  refId?: number;
+  /** Parent group id; "" = top level. */
+  pid: string;
   children?: JobTreeNode[];
   /** Total number of direct children (for the group count badge); may exceed loaded `children` when paginated. */
   childCount?: number;
