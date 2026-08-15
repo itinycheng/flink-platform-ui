@@ -1,5 +1,7 @@
-import type { DbType, WorkerStatus } from "@/constants/enums";
+import type { DbType, WorkerStatus, CatalogType } from "@/constants/enums";
 import type { DatasourceParam, EnvironmentSpec } from "@/types/entities";
+
+export type { CatalogType };
 
 export interface ResourceFile {
   id: string;
@@ -66,8 +68,6 @@ export interface TestConnectionResult {
 }
 
 // ---- Catalog (Flink SQL Catalog) ----
-
-export type CatalogType = "hive" | "jdbc" | "paimon" | "iceberg";
 
 export interface Catalog {
   id: string;

@@ -3,18 +3,12 @@ import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } f
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { Catalog, CatalogType } from "@/types/admin";
+import type { Catalog } from "@/types/admin";
 import { createCatalog, deleteCatalog, getCatalogs, updateCatalog } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import CodeEditor from "@/components/CodeEditor";
+import { CATALOG_TYPES, enumOptions } from "@/constants/enums";
 import { enumColor } from "@/utils/statusColor";
-
-const CATALOG_TYPE_OPTIONS: { label: string; value: CatalogType }[] = [
-  { label: "Hive", value: "hive" },
-  { label: "JDBC", value: "jdbc" },
-  { label: "Paimon", value: "paimon" },
-  { label: "Iceberg", value: "iceberg" },
-];
 
 interface CatalogTypeTagProps {
   type: Catalog["type"];
@@ -105,7 +99,7 @@ function CatalogFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }
           <Input placeholder={t("catalog.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
         <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("catalog.typePlaceholder") }]}>
-          <Select placeholder={t("catalog.typePlaceholder")} options={CATALOG_TYPE_OPTIONS} data-testid="select-type" />
+          <Select placeholder={t("catalog.typePlaceholder")} options={enumOptions(CATALOG_TYPES, "CatalogType", t)} data-testid="select-type" />
         </Form.Item>
         <Form.Item name="createSql" label={t("catalog.ddlLabel")} rules={[{ required: true, message: t("catalog.ddlPlaceholder") }]}>
           <CreateSqlField placeholder={t("catalog.ddlPlaceholder")} />

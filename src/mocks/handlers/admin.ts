@@ -91,10 +91,10 @@ function generateDataSources(count: number): DataSource[] {
 }
 
 function generateCatalogs(count: number): Catalog[] {
-  const types: CatalogType[] = ["hive", "jdbc", "paimon", "iceberg"];
+  const types: CatalogType[] = ["MEMORY", "HIVE", "JDBC", "POSTGRES", "CLICKHOUSE", "ICEBERG"];
   return Array.from({ length: count }, () => {
     const type = faker.helpers.arrayElement(types);
-    const name = `${type}_${faker.word.noun()}`;
+    const name = `${type.toLowerCase()}_${faker.word.noun()}`;
     const now = faker.date.recent({ days: 60 }).toISOString();
     return {
       id: `cat-${faker.string.nanoid(6)}`,
