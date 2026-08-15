@@ -17,6 +17,11 @@ import {
   getJobInfo,
   createJobInfo,
   updateJobInfo,
+  createJobGroup,
+  renameJobGroup,
+  deleteJobGroup,
+  renameTreeNode,
+  deleteTreeNode,
 } from "@/api/job";
 import {
   getJobFlow,
@@ -54,6 +59,9 @@ export interface WorkflowState {
   updateNodeName: (nodeId: string, newName: string) => void;
   patchNode: (nodeId: string, patch: Partial<JobTreeNode>) => void;
   removeNode: (nodeId: string) => void;
+  createGroup: (name: string, pid: string) => Promise<void>;
+  renameNode: (node: JobTreeNode, name: string) => Promise<void>;
+  deleteNode: (node: JobTreeNode) => Promise<void>;
   runOnce: (nodeId: string) => Promise<string>;
   setLifecycleStatus: (nodeId: string, status: WorkflowLifecycleStatus) => Promise<void>;
   copyDefinition: (nodeId: string) => Promise<void>;
@@ -218,6 +226,29 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     set({ treeData: newTree, selectedNode: newSelected, openTabs: newTabs, activeTabKey: newActiveKey });
   },
 
+  createGroup: async (name, pid) => {
+    const id = await createJobGroup({ name, pid });
+    get().addNode({ id: String(id), name, kind: "group", pid, children: [] });
+  },
+
+  renameNode: async (node, name) => {
+    if (node.kind === "group") {
+      await renameJobGroup({ id: node.id, name });
+    } else {
+      await renameTreeNode({ id: node.id, name });
+    }
+    get().updateNodeName(node.id, name);
+  },
+
+  deleteNode: async (node) => {
+    if (node.kind === "group") {
+      await deleteJobGroup(node.id);
+    } else {
+      await deleteTreeNode(node.id);
+    }
+    get().removeNode(node.id);
+  },
+
   openTab: (node) => {
     const { openTabs } = get();
     const exists = openTabs.some((tab) => tab.key === node.id);
@@ -258,7 +289,8 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   },
 
   saveJobInfo: async (nodeId, info) => {
-    const saved = info.id ? await updateJobInfo(info) : await createJobInfo(info);
+    const node = findNodeById(get().treeData, nodeId);
+    const saved = info.id ? await updateJobInfo(info) : await createJobInfo(info, node?.pid);
     get().patchNode(nodeId, { name: saved.name });
   },
 
@@ -271,10 +303,11 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   },
 
   saveJobFlow: async (nodeId, flow) => {
+    const node = findNodeById(get().treeData, nodeId);
     if (flow.id) {
       await updateJobFlow(flow);
     } else {
-      await createJobFlow(flow);
+      await createJobFlow(flow, node?.pid);
     }
     get().patchNode(nodeId, { name: flow.name });
   },

@@ -43,3 +43,32 @@ describe("jobStore jobInfo actions", () => {
     expect(jobApi.updateJobInfo).toHaveBeenCalled();
   });
 });
+
+describe("jobStore group/leaf backend wiring", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("createGroup calls backend then adds a group node", async () => {
+    vi.mocked(jobApi.createJobGroup).mockResolvedValue("g-new");
+    useJobStore.setState({ treeData: [] });
+    await useJobStore.getState().createGroup("G", "");
+    expect(jobApi.createJobGroup).toHaveBeenCalledWith({ name: "G", pid: "" });
+    expect(useJobStore.getState().treeData.some((n) => n.id === "g-new" && n.kind === "group")).toBe(true);
+  });
+
+  it("deleteNode routes groups to deleteJobGroup and leaves to deleteTreeNode", async () => {
+    vi.mocked(jobApi.deleteJobGroup).mockResolvedValue(true);
+    vi.mocked(jobApi.deleteTreeNode).mockResolvedValue(true);
+    useJobStore.setState({
+      treeData: [
+        { id: "g1", name: "g", kind: "group", pid: "", children: [{ id: "l1", name: "l", kind: "task", pid: "g1" }] },
+      ],
+      openTabs: [],
+      activeTabKey: null,
+      selectedNode: null,
+    });
+    await useJobStore.getState().deleteNode({ id: "l1", name: "l", kind: "task", pid: "g1" });
+    expect(jobApi.deleteTreeNode).toHaveBeenCalledWith("l1");
+    await useJobStore.getState().deleteNode({ id: "g1", name: "g", kind: "group", pid: "" });
+    expect(jobApi.deleteJobGroup).toHaveBeenCalledWith("g1");
+  });
+});
