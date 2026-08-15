@@ -48,7 +48,8 @@ export const jobFlowHandlers: RequestHandler[] = [
 
   mswHttp.get("/api/jobFlow/copy/:id", async ({ params }) => {
     await delay(200);
-    const src = store.get(numId(params.id as string)) ?? defaultFlow(numId(params.id as string));
+    const srcId = numId(params.id as string);
+    const src = store.get(srcId) ?? defaultFlow(srcId);
     const id = ++seq;
     store.set(id, { ...src, id, name: `${src.name}-copy` });
     return ok(id);
