@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { JobTreeNode, WorkflowFormData, WorkflowLifecycleStatus } from "@/types/job";
-import type { JobInfo } from "@/types/entities";
+import type { JobInfo, JobFlow } from "@/types/entities";
 import {
   findNodeById,
   updateNodeById,
@@ -16,15 +16,13 @@ import {
   createWorkflow,
   updateWorkflow,
   deleteWorkflow,
-  runJobOnce,
-  setJobStatus,
-  copyJob,
   updateJobTags,
   updateJobAlertRules,
   getJobInfo,
   createJobInfo,
   updateJobInfo,
 } from "@/api/job";
+import { getJobFlow, createJobFlow, updateJobFlow, copyJobFlow, startSchedule, stopSchedule, runFlowOnce } from "@/api/jobFlow";
 
 export interface OpenTab {
   key: string;
@@ -64,6 +62,8 @@ export interface WorkflowState {
   setActiveTab: (key: string) => void;
   loadJobInfo: (nodeId: string) => Promise<JobInfo | null>;
   saveJobInfo: (nodeId: string, info: JobInfo) => Promise<void>;
+  loadJobFlow: (nodeId: string) => Promise<JobFlow | null>;
+  saveJobFlow: (nodeId: string, flow: JobFlow) => Promise<void>;
 }
 
 // Re-exported so existing imports (`@/stores/jobStore`) keep working; the tree
@@ -171,20 +171,31 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   },
 
   runOnce: async (nodeId) => {
-    const { flowRunId } = await runJobOnce(nodeId);
+    const flowRunId = await runFlowOnce(nodeId);
     // Reflect the triggered run immediately in the node's last-run indicator.
     get().patchNode(nodeId, { status: "running" });
-    return flowRunId;
+    return String(flowRunId);
   },
 
   setLifecycleStatus: async (nodeId, status) => {
-    await setJobStatus(nodeId, status);
+    // The backend models flow lifecycle via start/stop scheduling; SCHEDULING
+    // starts the Quartz trigger, any other target stops it (returns to ONLINE).
+    if (status === "SCHEDULING") {
+      await startSchedule(nodeId);
+    } else {
+      await stopSchedule(nodeId);
+    }
     get().patchNode(nodeId, { lifecycleStatus: status });
   },
 
   copyDefinition: async (nodeId) => {
-    const copy = await copyJob(nodeId);
-    get().addNode(copy);
+    // /jobFlow/copy returns only the new id; clone the source tree node under
+    // the same parent so the copy appears immediately.
+    const newId = await copyJobFlow(nodeId);
+    const src = findNodeById(get().treeData, nodeId);
+    if (src) {
+      get().addNode({ ...src, id: String(newId), name: `${src.name}-copy`, children: undefined });
+    }
   },
 
   setNodeTags: async (nodeId, tags) => {
@@ -282,5 +293,22 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   saveJobInfo: async (nodeId, info) => {
     const saved = info.id ? await updateJobInfo(info) : await createJobInfo(info);
     get().patchNode(nodeId, { name: saved.name });
+  },
+
+  loadJobFlow: async (nodeId) => {
+    try {
+      return await getJobFlow(nodeId);
+    } catch {
+      return null;
+    }
+  },
+
+  saveJobFlow: async (nodeId, flow) => {
+    if (flow.id) {
+      await updateJobFlow(flow);
+    } else {
+      await createJobFlow(flow);
+    }
+    get().patchNode(nodeId, { name: flow.name });
   },
 }));
