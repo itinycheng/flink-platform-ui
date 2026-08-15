@@ -1,4 +1,4 @@
-import type { Node, Edge } from "@xyflow/react";
+import { MarkerType, type Node, type Edge } from "@xyflow/react";
 import type { FlowGraph, FlowNode, FlowEdge } from "@/types/flow";
 
 /**
@@ -36,4 +36,26 @@ export function serializeFlow(nodes: Node[], edges: Edge[]): FlowGraph {
   }));
 
   return { nodes: flowNodes, edges: flowEdges };
+}
+
+/** Reconstruct XYFlow canvas nodes/edges from a persisted {@link FlowGraph}. */
+export function deserializeFlow(graph: FlowGraph): { nodes: Node[]; edges: Edge[] } {
+  const nodes: Node[] = graph.nodes.map((n) => ({
+    id: n.id,
+    type: "taskNode",
+    position: { x: n.x, y: n.y },
+    data: { label: n.label, taskType: n.taskType, description: n.description, priority: n.priority, nodeType: "task" },
+  }));
+
+  const markerEnd = { type: MarkerType.ArrowClosed, color: "var(--ant-color-text-quaternary, #999)" };
+  const edges: Edge[] = graph.edges.map((e) => ({
+    id: e.id,
+    type: "status",
+    source: e.source,
+    target: e.target,
+    markerEnd,
+    data: { status: e.status },
+  }));
+
+  return { nodes, edges };
 }

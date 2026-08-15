@@ -13,6 +13,51 @@ import {
 } from "@xyflow/react";
 import type { TFunction } from "i18next";
 import { EDGE_STATUS_COLORS, getEdgeStyle, type EdgeStatus } from "@/components/FlowCanvas/constants";
+import { useJobStore } from "@/stores/jobStore";
+import { serializeFlow, deserializeFlow } from "./dagSerialize";
+
+interface UseFlowPersistenceOpts {
+  workflowId: string;
+  nodes: Node[];
+  edges: Edge[];
+  setNodes: Dispatch<SetStateAction<Node[]>>;
+  setEdges: Dispatch<SetStateAction<Edge[]>>;
+  messageApi: MessageInstance;
+  t: TFunction;
+}
+
+/** Load a persisted FlowGraph onto the canvas on mount, and serialize+save it on demand. */
+export function useFlowPersistence({ workflowId, nodes, edges, setNodes, setEdges, messageApi, t }: UseFlowPersistenceOpts) {
+  const saveFlowGraph = useJobStore((s) => s.saveFlowGraph);
+  const loadJobFlow = useJobStore((s) => s.loadJobFlow);
+
+  useEffect(() => {
+    let alive = true;
+    void loadJobFlow(workflowId).then((flow) => {
+      if (!alive) return;
+      const graph = flow?.flow;
+      if (graph && "nodes" in graph) {
+        const restored = deserializeFlow(graph);
+        setNodes(restored.nodes);
+        setEdges(restored.edges);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [workflowId, loadJobFlow, setNodes, setEdges]);
+
+  const handleSave = useCallback(async () => {
+    try {
+      await saveFlowGraph(workflowId, serializeFlow(nodes, edges));
+      void messageApi.success(t("dag.flowSaved"));
+    } catch {
+      void messageApi.error(t("dag.flowSaveFailed"));
+    }
+  }, [saveFlowGraph, workflowId, nodes, edges, messageApi, t]);
+
+  return { handleSave };
+}
 
 type ContextMenuState = { type: "node" | "edge"; id: string; x: number; y: number } | null;
 

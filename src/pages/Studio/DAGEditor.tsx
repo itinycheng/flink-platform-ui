@@ -8,8 +8,7 @@ import { useJobStore } from "@/stores/jobStore";
 import { FlowCanvas } from "@/components/FlowCanvas";
 import { appendStatusEdge } from "@/components/FlowCanvas/constants";
 import { type DAGEditorProps, getInitialEdges, getInitialNodes } from "./DAGEditor.constants";
-import { serializeFlow } from "./dagSerialize";
-import { useBottomPanel, useContextMenu, useDragAndDrop, useNodeEditModal } from "./DAGEditor.hooks";
+import { useBottomPanel, useContextMenu, useDragAndDrop, useFlowPersistence, useNodeEditModal } from "./DAGEditor.hooks";
 import { TaskSidebar } from "./DAGEditor.sidebar";
 import { BottomPanel, DAGToolbar } from "./DAGEditor.panels";
 import { NodeEditModal } from "./DAGEditor.modal";
@@ -17,7 +16,6 @@ import { NodeEditModal } from "./DAGEditor.modal";
 export default function DAGEditor({ embedded = false }: DAGEditorProps) {
   const { id: routeId } = useParams<{ id: string }>();
   const selectedNode = useJobStore((s) => s.selectedNode);
-  const saveFlowGraph = useJobStore((s) => s.saveFlowGraph);
   const [messageApi, contextHolder] = message.useMessage();
   const { t } = useTranslation();
 
@@ -42,15 +40,10 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
   const bottom = useBottomPanel({ flowRef });
   const dnd = useDragAndDrop({ reactFlowInstance, workflowId, setNodes });
 
+  // Loads a persisted FlowGraph onto the canvas on mount + serializes/saves on demand.
+  const { handleSave } = useFlowPersistence({ workflowId, nodes, edges, setNodes, setEdges, messageApi, t });
+
   const onConnect = useCallback((params: Connection) => setEdges((eds) => appendStatusEdge(params, eds)), [setEdges]);
-  const handleSave = useCallback(async () => {
-    try {
-      await saveFlowGraph(workflowId, serializeFlow(nodes, edges));
-      void messageApi.success(t("dag.flowSaved"));
-    } catch {
-      void messageApi.error(t("dag.flowSaveFailed"));
-    }
-  }, [saveFlowGraph, workflowId, nodes, edges, messageApi, t]);
 
   return (
     <Flex vertical style={{ height: "100%" }} onClick={ctx.closeContextMenu}>

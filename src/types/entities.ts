@@ -22,6 +22,7 @@ import type {
   WorkerStatus,
 } from "@/constants/enums";
 import type { JobConfig } from "./task";
+import type { FlowGraph } from "./flow";
 
 // ---- Job definition ----
 export interface JobInfo {
@@ -85,7 +86,8 @@ export interface JobFlow {
   description?: string;
   type: JobFlowType;
   cronExpr?: string;
-  flow?: JobFlowDag;
+  /** Legacy vertex/jobId DAG, or the new-UI FlowGraph; backend accepts both. */
+  flow?: JobFlowDag | FlowGraph;
   priority?: number;
   config?: ExecutionConfig;
   tags?: string[];
