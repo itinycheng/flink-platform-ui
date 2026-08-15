@@ -1,3 +1,6 @@
+import type { DbType } from "@/constants/enums";
+import type { DatasourceParam } from "@/types/entities";
+
 export interface ResourceFile {
   id: string;
   name: string;
@@ -43,14 +46,15 @@ export interface CustomParam {
 
 // ---- Data Source ----
 
-export type DataSourceType = "MySQL" | "PostgreSQL" | "Oracle" | "Hive" | "Kafka" | "Flink";
+// Aligned to the backend DbType enum (com.flink.platform.common.enums.DbType).
+export type DataSourceType = DbType;
 
 export interface DataSource {
   id: string;
   name: string;
   type: DataSourceType;
-  /** Connection parameters serialized as a JSON string. */
-  params: string;
+  /** Structured connection parameters (mirrors backend DatasourceParam). */
+  params: DatasourceParam;
   description?: string;
   createdAt: string;
   updatedAt: string;

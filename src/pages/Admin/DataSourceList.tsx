@@ -12,17 +12,10 @@ import {
   updateDataSource,
 } from "@/api/admin";
 import RowActions from "@/components/RowActions";
+import { KeyValueEditor } from "@/components/form";
+import { DB_TYPES, enumOptions } from "@/constants/enums";
 import { enumColor } from "@/utils/statusColor";
 import i18n from "@/i18n";
-
-const DATASOURCE_TYPE_OPTIONS = [
-  { label: "MySQL", value: "MySQL" },
-  { label: "PostgreSQL", value: "PostgreSQL" },
-  { label: "Oracle", value: "Oracle" },
-  { label: "Hive", value: "Hive" },
-  { label: "Kafka", value: "Kafka" },
-  { label: "Flink", value: "Flink" },
-];
 
 function DataSourceTypeTag({ type }: { type: DataSourceType }) {
   return <Tag color={enumColor(type)}>{type}</Tag>;
@@ -91,10 +84,19 @@ function DataSourceFormModal({ open, isEdit, form, confirmLoading, onOk, onCance
           <Input placeholder={t("datasource.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
         <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("datasource.typePlaceholder") }]}>
-          <Select placeholder={t("datasource.typePlaceholder")} options={DATASOURCE_TYPE_OPTIONS} data-testid="select-type" />
+          <Select placeholder={t("datasource.typePlaceholder")} options={enumOptions(DB_TYPES, "DbType", t)} data-testid="select-type" />
         </Form.Item>
-        <Form.Item name="params" label={t("datasource.paramsLabel")} rules={[{ required: true, message: t("datasource.paramsPlaceholder") }]}>
-          <Input.TextArea placeholder={t("datasource.paramsPlaceholder")} rows={6} data-testid="input-params" />
+        <Form.Item name={["params", "url"]} label={t("datasource.url")} rules={[{ required: true, message: t("datasource.urlPlaceholder") }]}>
+          <Input placeholder={t("datasource.urlPlaceholder")} data-testid="input-url" />
+        </Form.Item>
+        <Form.Item name={["params", "username"]} label={t("datasource.username")}>
+          <Input placeholder={t("datasource.usernamePlaceholder")} data-testid="input-username" />
+        </Form.Item>
+        <Form.Item name={["params", "password"]} label={t("datasource.password")}>
+          <Input.Password placeholder={t("datasource.passwordPlaceholder")} data-testid="input-password" />
+        </Form.Item>
+        <Form.Item name={["params", "properties"]} label={t("datasource.properties")}>
+          <KeyValueEditor />
         </Form.Item>
         <Form.Item name="description" label={t("common.description")}>
           <Input.TextArea placeholder={t("datasource.descriptionPlaceholder")} rows={3} data-testid="input-description" />
@@ -141,7 +143,7 @@ function useDataSourceCrud() {
     form.setFieldsValue({
       name: record.name,
       type: record.type,
-      params: record.params,
+      params: record.params ?? { url: "" },
       description: record.description ?? "",
     });
     setModalOpen(true);

@@ -69,7 +69,7 @@ function generateCustomParams(count: number): CustomParam[] {
 }
 
 function generateDataSources(count: number): DataSource[] {
-  const types: DataSourceType[] = ["MySQL", "PostgreSQL", "Oracle", "Hive", "Kafka", "Flink"];
+  const types: DataSourceType[] = ["CLICKHOUSE", "MYSQL", "HIVE"];
   return Array.from({ length: count }, () => {
     const type = faker.helpers.arrayElement(types);
     const now = faker.date.recent({ days: 60 }).toISOString();
@@ -77,16 +77,12 @@ function generateDataSources(count: number): DataSource[] {
       id: `ds-${faker.string.nanoid(6)}`,
       name: `${type.toLowerCase()}-${faker.word.noun()}`,
       type,
-      params: JSON.stringify(
-        {
-          host: faker.internet.ip(),
-          port: faker.internet.port(),
-          database: faker.word.noun(),
-          username: faker.internet.username(),
-        },
-        null,
-        2,
-      ),
+      params: {
+        url: `jdbc:${type.toLowerCase()}://${faker.internet.ip()}:3306/${faker.word.noun()}`,
+        username: faker.internet.username(),
+        password: faker.internet.password({ length: 10 }),
+        properties: { useSSL: "false", connectTimeout: "5000" },
+      },
       description: faker.lorem.sentence({ min: 3, max: 8 }),
       createdAt: now,
       updatedAt: now,
