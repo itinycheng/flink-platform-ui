@@ -1,4 +1,4 @@
-import type { DbType, WorkerStatus, CatalogType, TagType, Status, UserStatus } from "@/constants/enums";
+import type { DbType, WorkerStatus, CatalogType, TagType, Status, UserStatus, JobParamType } from "@/constants/enums";
 import type { DatasourceParam, EnvironmentSpec, UserRoles } from "@/types/entities";
 
 export type { CatalogType };
@@ -39,12 +39,16 @@ export interface ManagedUser {
   createdAt: string;
 }
 
+// Aligned to backend JobParam (t_job_param).
 export interface CustomParam {
   id: string;
-  name: string;
-  value: string;
-  type: "string" | "number" | "boolean" | "json";
+  paramName: string;
+  paramValue: string;
+  type: JobParamType;
+  /** Present only for JOB_FLOW-scoped params. */
+  flowId?: string;
   description?: string;
+  status?: Status;
 }
 
 // ---- Data Source ----

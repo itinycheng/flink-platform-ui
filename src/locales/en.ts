@@ -365,6 +365,8 @@ const en = {
     valueLabel: "Value",
     valuePlaceholder: "Enter param value",
     typePlaceholder: "Select param type",
+    flowIdLabel: "Workflow ID",
+    flowIdPlaceholder: "Enter the workflow id this param belongs to",
     descriptionPlaceholder: "Enter description (optional)",
     deleteConfirmDesc: 'Delete param "{{name}}"?',
     typeString: "String",

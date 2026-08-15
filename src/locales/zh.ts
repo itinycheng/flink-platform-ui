@@ -364,6 +364,8 @@ const zh = {
     valueLabel: "值",
     valuePlaceholder: "请输入参数值",
     typePlaceholder: "请选择参数类型",
+    flowIdLabel: "工作流 ID",
+    flowIdPlaceholder: "请输入该参数所属的工作流 ID",
     descriptionPlaceholder: "请输入描述（可选）",
     deleteConfirmDesc: '确定要删除参数 "{{name}}" 吗？',
     typeString: "字符串",

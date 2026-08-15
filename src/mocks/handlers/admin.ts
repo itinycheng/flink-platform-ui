@@ -28,41 +28,18 @@ function generateUsers(count: number): ManagedUser[] {
 }
 
 function generateCustomParams(count: number): CustomParam[] {
-  const paramTypes = ["string", "number", "boolean", "json"] as const;
   return Array.from({ length: count }, () => {
-    const type = faker.helpers.arrayElement(paramTypes);
-    let value: string;
-    switch (type) {
-      case "number":
-        value = String(faker.number.int({ min: 1, max: 1000 }));
-        break;
-      case "boolean":
-        value = faker.helpers.arrayElement(["true", "false"]);
-        break;
-      case "json":
-        value = JSON.stringify({
-          [faker.word.noun()]: faker.word.adjective(),
-          [faker.word.noun()]: faker.number.int({ min: 1, max: 100 }),
-        });
-        break;
-      default:
-        value = faker.word.words({ count: { min: 1, max: 3 } });
-    }
+    const type = faker.helpers.arrayElement(["GLOBAL", "JOB_FLOW"] as const);
+    const paramName =
+      faker.helpers.arrayElement(["max_retry", "alert_email", "batch_size", "timeout_sec", "notify_url", "data_dir"]) +
+      `_${faker.string.alphanumeric(3).toLowerCase()}`;
     return {
       id: `param-${faker.string.nanoid(6)}`,
-      name:
-        faker.helpers.arrayElement([
-          "MAX_RETRY",
-          "ALERT_EMAIL",
-          "ENABLE_CACHE",
-          "SPARK_CONF",
-          "BATCH_SIZE",
-          "TIMEOUT_SEC",
-          "NOTIFY_URL",
-          "DATA_DIR",
-        ]) + `_${faker.string.alphanumeric(3).toUpperCase()}`,
-      value,
+      paramName,
+      paramValue: faker.word.words({ count: { min: 1, max: 3 } }),
       type,
+      flowId: type === "JOB_FLOW" ? String(faker.number.int({ min: 1, max: 50 })) : undefined,
+      status: "ENABLE" as const,
       description: faker.lorem.sentence({ min: 3, max: 8 }),
     };
   });
