@@ -8,8 +8,8 @@ export function getJobFlow(id: string | number): Promise<JobFlow> {
 }
 
 /** Create a workflow; the backend returns the new id (not the entity). */
-export function createJobFlow(data: JobFlow): Promise<number> {
-  return http.post<number>("/jobFlow/create", data);
+export function createJobFlow(data: JobFlow, groupId?: string): Promise<number> {
+  return http.post<number>("/jobFlow/create", { ...data, groupId });
 }
 
 /** Update a workflow's settings; returns its id. */

@@ -9,23 +9,16 @@ import {
   createGroupRow,
   renameGroupRow,
   deleteGroupSubtree,
+  recordPlacement,
+  renameLeaf,
+  deleteLeaf,
 } from "@/mocks/data/jobTree";
-import type { JobTreeNode, WorkflowRunRecord } from "@/types/job";
+import type { WorkflowRunRecord } from "@/types/job";
 import type { JobInfo } from "@/types/entities";
 import type { JobType } from "@/constants/enums";
 
 // ---- Seed data generated with faker ----
 // Tree seeding (job_group + job_tree stores) now lives in `@/mocks/data/jobTree`.
-
-/**
- * Find a leaf placement (task/workflow definition) by node id.
- * Thin shim over the shared store — Task 5 rewrites the tags/alert-rule
- * handlers below to go through the shared store's own leaf-write helpers.
- */
-function findDefinition(id: string): { node: JobTreeNode } | null {
-  const node = jobTreeStore.get(id);
-  return node ? { node } : null;
-}
 
 function generateRuns(workflowId: string): WorkflowRunRecord[] {
   const runs: WorkflowRunRecord[] = [];
@@ -139,26 +132,37 @@ export const workflowHandlers: RequestHandler[] = [
   // NOTE: run-once / status / copy now go through /jobFlow/* (see jobStore); the
   // old /jobs/:id/{run-once,status,copy} handlers were removed with their api fns.
 
-  // PUT /api/jobs/:id/tags
-  http.put("/api/jobs/:id/tags", async ({ params, request }) => {
-    await delay(200);
-    const { id } = params as { id: string };
-    const { tags } = (await request.json()) as { tags: string[] };
-    const found = findDefinition(id);
-    if (!found) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
-    found.node.tags = tags;
-    return HttpResponse.json(found.node);
+  // POST /api/jobTree/rename — rename a leaf (task/workflow) placement
+  http.post("/api/jobTree/rename", async ({ request }) => {
+    await delay(150);
+    const { id, name } = (await request.json()) as { id: string; name: string };
+    return renameLeaf(id, name) ? ok(id) : fail(1003, "节点不存在");
   }),
 
-  // PUT /api/jobs/:id/alert-rules
-  http.put("/api/jobs/:id/alert-rules", async ({ params, request }) => {
-    await delay(200);
-    const { id } = params as { id: string };
-    const { alertRuleIds } = (await request.json()) as { alertRuleIds: string[] };
-    const found = findDefinition(id);
-    if (!found) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
-    found.node.alertRuleIds = alertRuleIds;
-    return HttpResponse.json(found.node);
+  // GET /api/jobTree/delete/:id — delete a leaf placement
+  http.get("/api/jobTree/delete/:id", async ({ params }) => {
+    await delay(150);
+    return ok(deleteLeaf((params as { id: string }).id));
+  }),
+
+  // POST /api/jobTree/tags
+  http.post("/api/jobTree/tags", async ({ request }) => {
+    await delay(150);
+    const { id, tags } = (await request.json()) as { id: string; tags: string[] };
+    const n = jobTreeStore.get(id);
+    if (!n) return fail(1003, "节点不存在");
+    n.tags = tags;
+    return ok(n);
+  }),
+
+  // POST /api/jobTree/alertRules
+  http.post("/api/jobTree/alertRules", async ({ request }) => {
+    await delay(150);
+    const { id, alertRuleIds } = (await request.json()) as { id: string; alertRuleIds: string[] };
+    const n = jobTreeStore.get(id);
+    if (!n) return fail(1003, "节点不存在");
+    n.alertRuleIds = alertRuleIds;
+    return ok(n);
   }),
 
   // ---- JobInfo (backend-shaped task entity) ----
@@ -178,10 +182,24 @@ export const workflowHandlers: RequestHandler[] = [
   // POST /api/jobInfo/create
   http.post("/api/jobInfo/create", async ({ request }) => {
     await delay(200);
-    const body = (await request.json()) as JobInfo;
+    const { groupId, ...body } = (await request.json()) as JobInfo & { groupId?: string };
     const id = ++jobInfoSeq;
     const stored: JobInfo = { ...body, id, status: "ONLINE" };
     jobInfoStore.set(id, stored);
+    if (groupId) {
+      recordPlacement({
+        id: String(id),
+        name: stored.name,
+        kind: "task",
+        jobType: stored.type,
+        refId: id,
+        pid: groupId,
+        status: "pending",
+        lifecycleStatus: "OFFLINE",
+        tags: [],
+        alertRuleIds: [],
+      });
+    }
     return ok(stored, { status: 201 });
   }),
 

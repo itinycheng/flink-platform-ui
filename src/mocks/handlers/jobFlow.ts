@@ -1,5 +1,6 @@
 import { http as mswHttp, delay, type RequestHandler } from "msw";
 import { ok } from "@/mocks/lib/response";
+import { recordPlacement } from "@/mocks/data/jobTree";
 import type { JobFlow } from "@/types/entities";
 
 // In-memory store, mirrors the backend /jobFlow endpoints for mock-only dev.
@@ -43,9 +44,22 @@ function defaultFlow(id: number): JobFlow {
 export const jobFlowHandlers: RequestHandler[] = [
   mswHttp.post("/api/jobFlow/create", async ({ request }) => {
     await delay(200);
-    const body = (await request.json()) as JobFlow;
+    const { groupId, ...body } = (await request.json()) as JobFlow & { groupId?: string };
     const id = ++seq;
     store.set(id, { ...body, id, status: "ONLINE" });
+    if (groupId) {
+      recordPlacement({
+        id: String(id),
+        name: body.name,
+        kind: "workflow",
+        refId: id,
+        pid: groupId,
+        status: "pending",
+        lifecycleStatus: "OFFLINE",
+        tags: [],
+        alertRuleIds: [],
+      });
+    }
     return ok(id, { status: 201 });
   }),
 

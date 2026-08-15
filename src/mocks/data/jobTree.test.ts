@@ -1,7 +1,18 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { workflowHandlers } from "@/mocks/handlers/job";
-import { createJobGroup, deleteJobGroup, getJobGroups, getJobsByGroup, renameJobGroup, searchJobs } from "@/api/job";
+import {
+  createJobGroup,
+  createJobInfo,
+  deleteJobGroup,
+  deleteTreeNode,
+  getJobGroups,
+  getJobsByGroup,
+  renameJobGroup,
+  renameTreeNode,
+  searchJobs,
+  updateJobTags,
+} from "@/api/job";
 
 const server = setupServer(...workflowHandlers);
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
@@ -53,5 +64,44 @@ describe("jobGroup write endpoints", () => {
     const id = await createJobGroup({ name: "T3" });
     expect(await renameJobGroup({ id, name: "T3x" })).toBe(id);
     expect(await deleteJobGroup(id)).toBe(true);
+  });
+});
+
+describe("job_tree placement + leaf writes", () => {
+  it("records a placement when a JobInfo is created with a groupId", async () => {
+    const topId = await createJobGroup({ name: "P1" });
+    await createJobInfo(
+      {
+        name: "placed-task",
+        type: "SHELL",
+        execMode: "BATCH",
+        routeUrl: [1],
+        subject: "echo",
+        config: { type: "SHELL", retryTimes: 0, retryInterval: "5s", timeout: "60s" },
+      },
+      topId,
+    );
+    const children = await getJobsByGroup(topId);
+    expect(children.some((n) => n.name === "placed-task" && n.kind === "task")).toBe(true);
+  });
+
+  it("renames and deletes a leaf, and sets tags", async () => {
+    const topId = await createJobGroup({ name: "P2" });
+    const created = await createJobInfo(
+      {
+        name: "t",
+        type: "SHELL",
+        execMode: "BATCH",
+        routeUrl: [1],
+        subject: "echo",
+        config: { type: "SHELL", retryTimes: 0, retryInterval: "5s", timeout: "60s" },
+      },
+      topId,
+    );
+    const leafId = String(created.id);
+    expect(await renameTreeNode({ id: leafId, name: "t2" })).toBe(leafId);
+    const tagged = await updateJobTags(leafId, ["etl"]);
+    expect(tagged.tags).toEqual(["etl"]);
+    expect(await deleteTreeNode(leafId)).toBe(true);
   });
 });

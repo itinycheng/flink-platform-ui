@@ -47,12 +47,20 @@ export function deleteJobGroup(id: string): Promise<boolean> {
 
 // ---- Definition lifecycle (Task & Workflow nodes) ----
 
+export function renameTreeNode(p: { id: string; name: string }): Promise<string> {
+  return http.post<string>("/jobTree/rename", p);
+}
+
+export function deleteTreeNode(id: string): Promise<boolean> {
+  return http.get<boolean>(`/jobTree/delete/${id}`);
+}
+
 export function updateJobTags(id: string, tags: string[]): Promise<JobTreeNode> {
-  return http.put<JobTreeNode>(`/jobs/${id}/tags`, { tags });
+  return http.post<JobTreeNode>("/jobTree/tags", { id, tags });
 }
 
 export function updateJobAlertRules(id: string, alertRuleIds: string[]): Promise<JobTreeNode> {
-  return http.put<JobTreeNode>(`/jobs/${id}/alert-rules`, { alertRuleIds });
+  return http.post<JobTreeNode>("/jobTree/alertRules", { id, alertRuleIds });
 }
 
 // ---- JobInfo (backend-shaped task entity) ----
@@ -61,8 +69,8 @@ export function getJobInfo(id: string | number): Promise<JobInfo> {
   return http.get<JobInfo>(`/jobInfo/get/${id}`);
 }
 
-export function createJobInfo(data: JobInfo): Promise<JobInfo> {
-  return http.post<JobInfo>("/jobInfo/create", data);
+export function createJobInfo(data: JobInfo, groupId?: string): Promise<JobInfo> {
+  return http.post<JobInfo>("/jobInfo/create", { ...data, groupId });
 }
 
 export function updateJobInfo(data: JobInfo): Promise<JobInfo> {
