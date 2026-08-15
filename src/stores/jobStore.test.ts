@@ -21,9 +21,10 @@ describe("jobStore jobInfo actions", () => {
     expect(info?.name).toBe("x");
   });
 
-  it("saveJobInfo creates when no id, updates when id present", async () => {
-    vi.mocked(jobApi.createJobInfo).mockResolvedValue({ id: 9 } as never);
-    vi.mocked(jobApi.updateJobInfo).mockResolvedValue({ id: 9 } as never);
+  it("saveJobInfo creates when no id, updates when id present, and sets refId on the node", async () => {
+    vi.mocked(jobApi.createJobInfo).mockResolvedValue({ id: 9, name: "n" } as never);
+    vi.mocked(jobApi.updateJobInfo).mockResolvedValue({ id: 9, name: "n" } as never);
+    useJobStore.setState({ treeData: [{ id: "tmp", name: "n", kind: "task", pid: "" }] });
     await useJobStore.getState().saveJobInfo("tmp", {
       name: "n",
       type: "SHELL",
@@ -32,6 +33,8 @@ describe("jobStore jobInfo actions", () => {
       config: { type: "SHELL", retryTimes: 0, retryInterval: "5s", timeout: "60s" },
     } as never);
     expect(jobApi.createJobInfo).toHaveBeenCalled();
+    expect(useJobStore.getState().treeData.find((n) => n.id === "tmp")?.refId).toBe(9);
+
     await useJobStore.getState().saveJobInfo("9", {
       id: 9,
       name: "n",

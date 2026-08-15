@@ -126,7 +126,10 @@ function matchesKeyword(leaf: JobTreeNode, keyword: string): boolean {
 }
 
 function matchesType(leaf: JobTreeNode, types: string[]): boolean {
-  return types.length === 0 || (leaf.jobType ? types.includes(leaf.jobType) : false);
+  // Workflow leaves carry no `jobType` (that's a task-only concept); fall back
+  // to `kind` so the "FLOW" filter (value "workflow") can still match them.
+  const typeKey = leaf.jobType ?? leaf.kind;
+  return types.length === 0 || types.includes(typeKey);
 }
 
 function matchesStatus(leaf: JobTreeNode, statuses: string[]): boolean {

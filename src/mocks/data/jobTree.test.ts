@@ -44,6 +44,13 @@ describe("jobTree read endpoints", () => {
     expect(leaves.length).toBeGreaterThan(0);
     expect(leaves.every((c) => c.jobType === "FLINK_SQL")).toBe(true);
   });
+
+  it("search matches workflow leaves (which carry no jobType) via the 'workflow' pseudo-type", async () => {
+    const results = await searchJobs({ types: ["workflow"] });
+    const leaves = results.flatMap((g) => g.children ?? []);
+    expect(leaves.length).toBeGreaterThan(0);
+    expect(leaves.every((c) => c.kind === "workflow")).toBe(true);
+  });
 });
 
 describe("jobGroup write endpoints", () => {

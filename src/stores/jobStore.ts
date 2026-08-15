@@ -44,7 +44,6 @@ export interface WorkflowState {
   treeData: JobTreeNode[];
   selectedNode: JobTreeNode | null;
   treeLoading: boolean;
-  operationLoading: boolean;
   loadingGroups: Set<string>;
   loadedGroups: Set<string>;
   searchExpandedKeys: string[] | null;
@@ -85,7 +84,6 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   treeData: [],
   selectedNode: null,
   treeLoading: false,
-  operationLoading: false,
   loadingGroups: new Set(),
   loadedGroups: new Set(),
   searchExpandedKeys: null,
@@ -291,7 +289,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   saveJobInfo: async (nodeId, info) => {
     const node = findNodeById(get().treeData, nodeId);
     const saved = info.id ? await updateJobInfo(info) : await createJobInfo(info, node?.pid);
-    get().patchNode(nodeId, { name: saved.name });
+    get().patchNode(nodeId, { name: saved.name, refId: saved.id });
   },
 
   loadJobFlow: async (nodeId) => {
@@ -304,12 +302,13 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
 
   saveJobFlow: async (nodeId, flow) => {
     const node = findNodeById(get().treeData, nodeId);
+    let id = flow.id;
     if (flow.id) {
       await updateJobFlow(flow);
     } else {
-      await createJobFlow(flow, node?.pid);
+      id = await createJobFlow(flow, node?.pid);
     }
-    get().patchNode(nodeId, { name: flow.name });
+    get().patchNode(nodeId, { name: flow.name, refId: id });
   },
 
   saveFlowGraph: async (nodeId, flow) => {
