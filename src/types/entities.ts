@@ -165,7 +165,8 @@ export interface Worker {
   ip: string;
   port: string;
   grpcPort?: number;
-  status: WorkerStatus;
+  /** Worker status. Backend serializes this under the JSON key `role`. */
+  role: WorkerStatus;
   heartbeat?: number;
   environments?: EnvironmentSpec[];
 }

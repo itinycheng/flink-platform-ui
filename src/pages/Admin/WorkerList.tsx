@@ -4,52 +4,42 @@ import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { Worker } from "@/types/admin";
+import type { EnvironmentSpec } from "@/types/entities";
 import { createWorker, deleteWorker, getWorkers, updateWorker } from "@/api/admin";
 import RowActions from "@/components/RowActions";
-import { enumColor, statusColor } from "@/utils/statusColor";
+import { DynamicListEditor } from "@/components/form";
+import { WORKER_STATUSES, enumOptions } from "@/constants/enums";
+import { statusColor } from "@/utils/statusColor";
 
-const ROLE_LABEL_KEYS: Record<Worker["role"], string> = {
-  master: "worker.roleMaster",
-  worker: "worker.roleWorker",
-  all: "worker.roleAll",
-};
-
-const STATUS_LABEL_KEYS: Record<Worker["status"], string> = {
-  online: "worker.statusOnline",
-  offline: "worker.statusOffline",
-};
-
-function getWorkerRoleOptions(t: (k: string) => string) {
-  return [
-    { label: t("worker.roleMaster"), value: "master" },
-    { label: t("worker.roleWorker"), value: "worker" },
-    { label: t("worker.roleAll"), value: "all" },
-  ];
-}
-
-function getWorkerStatusOptions(t: (k: string) => string) {
-  return [
-    { label: t("worker.statusOnline"), value: "online" },
-    { label: t("worker.statusOffline"), value: "offline" },
-  ];
-}
-
-interface WorkerRoleTagProps {
-  role: Worker["role"];
-}
-
-function WorkerRoleTag({ role }: WorkerRoleTagProps) {
+function WorkerStatusTag({ role }: { role: Worker["role"] }) {
   const { t } = useTranslation();
-  return <Tag color={enumColor(role)}>{t(ROLE_LABEL_KEYS[role])}</Tag>;
+  return <Tag color={statusColor(role)}>{t(`enums.WorkerStatus.${role}`)}</Tag>;
 }
 
-interface WorkerStatusTagProps {
-  status: Worker["status"];
-}
-
-function WorkerStatusTag({ status }: WorkerStatusTagProps) {
+/** Key/value editor for a worker's environment specs (EnvironmentSpec[]). */
+function EnvironmentsEditor({ value, onChange }: { value?: EnvironmentSpec[]; onChange?: (v: EnvironmentSpec[]) => void }) {
   const { t } = useTranslation();
-  return <Tag color={statusColor(status)}>{t(STATUS_LABEL_KEYS[status])}</Tag>;
+  return (
+    <DynamicListEditor<EnvironmentSpec>
+      value={value}
+      onChange={onChange}
+      newItem={() => ({ name: "", value: "" })}
+      renderItem={(item, onItemChange) => (
+        <>
+          <Input
+            placeholder={t("worker.envName")}
+            value={item.name}
+            onChange={(e) => onItemChange({ ...item, name: e.target.value })}
+          />
+          <Input
+            placeholder={t("worker.envValue")}
+            value={item.value}
+            onChange={(e) => onItemChange({ ...item, value: e.target.value })}
+          />
+        </>
+      )}
+    />
+  );
 }
 
 interface WorkerActionsCellProps {
@@ -110,27 +100,24 @@ function WorkerFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }:
         <Form.Item name="ip" label={t("worker.ip")} rules={[{ required: true, message: t("worker.ipPlaceholder") }]}>
           <Input placeholder={t("worker.ipPlaceholder")} data-testid="input-ip" />
         </Form.Item>
-        <Form.Item
-          name="port"
-          label={t("worker.port")}
-          rules={[{ required: true, message: t("worker.portPlaceholder") }]}
-        >
-          <InputNumber
-            placeholder={t("worker.portPlaceholder")}
-            min={1}
-            max={65535}
-            style={{ width: "100%" }}
-            data-testid="input-port"
+        <Form.Item name="port" label={t("worker.port")} rules={[{ required: true, message: t("worker.portPlaceholder") }]}>
+          <Input placeholder={t("worker.portPlaceholder")} data-testid="input-port" />
+        </Form.Item>
+        <Form.Item name="grpcPort" label={t("worker.grpcPort")}>
+          <InputNumber min={1} max={65535} style={{ width: "100%" }} data-testid="input-grpc-port" />
+        </Form.Item>
+        <Form.Item name="role" label={t("common.status")} rules={[{ required: true, message: t("worker.statusPlaceholder") }]}>
+          <Select
+            placeholder={t("worker.statusPlaceholder")}
+            options={enumOptions(WORKER_STATUSES, "WorkerStatus", t)}
+            data-testid="select-status"
           />
         </Form.Item>
-        <Form.Item name="role" label={t("worker.role")} rules={[{ required: true, message: t("worker.rolePlaceholder") }]}>
-          <Select placeholder={t("worker.rolePlaceholder")} options={getWorkerRoleOptions(t)} data-testid="select-role" />
+        <Form.Item name="desc" label={t("common.description")}>
+          <Input.TextArea placeholder={t("worker.descriptionPlaceholder")} rows={2} data-testid="input-description" />
         </Form.Item>
-        <Form.Item name="status" label={t("common.status")} rules={[{ required: true, message: t("worker.statusPlaceholder") }]}>
-          <Select placeholder={t("worker.statusPlaceholder")} options={getWorkerStatusOptions(t)} data-testid="select-status" />
-        </Form.Item>
-        <Form.Item name="description" label={t("common.description")}>
-          <Input.TextArea placeholder={t("worker.descriptionPlaceholder")} rows={3} data-testid="input-description" />
+        <Form.Item name="environments" label={t("worker.environments")}>
+          <EnvironmentsEditor />
         </Form.Item>
       </Form>
     </Modal>
@@ -161,9 +148,10 @@ function useWorkerCrud() {
       name: record.name,
       ip: record.ip,
       port: record.port,
+      grpcPort: record.grpcPort,
       role: record.role,
-      status: record.status,
-      description: record.description ?? "",
+      desc: record.desc ?? "",
+      environments: record.environments ?? [],
     });
     setModalOpen(true);
   };
@@ -229,16 +217,16 @@ export default function WorkerList() {
     () => [
       { title: t("common.name"), dataIndex: "name", key: "name", ellipsis: true },
       { title: t("worker.ip"), dataIndex: "ip", key: "ip", width: 160 },
-      { title: t("worker.port"), dataIndex: "port", key: "port", width: 100 },
-      { title: t("worker.role"), dataIndex: "role", key: "role", width: 100, render: (_, r) => <WorkerRoleTag role={r.role} /> },
+      { title: t("worker.port"), dataIndex: "port", key: "port", width: 90 },
+      { title: t("worker.grpcPort"), dataIndex: "grpcPort", key: "grpcPort", width: 100 },
       {
         title: t("common.status"),
-        dataIndex: "status",
-        key: "status",
+        dataIndex: "role",
+        key: "role",
         width: 100,
-        render: (_, r) => <WorkerStatusTag status={r.status} />,
+        render: (_, r) => <WorkerStatusTag role={r.role} />,
       },
-      { title: t("common.description"), dataIndex: "description", key: "description", ellipsis: true },
+      { title: t("common.description"), dataIndex: "desc", key: "desc", ellipsis: true },
       {
         title: t("common.operation"),
         key: "action",

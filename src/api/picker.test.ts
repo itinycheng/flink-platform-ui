@@ -17,9 +17,9 @@ describe("picker API + mocks", () => {
     expect(typeof w.id).toBe("number");
     expect(typeof w.name).toBe("string");
     expect(typeof w.ip).toBe("string");
-    expect(w.status).not.toBe("DELETED"); // list excludes deleted
+    expect(w.role).not.toBe("DELETED"); // list excludes deleted
     // Assert no DELETED workers in result
-    expect(workers.some((w) => w.status === "DELETED")).toBe(false);
+    expect(workers.some((w) => w.role === "DELETED")).toBe(false);
     // Assert DELETED worker fixture (id 99) is filtered out
     expect(workers.some((w) => w.id === 99)).toBe(false);
     // Assert returned length is less than total fixture count (6 total, 5 returned)

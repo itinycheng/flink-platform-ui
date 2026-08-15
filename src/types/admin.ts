@@ -1,5 +1,5 @@
-import type { DbType } from "@/constants/enums";
-import type { DatasourceParam } from "@/types/entities";
+import type { DbType, WorkerStatus } from "@/constants/enums";
+import type { DatasourceParam, EnvironmentSpec } from "@/types/entities";
 
 export interface ResourceFile {
   id: string;
@@ -82,17 +82,16 @@ export interface Catalog {
 
 // ---- Worker Node ----
 
-export type WorkerRole = "master" | "worker" | "all";
-export type WorkerStatus = "online" | "offline";
-
 export interface Worker {
   id: string;
   name: string;
   ip: string;
-  port: number;
-  role: WorkerRole;
-  status: WorkerStatus;
-  description?: string;
+  port: string;
+  grpcPort?: number;
+  /** Worker status (ACTIVE/INACTIVE/DELETED); backend JSON key is `role`. */
+  role: WorkerStatus;
+  desc?: string;
+  environments?: EnvironmentSpec[];
   createdAt: string;
   updatedAt: string;
 }

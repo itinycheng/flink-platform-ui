@@ -7,8 +7,8 @@ vi.mock("@/api/picker");
 
 beforeEach(() => {
   vi.mocked(picker.listWorkers).mockResolvedValue([
-    { id: 1, name: "alpha", ip: "10.0.0.1", port: "80", status: "ACTIVE" },
-    { id: 2, name: "beta", ip: "10.0.0.2", port: "80", status: "ACTIVE" },
+    { id: 1, name: "alpha", ip: "10.0.0.1", port: "80", role: "ACTIVE" },
+    { id: 2, name: "beta", ip: "10.0.0.2", port: "80", role: "ACTIVE" },
   ]);
 });
 

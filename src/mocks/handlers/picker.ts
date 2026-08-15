@@ -11,7 +11,7 @@ const workers: Worker[] = [
     ip: faker.internet.ip(),
     port: String(faker.internet.port()),
     grpcPort: faker.internet.port(),
-    status: "ACTIVE" as const,
+    role: "ACTIVE" as const,
   })),
   {
     id: 99,
@@ -19,7 +19,7 @@ const workers: Worker[] = [
     ip: faker.internet.ip(),
     port: String(faker.internet.port()),
     grpcPort: faker.internet.port(),
-    status: "DELETED" as const,
+    role: "DELETED" as const,
   },
 ];
 
@@ -47,7 +47,7 @@ const resources: Resource[] = [
 export const pickerHandlers: RequestHandler[] = [
   mswHttp.get("/api/worker/list", async () => {
     await delay(150);
-    return ok(workers.filter((w) => w.status !== "DELETED"));
+    return ok(workers.filter((w) => w.role !== "DELETED"));
   }),
   mswHttp.get("/api/datasource/list", async ({ request }) => {
     await delay(150);
