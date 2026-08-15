@@ -1,4 +1,4 @@
-import { http, HttpResponse, delay, type RequestHandler } from "msw";
+import { http, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import type {
   ManagedUser,
@@ -12,23 +12,8 @@ import type {
   SysConfig,
   SysConfigType,
 } from "@/types/admin";
-import { paginate, parsePagination } from "@/utils/pagination";
 import { ok } from "@/mocks/lib/response";
-
-// Backend-style page wrapper + query parsing (page/size), for migrated /…/page endpoints.
-function ipage<T>(items: T[], page: number, size: number) {
-  const start = (page - 1) * size;
-  return {
-    records: items.slice(start, start + size),
-    total: items.length,
-    size,
-    current: page,
-    pages: Math.ceil(items.length / size) || 1,
-  };
-}
-function parsePageSize(url: URL): { page: number; size: number } {
-  return { page: Number(url.searchParams.get("page")) || 1, size: Number(url.searchParams.get("size")) || 10 };
-}
+import { ipage, parsePageSize } from "@/mocks/lib/page";
 
 // ---- Seed data generated with faker ----
 
@@ -165,79 +150,59 @@ export const adminHandlers: RequestHandler[] = [
   // ---- Users ----
 
   // GET /api/users
-  http.get("/api/users", async ({ request }) => {
+  http.get("/api/user/page", async ({ request }) => {
     await delay(200);
-    const { page, pageSize } = parsePagination(new URL(request.url));
-    return HttpResponse.json(paginate(mockUsers, page, pageSize));
+    const { page, size } = parsePageSize(new URL(request.url));
+    return ok(ipage(mockUsers, page, size));
   }),
 
-  // POST /api/users
-  http.post("/api/users", async ({ request }) => {
+  http.post("/api/user/create", async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as Omit<ManagedUser, "id" | "createdAt">;
-    const user: ManagedUser = {
-      ...body,
-      id: `usr-${faker.string.nanoid(6)}`,
-      createdAt: new Date().toISOString(),
-    };
+    const user: ManagedUser = { ...body, id: `usr-${faker.string.nanoid(6)}`, createdAt: new Date().toISOString() };
     mockUsers.push(user);
-    return HttpResponse.json(user, { status: 201 });
+    return ok(mockUsers.length, { status: 201 });
   }),
 
-  // PUT /api/users/:id
-  http.put("/api/users/:id", async ({ params, request }) => {
+  http.post("/api/user/update", async ({ request }) => {
     await delay(200);
-    const { id } = params as { id: string };
-    const body = (await request.json()) as Partial<Omit<ManagedUser, "id" | "createdAt">>;
-    const user = mockUsers.find((u) => u.id === id);
-    if (!user) {
-      return HttpResponse.json({ message: "用户不存在" }, { status: 404 });
-    }
+    const body = (await request.json()) as Partial<ManagedUser> & { id: string };
+    const user = mockUsers.find((u) => u.id === body.id);
+    if (!user) return ok(0);
     Object.assign(user, body);
-    return HttpResponse.json(user);
+    return ok(1);
   }),
 
   // ---- Custom Params ----
 
-  // GET /api/params
-  http.get("/api/params", async ({ request }) => {
+  http.get("/api/jobParam/page", async ({ request }) => {
     await delay(200);
-    const { page, pageSize } = parsePagination(new URL(request.url));
-    return HttpResponse.json(paginate(mockParams, page, pageSize));
+    const { page, size } = parsePageSize(new URL(request.url));
+    return ok(ipage(mockParams, page, size));
   }),
 
-  // POST /api/params
-  http.post("/api/params", async ({ request }) => {
+  http.post("/api/jobParam/create", async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as Omit<CustomParam, "id">;
-    const param: CustomParam = { ...body, id: `param-${faker.string.nanoid(6)}` };
-    mockParams.push(param);
-    return HttpResponse.json(param, { status: 201 });
+    mockParams.push({ ...body, id: `param-${faker.string.nanoid(6)}` });
+    return ok(mockParams.length, { status: 201 });
   }),
 
-  // PUT /api/params/:id
-  http.put("/api/params/:id", async ({ params, request }) => {
+  http.post("/api/jobParam/update", async ({ request }) => {
     await delay(200);
-    const { id } = params as { id: string };
-    const body = (await request.json()) as Partial<Omit<CustomParam, "id">>;
-    const param = mockParams.find((p) => p.id === id);
-    if (!param) {
-      return HttpResponse.json({ message: "参数不存在" }, { status: 404 });
-    }
+    const body = (await request.json()) as Partial<CustomParam> & { id: string };
+    const param = mockParams.find((p) => p.id === body.id);
+    if (!param) return ok(0);
     Object.assign(param, body);
-    return HttpResponse.json(param);
+    return ok(1);
   }),
 
-  // DELETE /api/params/:id
-  http.delete("/api/params/:id", async ({ params }) => {
+  http.get("/api/jobParam/delete/:id", async ({ params }) => {
     await delay(200);
     const { id } = params as { id: string };
     const idx = mockParams.findIndex((p) => p.id === id);
-    if (idx === -1) {
-      return HttpResponse.json({ message: "参数不存在" }, { status: 404 });
-    }
-    mockParams.splice(idx, 1);
-    return new HttpResponse(null, { status: 204 });
+    if (idx !== -1) mockParams.splice(idx, 1);
+    return ok(idx !== -1);
   }),
 
   // ---- Data Sources ----
@@ -279,158 +244,146 @@ export const adminHandlers: RequestHandler[] = [
     return ok(faker.datatype.boolean({ probability: 0.7 }));
   }),
 
-  // ---- Catalogs ----
+  // ---- Catalogs ---- (/catalog/*)
 
-  http.get("/api/catalogs", async ({ request }) => {
+  http.get("/api/catalog/page", async ({ request }) => {
     await delay(200);
-    const { page, pageSize } = parsePagination(new URL(request.url));
-    return HttpResponse.json(paginate(mockCatalogs, page, pageSize));
+    const { page, size } = parsePageSize(new URL(request.url));
+    return ok(ipage(mockCatalogs, page, size));
   }),
 
-  http.post("/api/catalogs", async ({ request }) => {
+  http.post("/api/catalog/create", async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as Omit<Catalog, "id" | "createdAt" | "updatedAt">;
     const now = new Date().toISOString();
-    const cat: Catalog = { ...body, id: `cat-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now };
-    mockCatalogs.push(cat);
-    return HttpResponse.json(cat, { status: 201 });
+    mockCatalogs.push({ ...body, id: `cat-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now });
+    return ok(mockCatalogs.length, { status: 201 });
   }),
 
-  http.put("/api/catalogs/:id", async ({ params, request }) => {
+  http.post("/api/catalog/update", async ({ request }) => {
     await delay(200);
-    const { id } = params as { id: string };
-    const body = (await request.json()) as Partial<Catalog>;
-    const cat = mockCatalogs.find((c) => c.id === id);
-    if (!cat) return HttpResponse.json({ message: "Catalog 不存在" }, { status: 404 });
+    const body = (await request.json()) as Partial<Catalog> & { id: string };
+    const cat = mockCatalogs.find((c) => c.id === body.id);
+    if (!cat) return ok(0);
     Object.assign(cat, body, { updatedAt: new Date().toISOString() });
-    return HttpResponse.json(cat);
+    return ok(1);
   }),
 
-  http.delete("/api/catalogs/:id", async ({ params }) => {
+  http.get("/api/catalog/delete/:id", async ({ params }) => {
     await delay(200);
     const { id } = params as { id: string };
     const idx = mockCatalogs.findIndex((c) => c.id === id);
-    if (idx === -1) return HttpResponse.json({ message: "Catalog 不存在" }, { status: 404 });
-    mockCatalogs.splice(idx, 1);
-    return new HttpResponse(null, { status: 204 });
+    if (idx !== -1) mockCatalogs.splice(idx, 1);
+    return ok(idx !== -1);
   }),
 
-  // ---- Workers ----
+  // ---- Workers ---- (/worker/*)
 
-  http.get("/api/workers", async ({ request }) => {
+  http.get("/api/worker/page", async ({ request }) => {
     await delay(200);
-    const { page, pageSize } = parsePagination(new URL(request.url));
-    return HttpResponse.json(paginate(mockWorkers, page, pageSize));
+    const { page, size } = parsePageSize(new URL(request.url));
+    return ok(ipage(mockWorkers, page, size));
   }),
 
-  http.post("/api/workers", async ({ request }) => {
+  http.post("/api/worker/create", async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as Omit<Worker, "id" | "createdAt" | "updatedAt">;
     const now = new Date().toISOString();
-    const wk: Worker = { ...body, id: `wk-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now };
-    mockWorkers.push(wk);
-    return HttpResponse.json(wk, { status: 201 });
+    mockWorkers.push({ ...body, id: `wk-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now });
+    return ok(mockWorkers.length, { status: 201 });
   }),
 
-  http.put("/api/workers/:id", async ({ params, request }) => {
+  http.post("/api/worker/update", async ({ request }) => {
     await delay(200);
-    const { id } = params as { id: string };
-    const body = (await request.json()) as Partial<Worker>;
-    const wk = mockWorkers.find((w) => w.id === id);
-    if (!wk) return HttpResponse.json({ message: "Worker 不存在" }, { status: 404 });
+    const body = (await request.json()) as Partial<Worker> & { id: string };
+    const wk = mockWorkers.find((w) => w.id === body.id);
+    if (!wk) return ok(0);
     Object.assign(wk, body, { updatedAt: new Date().toISOString() });
-    return HttpResponse.json(wk);
+    return ok(1);
   }),
 
-  http.delete("/api/workers/:id", async ({ params }) => {
+  http.get("/api/worker/delete/:id", async ({ params }) => {
     await delay(200);
     const { id } = params as { id: string };
     const idx = mockWorkers.findIndex((w) => w.id === id);
-    if (idx === -1) return HttpResponse.json({ message: "Worker 不存在" }, { status: 404 });
-    mockWorkers.splice(idx, 1);
-    return new HttpResponse(null, { status: 204 });
+    if (idx !== -1) mockWorkers.splice(idx, 1);
+    return ok(idx !== -1);
   }),
 
-  // ---- Tags ----
+  // ---- Tags ---- (/tag/*)
 
-  http.get("/api/tags", async ({ request }) => {
+  http.get("/api/tag/page", async ({ request }) => {
     await delay(200);
-    const { page, pageSize } = parsePagination(new URL(request.url));
-    return HttpResponse.json(paginate(mockTags, page, pageSize));
+    const { page, size } = parsePageSize(new URL(request.url));
+    return ok(ipage(mockTags, page, size));
   }),
 
-  http.post("/api/tags", async ({ request }) => {
+  http.post("/api/tag/create", async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as Omit<Tag, "id" | "createdAt" | "updatedAt">;
     const now = new Date().toISOString();
-    const tag: Tag = { ...body, id: `tag-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now };
-    mockTags.push(tag);
-    return HttpResponse.json(tag, { status: 201 });
+    mockTags.push({ ...body, id: `tag-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now });
+    return ok(mockTags.length, { status: 201 });
   }),
 
-  http.put("/api/tags/:id", async ({ params, request }) => {
+  http.post("/api/tag/update", async ({ request }) => {
     await delay(200);
-    const { id } = params as { id: string };
-    const body = (await request.json()) as Partial<Tag>;
-    const tag = mockTags.find((t) => t.id === id);
-    if (!tag) return HttpResponse.json({ message: "标签不存在" }, { status: 404 });
+    const body = (await request.json()) as Partial<Tag> & { id: string };
+    const tag = mockTags.find((t) => t.id === body.id);
+    if (!tag) return ok(0);
     Object.assign(tag, body, { updatedAt: new Date().toISOString() });
-    return HttpResponse.json(tag);
+    return ok(1);
   }),
 
-  http.delete("/api/tags/:id", async ({ params }) => {
+  http.get("/api/tag/delete/:id", async ({ params }) => {
     await delay(200);
     const { id } = params as { id: string };
     const idx = mockTags.findIndex((t) => t.id === id);
-    if (idx === -1) return HttpResponse.json({ message: "标签不存在" }, { status: 404 });
-    mockTags.splice(idx, 1);
-    return new HttpResponse(null, { status: 204 });
+    if (idx !== -1) mockTags.splice(idx, 1);
+    return ok(idx !== -1);
   }),
 
-  // ---- System Configs ----
+  // ---- System Configs ---- (/config/*)
 
-  http.get("/api/sys-configs", async ({ request }) => {
+  http.get("/api/config/page", async ({ request }) => {
     await delay(200);
-    const { page, pageSize } = parsePagination(new URL(request.url));
-    return HttpResponse.json(paginate(mockSysConfigs, page, pageSize));
+    const { page, size } = parsePageSize(new URL(request.url));
+    return ok(ipage(mockSysConfigs, page, size));
   }),
 
-  http.post("/api/sys-configs", async ({ request }) => {
+  http.post("/api/config/create", async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as Omit<SysConfig, "id" | "createdAt" | "updatedAt">;
     const now = new Date().toISOString();
-    const cfg: SysConfig = { ...body, id: `cfg-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now };
-    mockSysConfigs.push(cfg);
-    return HttpResponse.json(cfg, { status: 201 });
+    mockSysConfigs.push({ ...body, id: `cfg-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now });
+    return ok(mockSysConfigs.length, { status: 201 });
   }),
 
-  http.put("/api/sys-configs/:id", async ({ params, request }) => {
+  http.post("/api/config/update", async ({ request }) => {
+    await delay(200);
+    const body = (await request.json()) as Partial<SysConfig> & { id: string };
+    const cfg = mockSysConfigs.find((c) => c.id === body.id);
+    if (!cfg) return ok(0);
+    Object.assign(cfg, body, { updatedAt: new Date().toISOString() });
+    return ok(1);
+  }),
+
+  // soft-delete: sets status DELETED (purge physically removes)
+  http.get("/api/config/delete/:id", async ({ params }) => {
     await delay(200);
     const { id } = params as { id: string };
-    const body = (await request.json()) as Partial<SysConfig>;
     const cfg = mockSysConfigs.find((c) => c.id === id);
-    if (!cfg) return HttpResponse.json({ message: "配置不存在" }, { status: 404 });
-    Object.assign(cfg, body, { updatedAt: new Date().toISOString() });
-    return HttpResponse.json(cfg);
+    if (!cfg) return ok(false);
+    cfg.status = "DELETED";
+    cfg.updatedAt = new Date().toISOString();
+    return ok(true);
   }),
 
-  // DELETE /api/sys-configs/:id/purge — must be registered before the plain delete.
-  http.delete("/api/sys-configs/:id/purge", async ({ params }) => {
+  http.get("/api/config/purge/:id", async ({ params }) => {
     await delay(200);
     const { id } = params as { id: string };
     const idx = mockSysConfigs.findIndex((c) => c.id === id);
-    if (idx === -1) return HttpResponse.json({ message: "配置不存在" }, { status: 404 });
-    mockSysConfigs.splice(idx, 1);
-    return new HttpResponse(null, { status: 204 });
-  }),
-
-  http.delete("/api/sys-configs/:id", async ({ params }) => {
-    await delay(200);
-    const { id } = params as { id: string };
-    const cfg = mockSysConfigs.find((c) => c.id === id);
-    if (!cfg) return HttpResponse.json({ message: "配置不存在" }, { status: 404 });
-    cfg.status = "DELETED";
-    cfg.updatedAt = new Date().toISOString();
-    return new HttpResponse(null, { status: 204 });
+    if (idx !== -1) mockSysConfigs.splice(idx, 1);
+    return ok(idx !== -1);
   }),
 ];

@@ -1,7 +1,8 @@
-import { http, HttpResponse, delay, type RequestHandler } from "msw";
+import { http, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import type { AuditLog } from "@/types/admin";
-import { paginate, parsePagination } from "@/utils/pagination";
+import { ok } from "@/mocks/lib/response";
+import { ipage, parsePageSize } from "@/mocks/lib/page";
 
 function generateAuditLogs(count: number): AuditLog[] {
   const actions = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "RUN", "ONLINE", "OFFLINE"];
@@ -45,11 +46,11 @@ function matchesAuditFilters(
 }
 
 export const auditHandlers: RequestHandler[] = [
-  // GET /api/audit-logs — read-only, filterable audit records (newest first)
-  http.get("/api/audit-logs", async ({ request }) => {
+  // GET /api/auditLog/page — read-only, filterable audit records (newest first)
+  http.get("/api/auditLog/page", async ({ request }) => {
     await delay(200);
     const url = new URL(request.url);
-    const { page, pageSize } = parsePagination(url);
+    const { page, size } = parsePageSize(url);
     const operator = url.searchParams.get("operator")?.toLowerCase() ?? "";
     const action = url.searchParams.get("action") ?? "";
     const moduleName = url.searchParams.get("module") ?? "";
@@ -70,6 +71,6 @@ export const auditHandlers: RequestHandler[] = [
       )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-    return HttpResponse.json(paginate(filtered, page, pageSize));
+    return ok(ipage(filtered, page, size));
   }),
 ];

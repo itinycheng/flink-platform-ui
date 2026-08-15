@@ -76,36 +76,36 @@ export function deleteResource(id: string): Promise<void> {
   return http.delete(`/resources/${id}`);
 }
 
-// ---- User Management ----
+// ---- User Management ---- (backend: /user/*)
 
 export function getUsers(params?: PaginationParams): Promise<PaginatedResponse<ManagedUser>> {
-  return http.get<PaginatedResponse<ManagedUser>>("/users", { params });
+  return http.get<IPage<ManagedUser>>("/user/page", { params: toPageParams(params) }).then(ipageToPaginated);
 }
 
-export function createUser(data: Omit<ManagedUser, "id" | "createdAt">): Promise<ManagedUser> {
-  return http.post<ManagedUser>("/users", data);
+export function createUser(data: Omit<ManagedUser, "id" | "createdAt">): Promise<number> {
+  return http.post<number>("/user/create", data);
 }
 
-export function updateUser(id: string, data: Partial<Omit<ManagedUser, "id" | "createdAt">>): Promise<ManagedUser> {
-  return http.put<ManagedUser>(`/users/${id}`, data);
+export function updateUser(id: string, data: Partial<Omit<ManagedUser, "id" | "createdAt">>): Promise<number> {
+  return http.post<number>("/user/update", { ...data, id });
 }
 
-// ---- Custom Parameters ----
+// ---- Job Parameters ---- (backend: /jobParam/*)
 
 export function getParams(params?: PaginationParams): Promise<PaginatedResponse<CustomParam>> {
-  return http.get<PaginatedResponse<CustomParam>>("/params", { params });
+  return http.get<IPage<CustomParam>>("/jobParam/page", { params: toPageParams(params) }).then(ipageToPaginated);
 }
 
-export function createParam(data: Omit<CustomParam, "id">): Promise<CustomParam> {
-  return http.post<CustomParam>("/params", data);
+export function createParam(data: Omit<CustomParam, "id">): Promise<number> {
+  return http.post<number>("/jobParam/create", data);
 }
 
-export function updateParam(id: string, data: Partial<Omit<CustomParam, "id">>): Promise<CustomParam> {
-  return http.put<CustomParam>(`/params/${id}`, data);
+export function updateParam(id: string, data: Partial<Omit<CustomParam, "id">>): Promise<number> {
+  return http.post<number>("/jobParam/update", { ...data, id });
 }
 
-export function deleteParam(id: string): Promise<void> {
-  return http.delete(`/params/${id}`);
+export function deleteParam(id: string): Promise<boolean> {
+  return http.get<boolean>(`/jobParam/delete/${id}`);
 }
 
 // ---- Data Sources ----
@@ -134,90 +134,90 @@ export function testDataSourceConnection(id: string): Promise<boolean> {
   return http.get<boolean>(`/datasource/test/${id}`);
 }
 
-// ---- Catalogs ----
+// ---- Catalogs ---- (backend: /catalog/*)
 
 export function getCatalogs(params?: PaginationParams): Promise<PaginatedResponse<Catalog>> {
-  return http.get<PaginatedResponse<Catalog>>("/catalogs", { params });
+  return http.get<IPage<Catalog>>("/catalog/page", { params: toPageParams(params) }).then(ipageToPaginated);
 }
 
-export function createCatalog(data: Omit<Catalog, "id" | "createdAt" | "updatedAt">): Promise<Catalog> {
-  return http.post<Catalog>("/catalogs", data);
+export function createCatalog(data: Omit<Catalog, "id" | "createdAt" | "updatedAt">): Promise<number> {
+  return http.post<number>("/catalog/create", data);
 }
 
 export function updateCatalog(
   id: string,
   data: Partial<Omit<Catalog, "id" | "createdAt" | "updatedAt">>,
-): Promise<Catalog> {
-  return http.put<Catalog>(`/catalogs/${id}`, data);
+): Promise<number> {
+  return http.post<number>("/catalog/update", { ...data, id });
 }
 
-export function deleteCatalog(id: string): Promise<void> {
-  return http.delete(`/catalogs/${id}`);
+export function deleteCatalog(id: string): Promise<boolean> {
+  return http.get<boolean>(`/catalog/delete/${id}`);
 }
 
-// ---- Workers ----
+// ---- Workers ---- (backend: /worker/*)
 
 export function getWorkers(params?: PaginationParams): Promise<PaginatedResponse<Worker>> {
-  return http.get<PaginatedResponse<Worker>>("/workers", { params });
+  return http.get<IPage<Worker>>("/worker/page", { params: toPageParams(params) }).then(ipageToPaginated);
 }
 
-export function createWorker(data: Omit<Worker, "id" | "createdAt" | "updatedAt">): Promise<Worker> {
-  return http.post<Worker>("/workers", data);
+export function createWorker(data: Omit<Worker, "id" | "createdAt" | "updatedAt">): Promise<number> {
+  return http.post<number>("/worker/create", data);
 }
 
 export function updateWorker(
   id: string,
   data: Partial<Omit<Worker, "id" | "createdAt" | "updatedAt">>,
-): Promise<Worker> {
-  return http.put<Worker>(`/workers/${id}`, data);
+): Promise<number> {
+  return http.post<number>("/worker/update", { ...data, id });
 }
 
-export function deleteWorker(id: string): Promise<void> {
-  return http.delete(`/workers/${id}`);
+export function deleteWorker(id: string): Promise<boolean> {
+  return http.get<boolean>(`/worker/delete/${id}`);
 }
 
-// ---- Tags ----
+// ---- Tags ---- (backend: /tag/*)
 
 export function getTags(params?: PaginationParams): Promise<PaginatedResponse<Tag>> {
-  return http.get<PaginatedResponse<Tag>>("/tags", { params });
+  return http.get<IPage<Tag>>("/tag/page", { params: toPageParams(params) }).then(ipageToPaginated);
 }
 
-export function createTag(data: Omit<Tag, "id" | "createdAt" | "updatedAt">): Promise<Tag> {
-  return http.post<Tag>("/tags", data);
+export function createTag(data: Omit<Tag, "id" | "createdAt" | "updatedAt">): Promise<number> {
+  return http.post<number>("/tag/create", data);
 }
 
-export function updateTag(id: string, data: Partial<Omit<Tag, "id" | "createdAt" | "updatedAt">>): Promise<Tag> {
-  return http.put<Tag>(`/tags/${id}`, data);
+export function updateTag(id: string, data: Partial<Omit<Tag, "id" | "createdAt" | "updatedAt">>): Promise<number> {
+  return http.post<number>("/tag/update", { ...data, id });
 }
 
-export function deleteTag(id: string): Promise<void> {
-  return http.delete(`/tags/${id}`);
+export function deleteTag(id: string): Promise<boolean> {
+  return http.get<boolean>(`/tag/delete/${id}`);
 }
 
-// ---- System Configs ----
+// ---- System Configs ---- (backend: /config/*)
 
 export function getSysConfigs(params?: PaginationParams): Promise<PaginatedResponse<SysConfig>> {
-  return http.get<PaginatedResponse<SysConfig>>("/sys-configs", { params });
+  return http.get<IPage<SysConfig>>("/config/page", { params: toPageParams(params) }).then(ipageToPaginated);
 }
 
-export function createSysConfig(data: Omit<SysConfig, "id" | "createdAt" | "updatedAt">): Promise<SysConfig> {
-  return http.post<SysConfig>("/sys-configs", data);
+export function createSysConfig(data: Omit<SysConfig, "id" | "createdAt" | "updatedAt">): Promise<number> {
+  return http.post<number>("/config/create", data);
 }
 
 export function updateSysConfig(
   id: string,
   data: Partial<Omit<SysConfig, "id" | "createdAt" | "updatedAt">>,
-): Promise<SysConfig> {
-  return http.put<SysConfig>(`/sys-configs/${id}`, data);
+): Promise<number> {
+  return http.post<number>("/config/update", { ...data, id });
 }
 
-export function deleteSysConfig(id: string): Promise<void> {
-  return http.delete(`/sys-configs/${id}`);
+export function deleteSysConfig(id: string): Promise<boolean> {
+  return http.get<boolean>(`/config/delete/${id}`);
 }
 
 /** Physically purge a soft-deleted config. */
-export function purgeSysConfig(id: string): Promise<void> {
-  return http.delete(`/sys-configs/${id}/purge`);
+export function purgeSysConfig(id: string): Promise<boolean> {
+  return http.get<boolean>(`/config/purge/${id}`);
 }
 
 // ---- Audit Log ----
@@ -232,5 +232,7 @@ export interface AuditLogQuery extends PaginationParams {
 }
 
 export function getAuditLogs(params?: AuditLogQuery): Promise<PaginatedResponse<AuditLog>> {
-  return http.get<PaginatedResponse<AuditLog>>("/audit-logs", { params });
+  return http
+    .get<IPage<AuditLog>>("/auditLog/page", { params: { ...params, ...toPageParams(params) } })
+    .then(ipageToPaginated);
 }

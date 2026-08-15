@@ -225,7 +225,7 @@ function useSysConfigCrud() {
     setEditingConfig(null);
   };
 
-  const runRowAction = async (action: (id: string) => Promise<void>, id: string, ok: string, fail: string) => {
+  const runRowAction = async (action: (id: string) => Promise<unknown>, id: string, ok: string, fail: string) => {
     try {
       await action(id);
       message.success(ok);

@@ -1,7 +1,8 @@
-import { http, HttpResponse, delay, type RequestHandler } from "msw";
+import { http, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import type { Workspace } from "@/types/workspace";
-import { paginate } from "@/utils/pagination";
+import { ok } from "@/mocks/lib/response";
+import { ipage, parsePageSize } from "@/mocks/lib/page";
 
 // A stable default workspace plus a few generated ones.
 const mockWorkspaces: Workspace[] = [
@@ -23,43 +24,38 @@ const mockWorkspaces: Workspace[] = [
 ];
 
 export const workspaceHandlers: RequestHandler[] = [
-  http.get("/api/workspaces/all", async () => {
+  http.get("/api/workspace/list", async () => {
     await delay(150);
-    return HttpResponse.json(mockWorkspaces.filter((w) => w.status === "ENABLE"));
+    return ok(mockWorkspaces.filter((w) => w.status === "ENABLE"));
   }),
 
-  http.get("/api/workspaces", async ({ request }) => {
+  http.get("/api/workspace/page", async ({ request }) => {
     await delay(200);
-    const p = new URL(request.url).searchParams;
-    const page = Number(p.get("page")) || 1;
-    const pageSize = Number(p.get("pageSize")) || 10;
-    return HttpResponse.json(paginate(mockWorkspaces, page, pageSize));
+    const { page, size } = parsePageSize(new URL(request.url));
+    return ok(ipage(mockWorkspaces, page, size));
   }),
 
-  http.post("/api/workspaces", async ({ request }) => {
+  http.post("/api/workspace/create", async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as Omit<Workspace, "id" | "createdAt">;
-    const ws: Workspace = { ...body, id: `ws-${faker.string.nanoid(6)}`, createdAt: new Date().toISOString() };
-    mockWorkspaces.push(ws);
-    return HttpResponse.json(ws, { status: 201 });
+    mockWorkspaces.push({ ...body, id: `ws-${faker.string.nanoid(6)}`, createdAt: new Date().toISOString() });
+    return ok(mockWorkspaces.length, { status: 201 });
   }),
 
-  http.put("/api/workspaces/:id", async ({ params, request }) => {
+  http.post("/api/workspace/update", async ({ request }) => {
     await delay(200);
-    const { id } = params as { id: string };
-    const body = (await request.json()) as Partial<Workspace>;
-    const ws = mockWorkspaces.find((w) => w.id === id);
-    if (!ws) return HttpResponse.json({ message: "工作空间不存在" }, { status: 404 });
+    const body = (await request.json()) as Partial<Workspace> & { id: string };
+    const ws = mockWorkspaces.find((w) => w.id === body.id);
+    if (!ws) return ok(0);
     Object.assign(ws, body);
-    return HttpResponse.json(ws);
+    return ok(1);
   }),
 
-  http.delete("/api/workspaces/:id", async ({ params }) => {
+  http.get("/api/workspace/delete/:id", async ({ params }) => {
     await delay(200);
     const { id } = params as { id: string };
     const idx = mockWorkspaces.findIndex((w) => w.id === id);
-    if (idx === -1) return HttpResponse.json({ message: "工作空间不存在" }, { status: 404 });
-    mockWorkspaces.splice(idx, 1);
-    return new HttpResponse(null, { status: 204 });
+    if (idx !== -1) mockWorkspaces.splice(idx, 1);
+    return ok(idx !== -1);
   }),
 ];

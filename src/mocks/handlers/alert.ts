@@ -1,7 +1,8 @@
-import { http, HttpResponse, delay, type RequestHandler } from "msw";
+import { http, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import type { AlertRule, AlertChannelType, AlertRuleConfig } from "@/types/alert";
-import { paginate } from "@/utils/pagination";
+import { ok } from "@/mocks/lib/response";
+import { ipage, parsePageSize } from "@/mocks/lib/page";
 
 const CHANNELS: AlertChannelType[] = ["EMAIL", "FEI_SHU", "DING_DING", "SMS"];
 
@@ -32,44 +33,39 @@ function generateAlertRules(count: number): AlertRule[] {
 const mockAlertRules: AlertRule[] = generateAlertRules(6);
 
 export const alertRuleHandlers: RequestHandler[] = [
-  http.get("/api/alert-rules/all", async () => {
+  http.get("/api/alert/list", async () => {
     await delay(150);
-    return HttpResponse.json(mockAlertRules);
+    return ok(mockAlertRules);
   }),
 
-  http.get("/api/alert-rules", async ({ request }) => {
+  http.get("/api/alert/page", async ({ request }) => {
     await delay(200);
-    const p = new URL(request.url).searchParams;
-    const page = Number(p.get("page")) || 1;
-    const pageSize = Number(p.get("pageSize")) || 10;
-    return HttpResponse.json(paginate(mockAlertRules, page, pageSize));
+    const { page, size } = parsePageSize(new URL(request.url));
+    return ok(ipage(mockAlertRules, page, size));
   }),
 
-  http.post("/api/alert-rules", async ({ request }) => {
+  http.post("/api/alert/create", async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as Omit<AlertRule, "id" | "createdAt" | "updatedAt">;
     const now = new Date().toISOString();
-    const rule: AlertRule = { ...body, id: `ar-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now };
-    mockAlertRules.push(rule);
-    return HttpResponse.json(rule, { status: 201 });
+    mockAlertRules.push({ ...body, id: `ar-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now });
+    return ok(mockAlertRules.length, { status: 201 });
   }),
 
-  http.put("/api/alert-rules/:id", async ({ params, request }) => {
+  http.post("/api/alert/update", async ({ request }) => {
     await delay(200);
-    const { id } = params as { id: string };
-    const body = (await request.json()) as Partial<AlertRule>;
-    const rule = mockAlertRules.find((r) => r.id === id);
-    if (!rule) return HttpResponse.json({ message: "告警规则不存在" }, { status: 404 });
+    const body = (await request.json()) as Partial<AlertRule> & { id: string };
+    const rule = mockAlertRules.find((r) => r.id === body.id);
+    if (!rule) return ok(0);
     Object.assign(rule, body, { updatedAt: new Date().toISOString() });
-    return HttpResponse.json(rule);
+    return ok(1);
   }),
 
-  http.delete("/api/alert-rules/:id", async ({ params }) => {
+  http.get("/api/alert/delete/:id", async ({ params }) => {
     await delay(200);
     const { id } = params as { id: string };
     const idx = mockAlertRules.findIndex((r) => r.id === id);
-    if (idx === -1) return HttpResponse.json({ message: "告警规则不存在" }, { status: 404 });
-    mockAlertRules.splice(idx, 1);
-    return new HttpResponse(null, { status: 204 });
+    if (idx !== -1) mockAlertRules.splice(idx, 1);
+    return ok(idx !== -1);
   }),
 ];
