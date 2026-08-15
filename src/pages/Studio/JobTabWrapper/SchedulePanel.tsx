@@ -46,7 +46,15 @@ export default function SchedulePanel({ nodeId }: { nodeId: string }) {
     const values = await form.validateFields();
     setSaving(true);
     try {
-      await saveJobFlow(nodeId, { ...(loadedRef.current ?? {}), ...values } as JobFlow);
+      const prev = loadedRef.current;
+      // Deep-merge the nested config/timeout so their un-edited sub-fields
+      // (e.g. ExecutionConfig.strategy/startJobId/scheduleTime) survive the save.
+      await saveJobFlow(nodeId, {
+        ...prev,
+        ...values,
+        config: { ...prev?.config, ...values.config },
+        timeout: { ...prev?.timeout, ...values.timeout },
+      } as JobFlow);
       void messageApi.success(t("common.saveSuccess"));
     } finally {
       setSaving(false);
