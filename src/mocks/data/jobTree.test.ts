@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { workflowHandlers } from "@/mocks/handlers/job";
-import { getJobGroups, getJobsByGroup, searchJobs } from "@/api/job";
+import { createJobGroup, deleteJobGroup, getJobGroups, getJobsByGroup, renameJobGroup, searchJobs } from "@/api/job";
 
 const server = setupServer(...workflowHandlers);
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
@@ -32,5 +32,26 @@ describe("jobTree read endpoints", () => {
     const leaves = results.flatMap((g) => g.children ?? []);
     expect(leaves.length).toBeGreaterThan(0);
     expect(leaves.every((c) => c.jobType === "FLINK_SQL")).toBe(true);
+  });
+});
+
+describe("jobGroup write endpoints", () => {
+  it("creates a top-level group and a subgroup under it", async () => {
+    const topId = await createJobGroup({ name: "T1" });
+    const subId = await createJobGroup({ name: "S1", pid: topId });
+    const children = await getJobsByGroup(topId);
+    expect(children.some((n) => n.id === subId && n.kind === "group")).toBe(true);
+  });
+
+  it("rejects a group nested more than one level deep", async () => {
+    const topId = await createJobGroup({ name: "T2" });
+    const subId = await createJobGroup({ name: "S2", pid: topId });
+    await expect(createJobGroup({ name: "S3", pid: subId })).rejects.toBeTruthy();
+  });
+
+  it("renames and deletes a group", async () => {
+    const id = await createJobGroup({ name: "T3" });
+    expect(await renameJobGroup({ id, name: "T3x" })).toBe(id);
+    expect(await deleteJobGroup(id)).toBe(true);
   });
 });

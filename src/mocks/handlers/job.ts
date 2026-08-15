@@ -1,7 +1,15 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
-import { ok } from "@/mocks/lib/response";
-import { jobTreeStore, listRoots, listChildren, searchTree } from "@/mocks/data/jobTree";
+import { ok, fail } from "@/mocks/lib/response";
+import {
+  jobTreeStore,
+  listRoots,
+  listChildren,
+  searchTree,
+  createGroupRow,
+  renameGroupRow,
+  deleteGroupSubtree,
+} from "@/mocks/data/jobTree";
 import type { JobTreeNode, WorkflowRunRecord } from "@/types/job";
 import type { JobInfo } from "@/types/entities";
 import type { JobType } from "@/constants/enums";
@@ -91,6 +99,33 @@ export const workflowHandlers: RequestHandler[] = [
         statuses: p.get("statuses") ? p.get("statuses")!.split(",") : undefined,
       }),
     );
+  }),
+
+  // POST /api/jobGroup/create — creates a top-level group (no pid) or a
+  // subgroup (pid points at a top-level group). Nesting beyond one level
+  // (pid pointing at a subgroup) or a nonexistent pid is rejected.
+  http.post("/api/jobGroup/create", async ({ request }) => {
+    await delay(150);
+    const { name, pid } = (await request.json()) as { name: string; pid?: string };
+    try {
+      return ok(createGroupRow(name, pid ?? ""), { status: 201 });
+    } catch (e) {
+      const err = e as { code?: number; desc?: string };
+      return fail(err.code ?? 1001, err.desc ?? "分组嵌套超过一层");
+    }
+  }),
+
+  // POST /api/jobGroup/update — rename a group
+  http.post("/api/jobGroup/update", async ({ request }) => {
+    await delay(150);
+    const { id, name } = (await request.json()) as { id: string; name: string };
+    return renameGroupRow(id, name) ? ok(id) : fail(1002, "分组不存在");
+  }),
+
+  // GET /api/jobGroup/delete/:id — delete a group and cascade its subtree
+  http.get("/api/jobGroup/delete/:id", async ({ params }) => {
+    await delay(150);
+    return ok(deleteGroupSubtree((params as { id: string }).id));
   }),
 
   // GET /api/workflows/:id/runs

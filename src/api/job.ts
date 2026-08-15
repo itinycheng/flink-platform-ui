@@ -13,7 +13,11 @@ export function getJobsByGroup(groupId: string): Promise<JobTreeNode[]> {
 }
 
 /** 搜索 Job（服务端，跨所有分组）。数组参数拼成逗号串，避免 axios 默认的 `key[]=` 序列化。 */
-export function searchJobs(params: { keyword?: string; types?: string[]; statuses?: string[] }): Promise<JobTreeNode[]> {
+export function searchJobs(params: {
+  keyword?: string;
+  types?: string[];
+  statuses?: string[];
+}): Promise<JobTreeNode[]> {
   return http.get<JobTreeNode[]>("/jobTree/search", {
     params: {
       keyword: params.keyword || undefined,
@@ -25,6 +29,20 @@ export function searchJobs(params: { keyword?: string; types?: string[]; statuse
 
 export function getWorkflowRuns(id: string): Promise<WorkflowRunRecord[]> {
   return http.get<WorkflowRunRecord[]>(`/workflows/${id}/runs`);
+}
+
+// ---- Group writes (create/rename/delete) ----
+
+export function createJobGroup(p: { name: string; pid?: string }): Promise<string> {
+  return http.post<string>("/jobGroup/create", p);
+}
+
+export function renameJobGroup(p: { id: string; name: string }): Promise<string> {
+  return http.post<string>("/jobGroup/update", p);
+}
+
+export function deleteJobGroup(id: string): Promise<boolean> {
+  return http.get<boolean>(`/jobGroup/delete/${id}`);
 }
 
 // ---- Definition lifecycle (Task & Workflow nodes) ----
