@@ -208,12 +208,6 @@ export const workflowHandlers: RequestHandler[] = [
     return HttpResponse.json(results);
   }),
 
-  // GET /api/workflows/tree
-  http.get("/api/workflows/tree", async () => {
-    await delay(200);
-    return HttpResponse.json(mockTree);
-  }),
-
   // GET /api/workflows/:id — get single workflow detail
   http.get("/api/workflows/:id", async ({ params }) => {
     await delay(200);
@@ -272,44 +266,8 @@ export const workflowHandlers: RequestHandler[] = [
   }),
 
   // ---- Definition lifecycle (Task & Workflow nodes) ----
-
-  // POST /api/jobs/:id/run-once — trigger a single run
-  http.post("/api/jobs/:id/run-once", async ({ params }) => {
-    await delay(300);
-    const { id } = params as { id: string };
-    if (!findDefinition(id)) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
-    return HttpResponse.json({ flowRunId: `fr-${faker.string.nanoid(8)}` });
-  }),
-
-  // PUT /api/jobs/:id/status — lifecycle transition (online/offline, start/stop schedule)
-  http.put("/api/jobs/:id/status", async ({ params, request }) => {
-    await delay(200);
-    const { id } = params as { id: string };
-    const { status } = (await request.json()) as { status: WorkflowLifecycleStatus };
-    const found = findDefinition(id);
-    if (!found) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
-    found.node.lifecycleStatus = status;
-    return HttpResponse.json(found.node);
-  }),
-
-  // POST /api/jobs/:id/copy — duplicate a definition into the same group (offline)
-  http.post("/api/jobs/:id/copy", async ({ params }) => {
-    await delay(300);
-    const { id } = params as { id: string };
-    const found = findDefinition(id);
-    if (!found) return HttpResponse.json({ message: "定义不存在" }, { status: 404 });
-    const isWorkflow = found.node.type === "workflow";
-    const copy: JobTreeNode = {
-      ...found.node,
-      id: `${isWorkflow ? "wf" : "task"}-${faker.string.nanoid(6)}`,
-      name: `${found.node.name}-copy`,
-      lifecycleStatus: "OFFLINE",
-      tags: [...(found.node.tags ?? [])],
-      alertRuleIds: [...(found.node.alertRuleIds ?? [])],
-    };
-    found.group.children?.push(copy);
-    return HttpResponse.json(copy, { status: 201 });
-  }),
+  // NOTE: run-once / status / copy now go through /jobFlow/* (see jobStore); the
+  // old /jobs/:id/{run-once,status,copy} handlers were removed with their api fns.
 
   // PUT /api/jobs/:id/tags
   http.put("/api/jobs/:id/tags", async ({ params, request }) => {

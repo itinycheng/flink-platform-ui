@@ -67,11 +67,6 @@ export interface DataSource {
   updatedAt: string;
 }
 
-export interface TestConnectionResult {
-  success: boolean;
-  message: string;
-}
-
 // ---- Catalog (Flink SQL Catalog) ----
 
 export interface Catalog {
