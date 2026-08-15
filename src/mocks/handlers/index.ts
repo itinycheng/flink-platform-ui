@@ -10,6 +10,7 @@ import { runHandlers } from "./run";
 import { alertRuleHandlers } from "./alert";
 import { queryHandlers } from "./query";
 import { workspaceHandlers } from "./workspace";
+import { jobFlowHandlers } from "./jobFlow";
 import { pickerHandlers } from "./picker";
 
 export const handlers: RequestHandler[] = [
@@ -25,4 +26,5 @@ export const handlers: RequestHandler[] = [
   ...queryHandlers,
   ...workspaceHandlers,
   ...pickerHandlers,
+  ...jobFlowHandlers,
 ];
