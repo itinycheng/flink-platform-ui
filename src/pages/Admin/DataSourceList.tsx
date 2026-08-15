@@ -112,11 +112,11 @@ function isFormValidationError(error: unknown): boolean {
 
 async function handleTest(id: string) {
   try {
-    const result = await testDataSourceConnection(id);
-    if (result.success) {
-      message.success(result.message);
+    const okConn = await testDataSourceConnection(id);
+    if (okConn) {
+      message.success(i18n.t("datasource.testOk"));
     } else {
-      message.error(result.message);
+      message.error(i18n.t("datasource.testFailed"));
     }
   } catch {
     message.error(i18n.t("datasource.testFailed"));

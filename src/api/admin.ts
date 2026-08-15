@@ -6,7 +6,6 @@ import type {
   ManagedUser,
   CustomParam,
   DataSource,
-  TestConnectionResult,
   Catalog,
   Worker,
   Tag,
@@ -14,7 +13,8 @@ import type {
   AuditLog,
   AuditResult,
 } from "@/types/admin";
-import type { PaginatedResponse, PaginationParams } from "@/types/common";
+import type { PaginatedResponse, PaginationParams, IPage } from "@/types/common";
+import { ipageToPaginated, toPageParams } from "@/types/common";
 
 // ---- Resource Management ----
 
@@ -111,28 +111,27 @@ export function deleteParam(id: string): Promise<void> {
 // ---- Data Sources ----
 
 export function getDataSources(params?: PaginationParams): Promise<PaginatedResponse<DataSource>> {
-  return http.get<PaginatedResponse<DataSource>>("/datasources", { params });
+  return http.get<IPage<DataSource>>("/datasource/page", { params: toPageParams(params) }).then(ipageToPaginated);
 }
 
-export function createDataSource(
-  data: Omit<DataSource, "id" | "createdAt" | "updatedAt">,
-): Promise<DataSource> {
-  return http.post<DataSource>("/datasources", data);
+export function createDataSource(data: Omit<DataSource, "id" | "createdAt" | "updatedAt">): Promise<number> {
+  return http.post<number>("/datasource/create", data);
 }
 
 export function updateDataSource(
   id: string,
   data: Partial<Omit<DataSource, "id" | "createdAt" | "updatedAt">>,
-): Promise<DataSource> {
-  return http.put<DataSource>(`/datasources/${id}`, data);
+): Promise<number> {
+  return http.post<number>("/datasource/update", { ...data, id });
 }
 
-export function deleteDataSource(id: string): Promise<void> {
-  return http.delete(`/datasources/${id}`);
+export function deleteDataSource(id: string): Promise<boolean> {
+  return http.get<boolean>(`/datasource/delete/${id}`);
 }
 
-export function testDataSourceConnection(id: string): Promise<TestConnectionResult> {
-  return http.post<TestConnectionResult>(`/datasources/${id}/test`);
+/** Test a persisted datasource's connection by id (backend returns a boolean). */
+export function testDataSourceConnection(id: string): Promise<boolean> {
+  return http.get<boolean>(`/datasource/test/${id}`);
 }
 
 // ---- Catalogs ----

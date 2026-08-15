@@ -497,6 +497,7 @@ const en = {
     properties: "Extra Properties",
     descriptionPlaceholder: "Please enter a description (optional)",
     test: "Test Connection",
+    testOk: "Connection successful",
     testFailed: "Connection test failed, please retry",
     deleteConfirmDesc: 'Are you sure you want to delete data source "{{name}}"?',
   },

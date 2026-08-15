@@ -13,6 +13,22 @@ import type {
   SysConfigType,
 } from "@/types/admin";
 import { paginate, parsePagination } from "@/utils/pagination";
+import { ok } from "@/mocks/lib/response";
+
+// Backend-style page wrapper + query parsing (page/size), for migrated /…/page endpoints.
+function ipage<T>(items: T[], page: number, size: number) {
+  const start = (page - 1) * size;
+  return {
+    records: items.slice(start, start + size),
+    total: items.length,
+    size,
+    current: page,
+    pages: Math.ceil(items.length / size) || 1,
+  };
+}
+function parsePageSize(url: URL): { page: number; size: number } {
+  return { page: Number(url.searchParams.get("page")) || 1, size: Number(url.searchParams.get("size")) || 10 };
+}
 
 // ---- Seed data generated with faker ----
 
@@ -226,47 +242,41 @@ export const adminHandlers: RequestHandler[] = [
 
   // ---- Data Sources ----
 
-  http.get("/api/datasources", async ({ request }) => {
+  http.get("/api/datasource/page", async ({ request }) => {
     await delay(200);
-    const { page, pageSize } = parsePagination(new URL(request.url));
-    return HttpResponse.json(paginate(mockDataSources, page, pageSize));
+    const { page, size } = parsePageSize(new URL(request.url));
+    return ok(ipage(mockDataSources, page, size));
   }),
 
-  http.post("/api/datasources", async ({ request }) => {
+  http.post("/api/datasource/create", async ({ request }) => {
     await delay(300);
     const body = (await request.json()) as Omit<DataSource, "id" | "createdAt" | "updatedAt">;
     const now = new Date().toISOString();
     const ds: DataSource = { ...body, id: `ds-${faker.string.nanoid(6)}`, createdAt: now, updatedAt: now };
     mockDataSources.push(ds);
-    return HttpResponse.json(ds, { status: 201 });
+    return ok(mockDataSources.length, { status: 201 });
   }),
 
-  http.put("/api/datasources/:id", async ({ params, request }) => {
+  http.post("/api/datasource/update", async ({ request }) => {
     await delay(200);
-    const { id } = params as { id: string };
-    const body = (await request.json()) as Partial<DataSource>;
-    const ds = mockDataSources.find((d) => d.id === id);
-    if (!ds) return HttpResponse.json({ message: "数据源不存在" }, { status: 404 });
+    const body = (await request.json()) as Partial<DataSource> & { id: string };
+    const ds = mockDataSources.find((d) => d.id === body.id);
+    if (!ds) return ok(0);
     Object.assign(ds, body, { updatedAt: new Date().toISOString() });
-    return HttpResponse.json(ds);
+    return ok(1);
   }),
 
-  http.delete("/api/datasources/:id", async ({ params }) => {
+  http.get("/api/datasource/delete/:id", async ({ params }) => {
     await delay(200);
     const { id } = params as { id: string };
     const idx = mockDataSources.findIndex((d) => d.id === id);
-    if (idx === -1) return HttpResponse.json({ message: "数据源不存在" }, { status: 404 });
-    mockDataSources.splice(idx, 1);
-    return new HttpResponse(null, { status: 204 });
+    if (idx !== -1) mockDataSources.splice(idx, 1);
+    return ok(idx !== -1);
   }),
 
-  http.post("/api/datasources/:id/test", async () => {
+  http.get("/api/datasource/test/:id", async () => {
     await delay(600);
-    const success = faker.datatype.boolean({ probability: 0.7 });
-    return HttpResponse.json({
-      success,
-      message: success ? "连接成功" : "连接失败：无法建立到数据源的连接",
-    });
+    return ok(faker.datatype.boolean({ probability: 0.7 }));
   }),
 
   // ---- Catalogs ----

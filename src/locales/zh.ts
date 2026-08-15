@@ -496,6 +496,7 @@ const zh = {
     properties: "额外属性",
     descriptionPlaceholder: "请输入描述（可选）",
     test: "测试连接",
+    testOk: "连接成功",
     testFailed: "连接测试失败，请重试",
     deleteConfirmDesc: '确定要删除数据源 "{{name}}" 吗？',
   },
