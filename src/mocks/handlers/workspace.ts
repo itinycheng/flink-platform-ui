@@ -9,7 +9,7 @@ const mockWorkspaces: Workspace[] = [
     id: "ws-default",
     name: "Default Workspace",
     description: "System default workspace",
-    status: "active",
+    status: "ENABLE",
     isDefault: true,
     createdAt: faker.date.past({ years: 1 }).toISOString(),
   },
@@ -17,7 +17,7 @@ const mockWorkspaces: Workspace[] = [
     id: `ws-${faker.string.nanoid(6)}`,
     name: faker.company.name(),
     description: faker.lorem.sentence({ min: 3, max: 8 }),
-    status: faker.helpers.arrayElement(["active", "disabled"] as const),
+    status: faker.helpers.arrayElement(["ENABLE", "DISABLE"] as const),
     createdAt: faker.date.past({ years: 1 }).toISOString(),
   })),
 ];
@@ -25,7 +25,7 @@ const mockWorkspaces: Workspace[] = [
 export const workspaceHandlers: RequestHandler[] = [
   http.get("/api/workspaces/all", async () => {
     await delay(150);
-    return HttpResponse.json(mockWorkspaces.filter((w) => w.status === "active"));
+    return HttpResponse.json(mockWorkspaces.filter((w) => w.status === "ENABLE"));
   }),
 
   http.get("/api/workspaces", async ({ request }) => {

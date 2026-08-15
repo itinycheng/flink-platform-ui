@@ -1,4 +1,6 @@
-export type WorkspaceStatus = "active" | "disabled";
+import type { Status } from "@/constants/enums";
+
+export type WorkspaceStatus = Status;
 
 export interface Workspace {
   id: string;

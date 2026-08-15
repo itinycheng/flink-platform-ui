@@ -6,29 +6,16 @@ import { useTranslation } from "react-i18next";
 import type { Workspace, WorkspaceStatus } from "@/types/workspace";
 import { createWorkspace, deleteWorkspace, getWorkspaces, updateWorkspace } from "@/api/workspace";
 import RowActions from "@/components/RowActions";
+import { STATUSES, enumOptions } from "@/constants/enums";
 import { statusColor } from "@/utils/statusColor";
 
 function getWorkspaceStatusOptions(t: (k: string) => string) {
-  return [
-    { label: t("workspace.statusActive"), value: "active" },
-    { label: t("workspace.statusDisabled"), value: "disabled" },
-  ];
+  return enumOptions(STATUSES, "Status", t);
 }
 
-function getWorkspaceStatusLabels(t: (k: string) => string): Record<WorkspaceStatus, string> {
-  return {
-    active: t("workspace.statusActive"),
-    disabled: t("workspace.statusDisabled"),
-  };
-}
-
-interface WorkspaceStatusTagProps {
-  status: WorkspaceStatus;
-}
-
-function WorkspaceStatusTag({ status }: WorkspaceStatusTagProps) {
+function WorkspaceStatusTag({ status }: { status: WorkspaceStatus }) {
   const { t } = useTranslation();
-  return <Tag color={statusColor(status)}>{getWorkspaceStatusLabels(t)[status]}</Tag>;
+  return <Tag color={statusColor(status)}>{t(`enums.Status.${status}`)}</Tag>;
 }
 
 interface WorkspaceActionsCellProps {
@@ -82,7 +69,7 @@ function WorkspaceFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel
       destroyOnHidden
       data-testid="workspace-modal"
     >
-      <Form form={form} layout="vertical" initialValues={{ status: "active" }} data-testid="workspace-form">
+      <Form form={form} layout="vertical" initialValues={{ status: "ENABLE" }} data-testid="workspace-form">
         <Form.Item name="name" label={t("common.name")} rules={[{ required: true, message: t("workspace.namePlaceholder") }]}>
           <Input placeholder={t("workspace.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
