@@ -21,8 +21,8 @@ function generateUsers(count: number): ManagedUser[] {
     id: `usr-${faker.string.nanoid(6)}`,
     username: faker.internet.username(),
     email: faker.internet.email(),
-    roles: [faker.helpers.arrayElement(["admin", "developer", "viewer"])],
-    status: faker.helpers.arrayElement(["active", "disabled"] as const),
+    roles: { global: faker.helpers.arrayElement(["ADMIN", "DEVELOPER", "OPERATOR", "VIEWER"] as const) },
+    status: faker.helpers.arrayElement(["NORMAL", "LOCKED"] as const),
     createdAt: faker.date.past({ years: 2 }).toISOString(),
   }));
 }

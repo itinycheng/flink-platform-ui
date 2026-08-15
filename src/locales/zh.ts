@@ -424,6 +424,8 @@ const zh = {
     emailInvalid: "请输入有效的邮箱地址",
     rolesLabel: "角色",
     rolesPlaceholder: "请选择角色",
+    passwordLabel: "密码",
+    passwordPlaceholder: "请输入密码",
     roleAdmin: "管理员",
     roleDeveloper: "开发者",
     roleViewer: "查看者",

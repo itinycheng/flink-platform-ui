@@ -1,5 +1,5 @@
-import type { DbType, WorkerStatus, CatalogType, TagType, Status } from "@/constants/enums";
-import type { DatasourceParam, EnvironmentSpec } from "@/types/entities";
+import type { DbType, WorkerStatus, CatalogType, TagType, Status, UserStatus } from "@/constants/enums";
+import type { DatasourceParam, EnvironmentSpec, UserRoles } from "@/types/entities";
 
 export type { CatalogType };
 
@@ -32,9 +32,10 @@ export interface FolderNode {
 export interface ManagedUser {
   id: string;
   username: string;
-  email: string;
-  roles: string[];
-  status: "active" | "disabled";
+  email?: string;
+  password?: string;
+  roles: UserRoles;
+  status: UserStatus;
   createdAt: string;
 }
 

@@ -6,40 +6,18 @@ import { useTranslation } from "react-i18next";
 import type { ManagedUser } from "@/types/admin";
 import { createUser, getUsers, updateUser } from "@/api/admin";
 import RowActions from "@/components/RowActions";
-import { statusColor } from "@/utils/statusColor";
+import { ROLES, enumOptions } from "@/constants/enums";
 
-function getRoleOptions(t: (k: string) => string) {
-  return [
-    { label: t("user2.roleAdmin"), value: "admin" },
-    { label: t("user2.roleDeveloper"), value: "developer" },
-    { label: t("user2.roleViewer"), value: "viewer" },
-  ];
-}
-
-interface UserRoleTagsProps {
-  roles: string[];
-}
-
-function UserRoleTags({ roles }: UserRoleTagsProps) {
-  return (
-    <>
-      {roles.map((role) => (
-        <Tag key={role} color="blue">
-          {role}
-        </Tag>
-      ))}
-    </>
-  );
-}
-
-interface UserStatusTagProps {
-  status: ManagedUser["status"];
-}
-
-function UserStatusTag({ status }: UserStatusTagProps) {
+/** Renders the user's global role (UserRoles.global). */
+function UserRoleTag({ roles }: { roles: ManagedUser["roles"] }) {
   const { t } = useTranslation();
-  const text = status === "active" ? t("common.enabled") : t("common.disabled");
-  return <Tag color={statusColor(status)}>{text}</Tag>;
+  const global = roles?.global;
+  return global ? <Tag color="blue">{t(`enums.Role.${global}`)}</Tag> : <Tag>-</Tag>;
+}
+
+function UserStatusTag({ status }: { status: ManagedUser["status"] }) {
+  const { t } = useTranslation();
+  return <Tag color={status === "NORMAL" ? "green" : "red"}>{t(`enums.UserStatus.${status}`)}</Tag>;
 }
 
 interface UserActionsCellProps {
@@ -50,7 +28,7 @@ interface UserActionsCellProps {
 
 function UserActionsCell({ record, onEdit, onToggleStatus }: UserActionsCellProps) {
   const { t } = useTranslation();
-  const isActive = record.status === "active";
+  const isActive = record.status === "NORMAL";
   return (
     <RowActions
       actions={[
@@ -110,8 +88,17 @@ function UserFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }: U
         >
           <Input placeholder={t("user2.emailPlaceholder")} data-testid="input-email" />
         </Form.Item>
-        <Form.Item name="roles" label={t("user2.rolesLabel")} rules={[{ required: true, message: t("user2.rolesPlaceholder") }]}>
-          <Select mode="multiple" placeholder={t("user2.rolesPlaceholder")} options={getRoleOptions(t)} data-testid="select-roles" />
+        {!isEdit && (
+          <Form.Item
+            name="password"
+            label={t("user2.passwordLabel")}
+            rules={[{ required: true, message: t("user2.passwordPlaceholder") }]}
+          >
+            <Input.Password placeholder={t("user2.passwordPlaceholder")} data-testid="input-password" />
+          </Form.Item>
+        )}
+        <Form.Item name="globalRole" label={t("user2.rolesLabel")} rules={[{ required: true, message: t("user2.rolesPlaceholder") }]}>
+          <Select placeholder={t("user2.rolesPlaceholder")} options={enumOptions(ROLES, "Role", t)} data-testid="select-roles" />
         </Form.Item>
       </Form>
     </Modal>
@@ -138,19 +125,21 @@ function useUserCrud() {
 
   const handleEdit = (record: ManagedUser) => {
     setEditingUser(record);
-    form.setFieldsValue({ username: record.username, email: record.email, roles: record.roles });
+    form.setFieldsValue({ username: record.username, email: record.email, globalRole: record.roles?.global });
     setModalOpen(true);
   };
 
   const handleModalOk = async () => {
     try {
-      const values = await form.validateFields();
+      const { globalRole, ...values } = await form.validateFields();
+      // The form edits a single global role; the backend model is UserRoles { global, workspaces }.
+      const payload = { ...values, roles: { global: globalRole } };
       setConfirmLoading(true);
       if (editingUser) {
-        await updateUser(editingUser.id, values);
+        await updateUser(editingUser.id, payload);
         message.success(t("common.updateSuccess"));
       } else {
-        await createUser({ ...values, status: "active" });
+        await createUser({ ...payload, status: "NORMAL" });
         message.success(t("common.createSuccess"));
       }
       setModalOpen(false);
@@ -171,10 +160,10 @@ function useUserCrud() {
   };
 
   const handleToggleStatus = async (record: ManagedUser) => {
-    const newStatus = record.status === "active" ? "disabled" : "active";
+    const newStatus = record.status === "NORMAL" ? "LOCKED" : "NORMAL";
     try {
       await updateUser(record.id, { status: newStatus });
-      message.success(newStatus === "disabled" ? t("user2.disableSuccess") : t("user2.enableSuccess"));
+      message.success(newStatus === "LOCKED" ? t("user2.disableSuccess") : t("user2.enableSuccess"));
       void actionRef.current?.reload();
     } catch {
       message.error(t("common.actionFailed"));
@@ -208,7 +197,7 @@ export default function UserList() {
         dataIndex: "roles",
         key: "roles",
         width: 200,
-        render: (_, r) => <UserRoleTags roles={r.roles} />,
+        render: (_, r) => <UserRoleTag roles={r.roles} />,
       },
       {
         title: t("common.status"),
