@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Form, Input, InputNumber, Select, Spin, Switch, message } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
@@ -18,6 +18,9 @@ export default function SchedulePanel({ nodeId }: { nodeId: string }) {
   const [messageApi, ctx] = message.useMessage();
   const loadJobFlow = useJobStore((s) => s.loadJobFlow);
   const saveJobFlow = useJobStore((s) => s.saveJobFlow);
+  // The full loaded flow — merge form edits OVER it so unedited fields
+  // (type, code, description, tags, alerts, status, id, name) survive the save.
+  const loadedRef = useRef<JobFlow | null>(null);
   const cron = Form.useWatch("cronExpr", form) as string | undefined;
   const timeoutEnabled = Form.useWatch(["timeout", "enable"], form) as boolean | undefined;
 
@@ -26,7 +29,10 @@ export default function SchedulePanel({ nodeId }: { nodeId: string }) {
     setLoading(true);
     void loadJobFlow(nodeId)
       .then((flow) => {
-        if (alive && flow) form.setFieldsValue(flow);
+        if (alive && flow) {
+          loadedRef.current = flow;
+          form.setFieldsValue(flow);
+        }
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -40,11 +46,7 @@ export default function SchedulePanel({ nodeId }: { nodeId: string }) {
     const values = await form.validateFields();
     setSaving(true);
     try {
-      await saveJobFlow(nodeId, {
-        ...values,
-        id: form.getFieldValue("id"),
-        name: form.getFieldValue("name"),
-      } as JobFlow);
+      await saveJobFlow(nodeId, { ...(loadedRef.current ?? {}), ...values } as JobFlow);
       void messageApi.success(t("common.saveSuccess"));
     } finally {
       setSaving(false);

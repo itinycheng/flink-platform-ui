@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Flex, Form, Spin, Typography, message } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
@@ -16,13 +16,18 @@ export default function ParamsPanel({ nodeId }: { nodeId: string }) {
   const [messageApi, ctx] = message.useMessage();
   const loadJobFlow = useJobStore((s) => s.loadJobFlow);
   const saveJobFlow = useJobStore((s) => s.saveJobFlow);
+  // Full loaded flow; merge param edits over it so other fields survive the save.
+  const loadedRef = useRef<JobFlow | null>(null);
 
   useEffect(() => {
     let alive = true;
     setLoading(true);
     void loadJobFlow(nodeId)
       .then((flow) => {
-        if (alive && flow) form.setFieldsValue(flow);
+        if (alive && flow) {
+          loadedRef.current = flow;
+          form.setFieldsValue(flow);
+        }
       })
       .finally(() => {
         if (alive) setLoading(false);
@@ -36,11 +41,7 @@ export default function ParamsPanel({ nodeId }: { nodeId: string }) {
     const values = await form.validateFields();
     setSaving(true);
     try {
-      await saveJobFlow(nodeId, {
-        ...values,
-        id: form.getFieldValue("id"),
-        name: form.getFieldValue("name"),
-      } as JobFlow);
+      await saveJobFlow(nodeId, { ...(loadedRef.current ?? {}), ...values } as JobFlow);
       void messageApi.success(t("common.saveSuccess"));
     } finally {
       setSaving(false);

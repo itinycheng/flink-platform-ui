@@ -6,10 +6,27 @@ import type { JobFlow } from "@/types/entities";
 const store = new Map<number, JobFlow>();
 let seq = 2000;
 
-/** Numeric id from a path param; non-numeric tree ids (e.g. "wf-abc") get a fresh synthesized id. */
+/**
+ * Numeric id from a path param. Non-numeric tree ids (e.g. "wf-abc") hash to a
+ * STABLE positive number so repeated GET/update of the same node hit the same
+ * stored flow (edits round-trip). Real backend flow ids are numeric already.
+ */
 function numId(idParam: string): number {
   const n = Number(idParam);
-  return Number.isFinite(n) ? n : ++seq;
+  if (Number.isFinite(n)) return n;
+  let hash = 0;
+  for (let i = 0; i < idParam.length; i++) hash = (hash * 31 + idParam.charCodeAt(i)) | 0;
+  return Math.abs(hash) + 1_000_000; // offset to avoid clashing with the ++seq range
+}
+
+/** Get-or-synthesize a stored flow so subsequent updates/reopens see the same object. */
+function ensureFlow(id: number): JobFlow {
+  let flow = store.get(id);
+  if (!flow) {
+    flow = defaultFlow(id);
+    store.set(id, flow);
+  }
+  return flow;
 }
 
 function defaultFlow(id: number): JobFlow {
@@ -42,14 +59,12 @@ export const jobFlowHandlers: RequestHandler[] = [
 
   mswHttp.get("/api/jobFlow/get/:id", async ({ params }) => {
     await delay(150);
-    const id = numId(params.id as string);
-    return ok(store.get(id) ?? defaultFlow(id));
+    return ok(ensureFlow(numId(params.id as string)));
   }),
 
   mswHttp.get("/api/jobFlow/copy/:id", async ({ params }) => {
     await delay(200);
-    const srcId = numId(params.id as string);
-    const src = store.get(srcId) ?? defaultFlow(srcId);
+    const src = ensureFlow(numId(params.id as string));
     const id = ++seq;
     store.set(id, { ...src, id, name: `${src.name}-copy` });
     return ok(id);
@@ -57,18 +72,16 @@ export const jobFlowHandlers: RequestHandler[] = [
 
   mswHttp.get("/api/jobFlow/schedule/start/:id", async ({ params }) => {
     await delay(150);
-    const id = numId(params.id as string);
-    const flow = store.get(id);
-    if (flow) flow.status = "SCHEDULING";
-    return ok(id);
+    const flow = ensureFlow(numId(params.id as string));
+    flow.status = "SCHEDULING";
+    return ok(flow.id);
   }),
 
   mswHttp.get("/api/jobFlow/schedule/stop/:id", async ({ params }) => {
     await delay(150);
-    const id = numId(params.id as string);
-    const flow = store.get(id);
-    if (flow) flow.status = "ONLINE";
-    return ok(id);
+    const flow = ensureFlow(numId(params.id as string));
+    flow.status = "ONLINE";
+    return ok(flow.id);
   }),
 
   mswHttp.post("/api/jobFlow/schedule/runOnce/:id", async () => {

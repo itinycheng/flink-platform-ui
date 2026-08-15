@@ -45,6 +45,14 @@ describe("jobFlow API + mock", () => {
     expect(flow.status).toBe("ONLINE");
   });
 
+  it("gives a non-numeric id a stable flow so edits round-trip", async () => {
+    const a = await getJobFlow("wf-stable");
+    const b = await getJobFlow("wf-stable");
+    expect(a.id).toBe(b.id); // deterministic id, same stored object
+    await updateJobFlow({ ...a, name: "renamed-flow" });
+    expect((await getJobFlow("wf-stable")).name).toBe("renamed-flow");
+  });
+
   it("copies a JobFlow under a new id", async () => {
     const id = await createJobFlow({ name: "f4", type: "JOB_FLOW" });
     const copyId = await copyJobFlow(id);

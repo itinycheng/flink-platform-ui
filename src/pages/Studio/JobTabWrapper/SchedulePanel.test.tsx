@@ -30,5 +30,8 @@ describe("SchedulePanel", () => {
     const arg = (useJobStore.getState().saveJobFlow as ReturnType<typeof vi.fn>).mock.calls[0][1];
     expect(arg.config.parallelism).toBe(3);
     expect(arg.cronExpr).toBe("0 0 * * *");
+    // Unedited fields (type, name) must survive the save — merged over the loaded flow.
+    expect(arg.type).toBe("JOB_FLOW");
+    expect(arg.name).toBe("f");
   });
 });
