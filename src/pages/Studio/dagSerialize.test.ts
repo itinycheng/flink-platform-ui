@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { Node, Edge } from "@xyflow/react";
-import { serializeFlow } from "./dagSerialize";
+import { serializeFlow, deserializeFlow } from "./dagSerialize";
 
 describe("serializeFlow (new-UI FlowGraph)", () => {
   const nodes: Node[] = [
@@ -38,5 +38,23 @@ describe("serializeFlow (new-UI FlowGraph)", () => {
     expect(g.edges).toEqual([{ id: "e1", source: "wf-1-task1", target: "wf-1-task2", status: "SUCCESS" }]);
     const g2 = serializeFlow(nodes, [{ id: "e2", source: "wf-1-task1", target: "wf-1-task2" } as Edge]);
     expect(g2.edges[0].status).toBe("default");
+  });
+
+  it("round-trips inline per-node config + subject", () => {
+    const withConfig: Node[] = [
+      {
+        id: "n1",
+        type: "taskNode",
+        position: { x: 10, y: 20 },
+        data: { label: "sql", taskType: "MYSQL_SQL", config: { dsId: 7, retryTimes: 0 }, subject: "SELECT 1" },
+      },
+    ];
+    const graph = serializeFlow(withConfig, []);
+    expect(graph.nodes[0].config).toEqual({ dsId: 7, retryTimes: 0 });
+    expect(graph.nodes[0].subject).toBe("SELECT 1");
+
+    const restored = deserializeFlow(graph);
+    expect(restored.nodes[0].data.config).toEqual({ dsId: 7, retryTimes: 0 });
+    expect(restored.nodes[0].data.subject).toBe("SELECT 1");
   });
 });

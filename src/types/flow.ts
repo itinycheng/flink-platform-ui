@@ -13,6 +13,10 @@ export interface FlowNode {
   label: string;
   description?: string;
   priority?: string;
+  /** Per-node task config, inlined into the graph (polymorphic per taskType). */
+  config?: Record<string, unknown>;
+  /** SQL / shell / jar main content for task types that need it. */
+  subject?: string;
   /** Canvas position. */
   x: number;
   y: number;

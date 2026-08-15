@@ -78,6 +78,9 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
               panelHeight={bottom.bottomPanelHeight}
               onResizeMouseDown={bottom.onResizeMouseDown}
               onClose={bottom.closeBottomPanel}
+              onSaveNode={(nodeId, patch) =>
+                setNodes((nds) => nds.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, ...patch } } : n)))
+              }
               messageApi={messageApi}
             />
           )}

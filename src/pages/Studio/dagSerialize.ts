@@ -23,6 +23,8 @@ export function serializeFlow(nodes: Node[], edges: Edge[]): FlowGraph {
       label: str(data.label),
       description: str(data.description) || undefined,
       priority: str(data.priority) || undefined,
+      config: (data.config as Record<string, unknown> | undefined) || undefined,
+      subject: str(data.subject) || undefined,
       x: Math.round(n.position.x),
       y: Math.round(n.position.y),
     };
@@ -44,7 +46,15 @@ export function deserializeFlow(graph: FlowGraph): { nodes: Node[]; edges: Edge[
     id: n.id,
     type: "taskNode",
     position: { x: n.x, y: n.y },
-    data: { label: n.label, taskType: n.taskType, description: n.description, priority: n.priority, nodeType: "task" },
+    data: {
+      label: n.label,
+      taskType: n.taskType,
+      description: n.description,
+      priority: n.priority,
+      config: n.config,
+      subject: n.subject,
+      nodeType: "task",
+    },
   }));
 
   const markerEnd = { type: MarkerType.ArrowClosed, color: "var(--ant-color-text-quaternary, #999)" };
