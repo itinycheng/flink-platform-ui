@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { JobTreeNode, WorkflowFormData, WorkflowLifecycleStatus } from "@/types/job";
+import type { JobTreeNode, WorkflowLifecycleStatus } from "@/types/job";
 import type { JobInfo, JobFlow } from "@/types/entities";
 import {
   findNodeById,
@@ -12,10 +12,6 @@ import {
   getJobGroups,
   getJobsByGroup,
   searchJobs,
-  getWorkflowDetail,
-  createWorkflow,
-  updateWorkflow,
-  deleteWorkflow,
   updateJobTags,
   updateJobAlertRules,
   getJobInfo,
@@ -42,7 +38,6 @@ export interface OpenTab {
 export interface WorkflowState {
   treeData: JobTreeNode[];
   selectedNode: JobTreeNode | null;
-  formData: WorkflowFormData | null;
   treeLoading: boolean;
   operationLoading: boolean;
   loadingGroups: Set<string>;
@@ -55,7 +50,6 @@ export interface WorkflowState {
   fetchGroupChildren: (groupId: string) => Promise<void>;
   searchTree: (keyword: string, types: string[], statuses?: string[]) => Promise<void>;
   selectNode: (node: JobTreeNode | null) => Promise<void>;
-  setFormData: (data: WorkflowFormData | null) => void;
   addNode: (node: JobTreeNode) => void;
   updateNodeName: (nodeId: string, newName: string) => void;
   patchNode: (nodeId: string, patch: Partial<JobTreeNode>) => void;
@@ -65,8 +59,6 @@ export interface WorkflowState {
   copyDefinition: (nodeId: string) => Promise<void>;
   setNodeTags: (nodeId: string, tags: string[]) => Promise<void>;
   setNodeAlertRules: (nodeId: string, alertRuleIds: string[]) => Promise<void>;
-  saveWorkflow: (data: WorkflowFormData) => Promise<void>;
-  deleteWorkflow: (nodeId: string) => Promise<void>;
   openTab: (node: JobTreeNode) => void;
   closeTab: (key: string) => void;
   setActiveTab: (key: string) => void;
@@ -84,7 +76,6 @@ export { findNodeById } from "@/utils/tree";
 export const useJobStore = create<WorkflowState>((set, get) => ({
   treeData: [],
   selectedNode: null,
-  formData: null,
   treeLoading: false,
   operationLoading: false,
   loadingGroups: new Set(),
@@ -145,21 +136,9 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   },
 
   selectNode: async (node) => {
-    set({ selectedNode: node, formData: null });
+    set({ selectedNode: node });
     if (!node || node.type === "group") return;
     get().openTab(node);
-    try {
-      const data = await getWorkflowDetail(node.id);
-      if (get().selectedNode?.id === node.id) {
-        set({ formData: data });
-      }
-    } catch (err) {
-      console.error("[jobStore] getWorkflowDetail failed", err);
-    }
-  },
-
-  setFormData: (data) => {
-    set({ formData: data });
   },
 
   addNode: (node) => {
@@ -237,29 +216,6 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     }
 
     set({ treeData: newTree, selectedNode: newSelected, openTabs: newTabs, activeTabKey: newActiveKey });
-  },
-
-  saveWorkflow: async (data) => {
-    set({ operationLoading: true });
-    try {
-      if (data.id) {
-        await updateWorkflow(data.id, data);
-      } else {
-        await createWorkflow(data);
-      }
-    } finally {
-      set({ operationLoading: false });
-    }
-  },
-
-  deleteWorkflow: async (nodeId) => {
-    set({ operationLoading: true });
-    try {
-      await deleteWorkflow(nodeId);
-      get().removeNode(nodeId);
-    } finally {
-      set({ operationLoading: false });
-    }
   },
 
   openTab: (node) => {

@@ -1,5 +1,5 @@
 import { http } from "@/utils/request";
-import type { JobTreeNode, WorkflowFormData, WorkflowRunRecord } from "@/types/job";
+import type { JobTreeNode, WorkflowRunRecord } from "@/types/job";
 import type { JobInfo } from "@/types/entities";
 
 /** 获取所有分组（不含子节点） */
@@ -21,22 +21,6 @@ export function searchJobs(params: { keyword?: string; types?: string[]; statuse
       statuses: params.statuses?.length ? params.statuses.join(",") : undefined,
     },
   });
-}
-
-export function getWorkflowDetail(id: string): Promise<WorkflowFormData> {
-  return http.get<WorkflowFormData>(`/workflows/${id}`);
-}
-
-export function createWorkflow(data: WorkflowFormData): Promise<WorkflowFormData> {
-  return http.post<WorkflowFormData>("/workflows", data);
-}
-
-export function updateWorkflow(id: string, data: WorkflowFormData): Promise<WorkflowFormData> {
-  return http.put<WorkflowFormData>(`/workflows/${id}`, data);
-}
-
-export function deleteWorkflow(id: string): Promise<void> {
-  return http.delete(`/workflows/${id}`);
 }
 
 export function getWorkflowRuns(id: string): Promise<WorkflowRunRecord[]> {

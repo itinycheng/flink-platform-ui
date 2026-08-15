@@ -1,7 +1,7 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import { ok } from "@/mocks/lib/response";
-import type { JobTreeNode, WorkflowFormData, WorkflowRunRecord, JobStatus, WorkflowLifecycleStatus } from "@/types/job";
+import type { JobTreeNode, WorkflowRunRecord, JobStatus, WorkflowLifecycleStatus } from "@/types/job";
 import type { JobInfo } from "@/types/entities";
 import type { JobType } from "@/constants/enums";
 
@@ -66,52 +66,6 @@ function findDefinition(id: string): { node: JobTreeNode; group: JobTreeNode } |
     if (node) return { node, group };
   }
   return null;
-}
-
-function generateWorkflowFormData(id: string, name: string): WorkflowFormData {
-  const taskType = faker.helpers.arrayElement(["sql", "shell", "spark"] as const);
-  const taskParamsMap = {
-    sql: {
-      datasource: faker.helpers.arrayElement(["mysql-prod", "mysql-staging", "postgres-analytics"]),
-      sql: `CALL ${faker.database.column()}_sync()`,
-      timeout: faker.number.int({ min: 60, max: 7200 }),
-    },
-    shell: {
-      script: `/opt/scripts/${faker.system.fileName()}`,
-      workingDir: faker.helpers.arrayElement(["/opt/scripts", "/home/deploy", "/var/tasks"]),
-      env: { RETENTION_DAYS: String(faker.number.int({ min: 7, max: 90 })) },
-    },
-    spark: {
-      mainClass: `com.example.${faker.word.noun().replace(/^\w/, (c) => c.toUpperCase())}ETL`,
-      jarPath: `/opt/jars/${faker.system.fileName({ extensionCount: 0 })}.jar`,
-      sparkConf: {
-        "executor.memory": faker.helpers.arrayElement(["2g", "4g", "8g"]),
-      },
-      args: ["--date", "yesterday"],
-    },
-  };
-
-  return {
-    id,
-    name,
-    cronExpression: `${faker.number.int({ min: 0, max: 59 })} ${faker.number.int({ min: 0, max: 23 })} * * *`,
-    taskType,
-    taskParams: taskParamsMap[taskType],
-    description: faker.lorem.sentence(),
-    enabled: faker.datatype.boolean(),
-  };
-}
-
-// Workflow detail is generated lazily on first fetch to keep MSW startup fast with large trees.
-const mockWorkflows: Record<string, WorkflowFormData> = {};
-
-function getOrCreateWorkflow(id: string): WorkflowFormData | null {
-  if (mockWorkflows[id]) return mockWorkflows[id];
-  const found = findDefinition(id);
-  if (!found) return null;
-  const wf = generateWorkflowFormData(id, found.node.name);
-  mockWorkflows[id] = wf;
-  return wf;
 }
 
 function generateRuns(workflowId: string): WorkflowRunRecord[] {
@@ -206,56 +160,6 @@ export const workflowHandlers: RequestHandler[] = [
       }
     }
     return HttpResponse.json(results);
-  }),
-
-  // GET /api/workflows/:id — get single workflow detail
-  http.get("/api/workflows/:id", async ({ params }) => {
-    await delay(200);
-    const { id } = params as { id: string };
-    // Skip if the path looks like /workflows/:id/runs (handled by another handler)
-    const wf = getOrCreateWorkflow(id);
-    if (!wf) {
-      return HttpResponse.json({ message: "工作流不存在" }, { status: 404 });
-    }
-    return HttpResponse.json(wf);
-  }),
-
-  // POST /api/workflows
-  http.post("/api/workflows", async ({ request }) => {
-    await delay(300);
-    const body = (await request.json()) as WorkflowFormData;
-    const id = `wf-${faker.string.nanoid(6)}`;
-    const created: WorkflowFormData = { ...body, id };
-    mockWorkflows[id] = created;
-    return HttpResponse.json(created, { status: 201 });
-  }),
-
-  // PUT /api/workflows/:id
-  http.put("/api/workflows/:id", async ({ params, request }) => {
-    await delay(200);
-    const { id } = params as { id: string };
-    const body = (await request.json()) as WorkflowFormData;
-
-    if (!mockWorkflows[id]) {
-      return HttpResponse.json({ message: "工作流不存在" }, { status: 404 });
-    }
-
-    const updated: WorkflowFormData = { ...body, id };
-    mockWorkflows[id] = updated;
-    return HttpResponse.json(updated);
-  }),
-
-  // DELETE /api/workflows/:id
-  http.delete("/api/workflows/:id", async ({ params }) => {
-    await delay(200);
-    const { id } = params as { id: string };
-
-    if (!mockWorkflows[id]) {
-      return HttpResponse.json({ message: "工作流不存在" }, { status: 404 });
-    }
-
-    delete mockWorkflows[id];
-    return new HttpResponse(null, { status: 204 });
   }),
 
   // GET /api/workflows/:id/runs
