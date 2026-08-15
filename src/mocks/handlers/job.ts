@@ -1,73 +1,22 @@
 import { http, HttpResponse, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import { ok } from "@/mocks/lib/response";
-import type { JobTreeNode, WorkflowRunRecord, JobStatus, WorkflowLifecycleStatus } from "@/types/job";
+import { jobTreeStore, listRoots, listChildren, searchTree } from "@/mocks/data/jobTree";
+import type { JobTreeNode, WorkflowRunRecord } from "@/types/job";
 import type { JobInfo } from "@/types/entities";
 import type { JobType } from "@/constants/enums";
 
 // ---- Seed data generated with faker ----
+// Tree seeding (job_group + job_tree stores) now lives in `@/mocks/data/jobTree`.
 
-// Group name + how many children to generate. One oversized group stress-tests virtual scrolling.
-const GROUP_SPECS: { name: string; size: number }[] = [
-  { name: "数据采集", size: 1200 },
-  { name: "数据处理", size: 350 },
-  { name: "实时计算", size: 600 },
-  { name: "机器学习", size: 15 },
-  { name: "报表生成", size: 8 },
-];
-
-function generateChild(gi: number, groupId: string): JobTreeNode {
-  const isWorkflow = faker.datatype.boolean();
-  const jobType = faker.helpers.arrayElement<JobType>(["MYSQL_SQL", "SHELL", "FLINK_SQL", "FLINK_JAR"]);
-  return {
-    id: isWorkflow ? `wf-${faker.string.nanoid(6)}` : `task-${faker.string.nanoid(6)}`,
-    name:
-      isWorkflow
-        ? faker.helpers.arrayElement(["日报汇总", "数据同步流程", "ETL Pipeline", "报表生成流程"]) +
-          ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`
-        : faker.helpers.arrayElement([
-            "MySQL 数据同步",
-            "Kafka 消费任务",
-            "Spark ETL 日报",
-            "Shell 清理脚本",
-            "Hive 分区整理",
-            "Flink CDC 实时同步",
-          ]) + ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`,
-    kind: isWorkflow ? "workflow" : "task",
-    jobType: isWorkflow ? undefined : jobType,
-    pid: groupId,
-    // Latest-run status (run outcome), shown as an icon on the definition node.
-    status: faker.helpers.arrayElement(["success", "failed", "running", "pending", "stopped"] as JobStatus[]),
-    lifecycleStatus: faker.helpers.arrayElement(["OFFLINE", "ONLINE", "SCHEDULING"] as WorkflowLifecycleStatus[]),
-    tags: faker.helpers.arrayElements(["etl", "daily", "hourly", "critical", "adhoc"], { min: 0, max: 2 }),
-    alertRuleIds: [],
-  };
-}
-
-function generateWorkflowTree(): JobTreeNode[] {
-  return GROUP_SPECS.map(({ name, size }, gi) => {
-    const groupId = `g-${faker.string.nanoid(6)}`;
-    const children: JobTreeNode[] = Array.from({ length: size }, () => generateChild(gi, groupId));
-    return {
-      id: groupId,
-      name,
-      kind: "group" as const,
-      pid: "",
-      childCount: children.length,
-      children,
-    };
-  });
-}
-
-const mockTree: JobTreeNode[] = generateWorkflowTree();
-
-/** Find a definition node (a group's child) and its parent group by node id. */
-function findDefinition(id: string): { node: JobTreeNode; group: JobTreeNode } | null {
-  for (const group of mockTree) {
-    const node = group.children?.find((c) => c.id === id);
-    if (node) return { node, group };
-  }
-  return null;
+/**
+ * Find a leaf placement (task/workflow definition) by node id.
+ * Thin shim over the shared store — Task 5 rewrites the tags/alert-rule
+ * handlers below to go through the shared store's own leaf-write helpers.
+ */
+function findDefinition(id: string): { node: JobTreeNode } | null {
+  const node = jobTreeStore.get(id);
+  return node ? { node } : null;
 }
 
 function generateRuns(workflowId: string): WorkflowRunRecord[] {
@@ -118,50 +67,30 @@ function defaultJobInfo(id: number): JobInfo {
 }
 
 export const workflowHandlers: RequestHandler[] = [
-  // GET /api/jobs/groups — only group nodes (no children)
-  http.get("/api/jobs/groups", async () => {
+  // GET /api/jobTree/roots — top-level groups only (no children)
+  http.get("/api/jobTree/roots", async () => {
     await delay(200);
-    const groups = mockTree.map(({ children: _children, ...rest }) => rest);
-    return HttpResponse.json(groups);
+    return ok(listRoots());
   }),
 
-  // GET /api/jobs/groups/:groupId/children — children of a specific group
-  http.get("/api/jobs/groups/:groupId/children", async ({ params }) => {
+  // GET /api/jobTree/children — direct members (subgroups + leaves) of a group
+  http.get("/api/jobTree/children", async ({ request }) => {
     await delay(50);
-    const { groupId } = params as { groupId: string };
-    const group = mockTree.find((g) => g.id === groupId);
-    if (!group) {
-      return HttpResponse.json({ message: "分组不存在" }, { status: 404 });
-    }
-    return HttpResponse.json(group.children ?? []);
+    const groupId = new URL(request.url).searchParams.get("groupId") ?? "";
+    return ok(listChildren(groupId));
   }),
 
-  // GET /api/jobs/search — search jobs across all groups
-  http.get("/api/jobs/search", async ({ request }) => {
+  // GET /api/jobTree/search — search leaves across all groups
+  http.get("/api/jobTree/search", async ({ request }) => {
     await delay(200);
-    const url = new URL(request.url);
-    const keyword = (url.searchParams.get("keyword") ?? "").toLowerCase().trim();
-    const splitParam = (key: string) =>
-      url.searchParams.get(key) ? url.searchParams.get(key)!.toLowerCase().split(",") : [];
-    // Task types are backend JobType values (e.g. FLINK_SQL) and are matched
-    // case-sensitively — unlike keyword/status, they must not be lowercased.
-    const types = url.searchParams.get("types") ? url.searchParams.get("types")!.split(",") : [];
-    const statuses = splitParam("statuses");
-
-    const results: JobTreeNode[] = [];
-    for (const group of mockTree) {
-      const matched = (group.children ?? []).filter((child) => {
-        const matchKeyword =
-          !keyword || child.name.toLowerCase().includes(keyword) || child.id.toLowerCase().includes(keyword);
-        const matchType = types.length === 0 || (child.jobType ? types.includes(child.jobType) : false);
-        const matchStatus = statuses.length === 0 || (child.status ? statuses.includes(child.status) : false);
-        return matchKeyword && matchType && matchStatus;
-      });
-      if (matched.length > 0) {
-        results.push({ ...group, children: matched });
-      }
-    }
-    return HttpResponse.json(results);
+    const p = new URL(request.url).searchParams;
+    return ok(
+      searchTree({
+        keyword: p.get("keyword") ?? undefined,
+        types: p.get("types") ? p.get("types")!.split(",") : undefined,
+        statuses: p.get("statuses") ? p.get("statuses")!.split(",") : undefined,
+      }),
+    );
   }),
 
   // GET /api/workflows/:id/runs

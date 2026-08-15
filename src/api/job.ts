@@ -2,19 +2,19 @@ import { http } from "@/utils/request";
 import type { JobTreeNode, WorkflowRunRecord } from "@/types/job";
 import type { JobInfo } from "@/types/entities";
 
-/** 获取所有分组（不含子节点） */
+/** 获取顶层分组（不含子节点） */
 export function getJobGroups(): Promise<JobTreeNode[]> {
-  return http.get<JobTreeNode[]>("/jobs/groups");
+  return http.get<JobTreeNode[]>("/jobTree/roots");
 }
 
-/** 获取指定分组下的 Job 列表 */
+/** 获取指定分组下的直接成员（子分组 + 叶子节点） */
 export function getJobsByGroup(groupId: string): Promise<JobTreeNode[]> {
-  return http.get<JobTreeNode[]>(`/jobs/groups/${groupId}/children`);
+  return http.get<JobTreeNode[]>("/jobTree/children", { params: { groupId } });
 }
 
 /** 搜索 Job（服务端，跨所有分组）。数组参数拼成逗号串，避免 axios 默认的 `key[]=` 序列化。 */
 export function searchJobs(params: { keyword?: string; types?: string[]; statuses?: string[] }): Promise<JobTreeNode[]> {
-  return http.get<JobTreeNode[]>("/jobs/search", {
+  return http.get<JobTreeNode[]>("/jobTree/search", {
     params: {
       keyword: params.keyword || undefined,
       types: params.types?.length ? params.types.join(",") : undefined,
