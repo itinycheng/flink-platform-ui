@@ -3,10 +3,11 @@ import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } f
 import { ClearOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { SysConfig, SysConfigStatus, SysConfigType } from "@/types/admin";
+import type { SysConfig, SysConfigType } from "@/types/admin";
 import { createSysConfig, deleteSysConfig, getSysConfigs, purgeSysConfig, updateSysConfig } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import CodeEditor from "@/components/CodeEditor";
+import { enumOptions } from "@/constants/enums";
 import { enumColor, statusColor } from "@/utils/statusColor";
 
 function getSysConfigTypeOptions(
@@ -20,14 +21,9 @@ function getSysConfigTypeOptions(
   ];
 }
 
-// Only online/offline are user-selectable; `deleted` is set by the backend soft-delete.
-function getSysConfigStatusOptions(
-  t: (k: string) => string,
-): { label: string; value: Exclude<SysConfigStatus, "deleted"> }[] {
-  return [
-    { label: t("sysConfig.statusOnline"), value: "online" },
-    { label: t("sysConfig.statusOffline"), value: "offline" },
-  ];
+// Only ENABLE/DISABLE are user-selectable; DELETED is set by the backend soft-delete.
+function getSysConfigStatusOptions(t: (k: string) => string) {
+  return enumOptions(["ENABLE", "DISABLE"] as const, "Status", t);
 }
 
 const TYPE_LABEL_KEYS: Record<SysConfigType, string> = {
@@ -35,12 +31,6 @@ const TYPE_LABEL_KEYS: Record<SysConfigType, string> = {
   FLINK_CONFIG: "sysConfig.typeFlink",
   HIVE_CONFIG: "sysConfig.typeHive",
   SPARK_CONFIG: "sysConfig.typeSpark",
-};
-
-const STATUS_LABEL_KEYS: Record<SysConfigStatus, string> = {
-  online: "sysConfig.statusOnline",
-  offline: "sysConfig.statusOffline",
-  deleted: "sysConfig.statusDeleted",
 };
 
 interface SysConfigTypeTagProps {
@@ -52,13 +42,9 @@ function SysConfigTypeTag({ type }: SysConfigTypeTagProps) {
   return <Tag color={enumColor(type)}>{t(TYPE_LABEL_KEYS[type])}</Tag>;
 }
 
-interface SysConfigStatusTagProps {
-  status: SysConfig["status"];
-}
-
-function SysConfigStatusTag({ status }: SysConfigStatusTagProps) {
+function SysConfigStatusTag({ status }: { status: SysConfig["status"] }) {
   const { t } = useTranslation();
-  return <Tag color={statusColor(status)}>{t(STATUS_LABEL_KEYS[status])}</Tag>;
+  return <Tag color={statusColor(status)}>{t(`enums.Status.${status}`)}</Tag>;
 }
 
 interface SysConfigActionsCellProps {
@@ -94,7 +80,7 @@ function SysConfigActionsCell({ record, onEdit, onDelete, onPurge }: SysConfigAc
           danger: true,
           confirm: t("sysConfig.purgeConfirmDesc", { name: record.name }),
           onClick: () => onPurge(record.id),
-          hidden: record.status !== "deleted",
+          hidden: record.status !== "DELETED",
         },
       ]}
     />

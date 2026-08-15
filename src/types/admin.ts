@@ -112,7 +112,7 @@ export interface Tag {
 // ---- System Config (Hadoop/Flink/Hive) ----
 
 export type SysConfigType = "HADOOP_CONFIG" | "FLINK_CONFIG" | "HIVE_CONFIG" | "SPARK_CONFIG";
-export type SysConfigStatus = "online" | "offline" | "deleted";
+export type SysConfigStatus = Status;
 
 export interface SysConfig {
   id: string;

@@ -151,7 +151,7 @@ function generateSysConfigs(count: number): SysConfig[] {
       name: `${type.toLowerCase()}-${faker.word.noun()}`,
       type,
       version: `${faker.number.int({ min: 1, max: 3 })}.${faker.number.int({ min: 0, max: 9 })}`,
-      status: faker.helpers.arrayElement(["online", "offline"] as const),
+      status: faker.helpers.arrayElement(["ENABLE", "DISABLE"] as const),
       content: `# ${type}\nkey.a=${faker.word.noun()}\nkey.b=${faker.number.int({ min: 1, max: 100 })}`,
       description: faker.lorem.sentence({ min: 3, max: 8 }),
       createdAt: now,
@@ -442,7 +442,7 @@ export const adminHandlers: RequestHandler[] = [
     const { id } = params as { id: string };
     const cfg = mockSysConfigs.find((c) => c.id === id);
     if (!cfg) return HttpResponse.json({ message: "配置不存在" }, { status: 404 });
-    cfg.status = "deleted";
+    cfg.status = "DELETED";
     cfg.updatedAt = new Date().toISOString();
     return new HttpResponse(null, { status: 204 });
   }),
