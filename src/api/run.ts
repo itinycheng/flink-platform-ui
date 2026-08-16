@@ -4,9 +4,15 @@ import { ipageToPaginated, toPageParams, type IPage, type PaginatedResponse } fr
 
 /** Unified list of top-level runs (single-task + composite flow) from `/jobFlowRun/page`. */
 export function getFlowRuns(params: FlowRunListParams): Promise<PaginatedResponse<FlowRun>> {
-  const { page, pageSize, ...rest } = params;
+  const { page, pageSize, statuses, ...rest } = params;
   return http
-    .get<IPage<FlowRun>>("/jobFlowRun/page", { params: { ...toPageParams({ page, pageSize }), ...rest } })
+    .get<IPage<FlowRun>>("/jobFlowRun/page", {
+      params: {
+        ...toPageParams({ page, pageSize }),
+        ...rest,
+        statuses: statuses?.length ? statuses.join(",") : undefined,
+      },
+    })
     .then(ipageToPaginated);
 }
 

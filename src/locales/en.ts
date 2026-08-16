@@ -648,6 +648,7 @@ const en = {
     instanceId: "Instance ID",
     jobId: "Job ID",
     logLoadFailed: "Failed to load log",
+    noNodeData: "No node data",
   },
 
   definitions: {

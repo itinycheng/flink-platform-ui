@@ -28,6 +28,11 @@ describe("jobFlowRun endpoints", () => {
     expect((await getFlowRunDetail(composite.id)).nodes.length).toBeGreaterThan(1);
     expect((await getFlowRunDetail(single.id)).nodes.length).toBe(1);
   });
+  it("filters by statuses (CSV bucket, e.g. dashboard failed panel)", async () => {
+    const res = await getFlowRuns({ page: 1, pageSize: 50, statuses: ["FAILURE", "ERROR"] });
+    expect(res.data.length).toBeGreaterThan(0);
+    expect(res.data.every((r) => r.status === "FAILURE" || r.status === "ERROR")).toBe(true);
+  });
   it("kill sets status KILLED", async () => {
     const all = await getFlowRuns({ page: 1, pageSize: 50 });
     const killed = await killFlowRun(all.data[0].id);

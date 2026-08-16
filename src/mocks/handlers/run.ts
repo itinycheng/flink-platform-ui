@@ -103,11 +103,18 @@ function toFlowListItem({ graph: _g, nodes: _n, ...rest }: FlowRunDetail): FlowR
   return rest;
 }
 
+/** `statuses` (CSV bucket match) takes precedence over the single `status` literal when both are present. */
+function matchesStatus(r: FlowRun, status?: string | null, statuses?: string | null): boolean {
+  if (statuses) return statuses.split(",").filter(Boolean).includes(r.status);
+  return !status || r.status === status;
+}
+
 function matchesFlowRunFilters(
   r: FlowRun,
   f: {
     name?: string;
     status?: string | null;
+    statuses?: string | null;
     type?: string | null;
     flowId?: string | null;
     from?: string | null;
@@ -115,7 +122,7 @@ function matchesFlowRunFilters(
   },
 ): boolean {
   const nameMatch = !f.name || r.name.toLowerCase().includes(f.name);
-  const statusMatch = !f.status || r.status === f.status;
+  const statusMatch = matchesStatus(r, f.status, f.statuses);
   const typeMatch = !f.type || r.type === f.type;
   const flowIdMatch = !f.flowId || r.flowId === f.flowId;
   const fromMatch = !f.from || r.startTime >= f.from;
@@ -133,6 +140,7 @@ export const runHandlers: RequestHandler[] = [
     const filters = {
       name: p.get("name")?.toLowerCase(),
       status: p.get("status"),
+      statuses: p.get("statuses"),
       type: p.get("type"),
       flowId: p.get("flowId"),
       from: p.get("startFrom"),
@@ -153,8 +161,8 @@ export const runHandlers: RequestHandler[] = [
     const r = mockFlowRuns.find((x) => x.id === (params as { id: string }).id);
     if (!r) return fail(1404, "运行不存在");
     r.status = "KILLED";
-    r.endTime = new Date(0).toISOString();
-    r.duration = r.duration || 1;
+    r.endTime = new Date().toISOString();
+    r.duration = Math.max(1, Math.round((Date.now() - new Date(r.startTime).getTime()) / 1000));
     return ok(toFlowListItem(r));
   }),
 

@@ -8,7 +8,7 @@ import type { FlowRun } from "@/types/run";
 import { JOB_FLOW_TYPES, type ExecutionStatus } from "@/constants/enums";
 import type { DashboardStats } from "@/api/dashboard";
 import { RunStatusTag } from "@/pages/Runs/RunStatusTag";
-import { formatDuration } from "@/pages/Runs/runStatus";
+import { formatDuration, FAILED_EXEC_STATUSES, RUNNING_EXEC_STATUSES } from "@/pages/Runs/runStatus";
 
 const cardStyle: CSSProperties = {
   padding: 20,
@@ -99,8 +99,17 @@ export function StatusDonut({ stats }: { stats: DashboardStats | null }) {
 
 // ---- Reusable run list (Recent failures / Running now) ----
 
+type RunListCardStatus = Extract<ExecutionStatus, "FAILURE" | "RUNNING">;
+
+/** The list-card query should cover the whole semantic bucket (all "failed"/"running" statuses),
+ * consistent with the tag colors + Kill affordance — not just the single literal status. */
+const STATUS_BUCKETS: Record<RunListCardStatus, ExecutionStatus[]> = {
+  FAILURE: FAILED_EXEC_STATUSES,
+  RUNNING: RUNNING_EXEC_STATUSES,
+};
+
 interface RunListCardProps {
-  status: Extract<ExecutionStatus, "FAILURE" | "RUNNING">;
+  status: RunListCardStatus;
   title: string;
   emptyText: string;
 }
@@ -116,7 +125,7 @@ export function RunListCard({ status, title, emptyText }: RunListCardProps) {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await getFlowRuns({ page: 1, pageSize: 6, status });
+        const res = await getFlowRuns({ page: 1, pageSize: 6, statuses: STATUS_BUCKETS[status] });
         if (!cancelled) setItems(res.data);
       } catch {
         if (!cancelled) setItems([]);

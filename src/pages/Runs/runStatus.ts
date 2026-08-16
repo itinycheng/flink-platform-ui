@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next";
-import { EXECUTION_STATUSES, type ExecutionStatus } from "@/constants/enums";
+import { EXECUTION_STATUSES, JOB_FLOW_TYPES, type ExecutionStatus, type JobFlowType, type JobType } from "@/constants/enums";
 import { statusColor } from "@/utils/statusColor";
 
 /** Format a duration given in seconds as a human-readable string. */
@@ -44,3 +44,13 @@ export function getExecStatusOptions(t: TFunction) {
 
 export const execIsRunning = (s: ExecutionStatus): boolean =>
   s === "SUBMITTED" || s === "RUNNING" || s === "KILLABLE" || s === "CREATED";
+
+/** All statuses shown with the "failed" (red) tag — the full failure bucket, not just `FAILURE`. */
+export const FAILED_EXEC_STATUSES = EXECUTION_STATUSES.filter((s) => execStatusSemantic(s) === "failed");
+
+/** All statuses considered in-flight/cancellable — the full running bucket, not just `RUNNING`. */
+export const RUNNING_EXEC_STATUSES = EXECUTION_STATUSES.filter((s) => execIsRunning(s));
+
+/** True if `type` is a composite flow type (`JOB_FLOW`/`JOB_LIST`) rather than a single-task `JobType`. */
+export const isFlowType = (type: JobType | JobFlowType): boolean =>
+  (JOB_FLOW_TYPES as readonly string[]).includes(type);

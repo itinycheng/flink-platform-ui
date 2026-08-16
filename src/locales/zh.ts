@@ -646,6 +646,7 @@ const zh = {
     instanceId: "实例 ID",
     jobId: "作业 ID",
     logLoadFailed: "日志加载失败",
+    noNodeData: "暂无节点数据",
   },
 
   definitions: {

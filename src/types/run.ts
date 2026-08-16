@@ -71,6 +71,8 @@ export interface FlowRunListParams {
   name?: string;
   type?: string;
   status?: ExecutionStatus;
+  /** Match any status in this set (sent as a CSV query param). Takes precedence over `status` server-side when both are considered. */
+  statuses?: ExecutionStatus[];
   startFrom?: string;
   startTo?: string;
   flowId?: string;

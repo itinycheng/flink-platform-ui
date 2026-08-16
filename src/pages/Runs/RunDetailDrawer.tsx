@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
-import { Descriptions, Drawer, Flex, Modal, Spin, Table, Tabs, Tag, Typography, type TableColumnsType } from "antd";
+import { Descriptions, Drawer, Empty, Flex, Modal, Spin, Table, Tabs, Tag, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
 import { getFlowRunDetail, getJobRunLog } from "@/api/run";
 import type { FlowRunDetail, JobRun } from "@/types/run";
-import { JOB_FLOW_TYPES } from "@/constants/enums";
 import { RunStatusTag } from "./RunStatusTag";
-import { formatDuration } from "./runStatus";
+import { formatDuration, isFlowType } from "./runStatus";
 import { RunFlowGraph } from "./RunFlowGraph";
 
 const preStyle: React.CSSProperties = {
@@ -48,7 +47,7 @@ function LogView({ jobRunId }: { jobRunId: string }) {
 
 function RunMeta({ run }: { run: FlowRunDetail }) {
   const { t } = useTranslation();
-  const typeGroup = JOB_FLOW_TYPES.includes(run.type as never) ? "JobFlowType" : "JobType";
+  const typeGroup = isFlowType(run.type) ? "JobFlowType" : "JobType";
   return (
     <>
       <Flex align="center" gap={8} style={{ marginBottom: 12 }}>
@@ -111,6 +110,7 @@ function FlowDetail({ run }: { run: FlowRunDetail }) {
 function AtomicDetail({ run }: { run: FlowRunDetail }) {
   const { t } = useTranslation();
   const node = run.nodes[0];
+  if (!node) return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("runs.noNodeData")} />;
   return (
     <Tabs
       items={[
@@ -167,7 +167,7 @@ export default function RunDetailDrawer({ runId, open, onClose }: RunDetailDrawe
       ) : (
         <>
           <RunMeta run={detail} />
-          {detail.nodes.length > 1 ? <FlowDetail run={detail} /> : <AtomicDetail run={detail} />}
+          {isFlowType(detail.type) ? <FlowDetail run={detail} /> : <AtomicDetail run={detail} />}
         </>
       )}
     </Drawer>

@@ -7,7 +7,7 @@ import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-comp
 import type { FlowRun, FlowRunListParams } from "@/types/run";
 import { getFlowRuns, killFlowRun } from "@/api/run";
 import { JOB_TYPES, JOB_FLOW_TYPES, type JobType, type JobFlowType } from "@/constants/enums";
-import { getExecStatusOptions, formatDuration, execIsRunning } from "./runStatus";
+import { getExecStatusOptions, formatDuration, execIsRunning, isFlowType } from "./runStatus";
 import { RunStatusTag } from "./RunStatusTag";
 import RunDetailDrawer from "./RunDetailDrawer";
 
@@ -26,7 +26,6 @@ function toParams(p: Record<string, unknown>): FlowRunListParams {
   };
 }
 
-const isFlowType = (type: RunType) => JOB_FLOW_TYPES.includes(type as never);
 const typeLabel = (type: RunType, t: (key: string) => string) =>
   t(`enums.${isFlowType(type) ? "JobFlowType" : "JobType"}.${type}`);
 
