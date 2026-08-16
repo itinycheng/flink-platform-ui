@@ -59,7 +59,6 @@ function seedLeaf(gi: number, groupId: string): JobTreeNode {
     status: faker.helpers.arrayElement(["success", "failed", "running", "pending", "stopped"] as JobStatus[]),
     lifecycleStatus: faker.helpers.arrayElement(["OFFLINE", "ONLINE", "SCHEDULING"] as WorkflowLifecycleStatus[]),
     tags: faker.helpers.arrayElements(["etl", "daily", "hourly", "critical", "adhoc"], { min: 0, max: 2 }),
-    alertRuleIds: [],
   };
 }
 

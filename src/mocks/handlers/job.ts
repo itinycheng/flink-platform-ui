@@ -124,16 +124,6 @@ export const workflowHandlers: RequestHandler[] = [
     return ok(n);
   }),
 
-  // POST /api/jobTree/alertRules
-  http.post("/api/jobTree/alertRules", async ({ request }) => {
-    await delay(150);
-    const { id, alertRuleIds } = (await request.json()) as { id: string; alertRuleIds: string[] };
-    const n = jobTreeStore.get(id);
-    if (!n) return fail(1003, "节点不存在");
-    n.alertRuleIds = alertRuleIds;
-    return ok(n);
-  }),
-
   // ---- JobInfo (backend-shaped task entity) ----
 
   // GET /api/jobInfo/get/:id — tolerates numeric ids (stored) and non-numeric
@@ -166,7 +156,6 @@ export const workflowHandlers: RequestHandler[] = [
         status: "pending",
         lifecycleStatus: "OFFLINE",
         tags: [],
-        alertRuleIds: [],
       });
     }
     return ok(stored, { status: 201 });

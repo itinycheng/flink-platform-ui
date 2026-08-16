@@ -13,7 +13,6 @@ import {
   getJobsByGroup,
   searchJobs,
   updateJobTags,
-  updateJobAlertRules,
   getJobInfo,
   createJobInfo,
   updateJobInfo,
@@ -65,7 +64,6 @@ export interface WorkflowState {
   setLifecycleStatus: (nodeId: string, status: WorkflowLifecycleStatus) => Promise<void>;
   copyDefinition: (nodeId: string) => Promise<void>;
   setNodeTags: (nodeId: string, tags: string[]) => Promise<void>;
-  setNodeAlertRules: (nodeId: string, alertRuleIds: string[]) => Promise<void>;
   openTab: (node: JobTreeNode) => void;
   closeTab: (key: string) => void;
   setActiveTab: (key: string) => void;
@@ -197,11 +195,6 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   setNodeTags: async (nodeId, tags) => {
     await updateJobTags(nodeId, tags);
     get().patchNode(nodeId, { tags });
-  },
-
-  setNodeAlertRules: async (nodeId, alertRuleIds) => {
-    await updateJobAlertRules(nodeId, alertRuleIds);
-    get().patchNode(nodeId, { alertRuleIds });
   },
 
   removeNode: (nodeId) => {

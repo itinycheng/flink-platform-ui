@@ -668,7 +668,6 @@ const zh = {
     copy: "复制",
     purge: "清理",
     editTags: "编辑标签",
-    editAlerts: "编辑告警",
     deleteConfirm: "确认删除该工作流定义？",
     purgeConfirm: "确认彻底清理该工作流定义？",
     runTriggered: "已触发运行 {{id}}",
@@ -678,13 +677,9 @@ const zh = {
     purgeSuccess: "清理成功",
     purgeFailed: "清理失败，请重试",
     tagModalTitle: "编辑标签",
-    alertModalTitle: "编辑告警",
     selectTags: "请选择标签",
-    selectAlerts: "请选择告警通道",
     tagsUpdated: "标签已更新",
     tagsUpdateFailed: "更新标签失败，请重试",
-    alertsUpdated: "告警已更新",
-    alertsUpdateFailed: "更新告警失败，请重试",
   },
 
   query: {

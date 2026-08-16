@@ -670,7 +670,6 @@ const en = {
     copy: "Copy",
     purge: "Purge",
     editTags: "Edit Tags",
-    editAlerts: "Edit Alerts",
     deleteConfirm: "Delete this workflow definition?",
     purgeConfirm: "Permanently purge this workflow definition?",
     runTriggered: "Run triggered {{id}}",
@@ -680,13 +679,9 @@ const en = {
     purgeSuccess: "Purged successfully",
     purgeFailed: "Purge failed, please retry",
     tagModalTitle: "Edit Tags",
-    alertModalTitle: "Edit Alerts",
     selectTags: "Please select tags",
-    selectAlerts: "Please select alert channels",
     tagsUpdated: "Tags updated",
     tagsUpdateFailed: "Failed to update tags, please retry",
-    alertsUpdated: "Alerts updated",
-    alertsUpdateFailed: "Failed to update alerts, please retry",
   },
 
   query: {

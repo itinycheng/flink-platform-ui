@@ -23,8 +23,6 @@ export interface JobTreeNode {
   lifecycleStatus?: WorkflowLifecycleStatus;
   /** Tags bound to this definition. */
   tags?: string[];
-  /** Ids of bound notification alert rules. */
-  alertRuleIds?: string[];
 }
 
 /** Lifecycle status of a workflow definition (mirrors the legacy project). */

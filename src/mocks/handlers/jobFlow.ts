@@ -57,7 +57,6 @@ export const jobFlowHandlers: RequestHandler[] = [
         status: "pending",
         lifecycleStatus: "OFFLINE",
         tags: [],
-        alertRuleIds: [],
       });
     }
     return ok(id, { status: 201 });

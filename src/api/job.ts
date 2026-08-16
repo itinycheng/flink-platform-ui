@@ -55,10 +55,6 @@ export function updateJobTags(id: string, tags: string[]): Promise<JobTreeNode> 
   return http.post<JobTreeNode>("/jobTree/tags", { id, tags });
 }
 
-export function updateJobAlertRules(id: string, alertRuleIds: string[]): Promise<JobTreeNode> {
-  return http.post<JobTreeNode>("/jobTree/alertRules", { id, alertRuleIds });
-}
-
 // ---- JobInfo (backend-shaped task entity) ----
 
 export function getJobInfo(id: string | number): Promise<JobInfo> {

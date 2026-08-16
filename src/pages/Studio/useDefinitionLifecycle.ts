@@ -11,17 +11,15 @@ const STATUS_ACTION: Record<string, WorkflowLifecycleStatus> = {
   stopSchedule: "ONLINE",
 };
 
-/** Lifecycle actions (run-once, status transitions, copy) + tag/alert edit modals for definition nodes. */
+/** Lifecycle actions (run-once, status transitions, copy) + tag edit modal for definition nodes. */
 export function useDefinitionLifecycle(messageApi: MessageInstance) {
   const { t } = useTranslation();
   const runOnce = useJobStore((s) => s.runOnce);
   const setLifecycleStatus = useJobStore((s) => s.setLifecycleStatus);
   const copyDefinition = useJobStore((s) => s.copyDefinition);
   const setNodeTags = useJobStore((s) => s.setNodeTags);
-  const setNodeAlertRules = useJobStore((s) => s.setNodeAlertRules);
 
   const [tagNode, setTagNode] = useState<JobTreeNode | null>(null);
-  const [alertNode, setAlertNode] = useState<JobTreeNode | null>(null);
   const [saving, setSaving] = useState(false);
 
   const handleLifecycle = useCallback(
@@ -38,8 +36,6 @@ export function useDefinitionLifecycle(messageApi: MessageInstance) {
           void messageApi.success(t("definitions.copySuccess"));
         } else if (key === "editTags") {
           setTagNode(node);
-        } else if (key === "editAlerts") {
-          setAlertNode(node);
         }
       } catch {
         void messageApi.error(t("common.actionFailed"));
@@ -65,31 +61,11 @@ export function useDefinitionLifecycle(messageApi: MessageInstance) {
     [tagNode, setNodeTags, messageApi, t],
   );
 
-  const saveAlerts = useCallback(
-    async (alertRuleIds: string[]) => {
-      if (!alertNode) return;
-      setSaving(true);
-      try {
-        await setNodeAlertRules(alertNode.id, alertRuleIds);
-        void messageApi.success(t("definitions.alertsUpdated"));
-        setAlertNode(null);
-      } catch {
-        void messageApi.error(t("definitions.alertsUpdateFailed"));
-      } finally {
-        setSaving(false);
-      }
-    },
-    [alertNode, setNodeAlertRules, messageApi, t],
-  );
-
   return {
     handleLifecycle,
     tagNode,
-    alertNode,
     saving,
     closeTag: () => setTagNode(null),
-    closeAlert: () => setAlertNode(null),
     saveTags,
-    saveAlerts,
   };
 }

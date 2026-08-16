@@ -16,7 +16,6 @@ import { buildNodeMenuItems } from "./nodeMenu";
 import { performDelete } from "./performDelete";
 import { useDefinitionLifecycle } from "./useDefinitionLifecycle";
 import { TagEditModal } from "./TagEditModal";
-import { AlertBindModal } from "./AlertBindModal";
 import { GroupEditModal } from "./GroupEditModal";
 
 // ---------- constants & icons ----------
@@ -488,21 +487,12 @@ function GroupRenameModal({ node, onClose }: { node: JobTreeNode | null; onClose
 
 function LifecycleModals({ lifecycle }: { lifecycle: ReturnType<typeof useDefinitionLifecycle> }) {
   return (
-    <>
-      <TagEditModal
-        open={!!lifecycle.tagNode}
-        value={lifecycle.tagNode?.tags ?? []}
-        confirmLoading={lifecycle.saving}
-        onOk={lifecycle.saveTags}
-        onCancel={lifecycle.closeTag}
-      />
-      <AlertBindModal
-        open={!!lifecycle.alertNode}
-        value={lifecycle.alertNode?.alertRuleIds ?? []}
-        confirmLoading={lifecycle.saving}
-        onOk={lifecycle.saveAlerts}
-        onCancel={lifecycle.closeAlert}
-      />
-    </>
+    <TagEditModal
+      open={!!lifecycle.tagNode}
+      value={lifecycle.tagNode?.tags ?? []}
+      confirmLoading={lifecycle.saving}
+      onOk={lifecycle.saveTags}
+      onCancel={lifecycle.closeTag}
+    />
   );
 }

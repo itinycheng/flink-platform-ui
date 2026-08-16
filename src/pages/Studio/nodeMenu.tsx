@@ -5,7 +5,6 @@ import {
   DeleteOutlined,
   CopyOutlined,
   TagsOutlined,
-  BellOutlined,
   CloudUploadOutlined,
   CloudDownloadOutlined,
   ClockCircleOutlined,
@@ -52,7 +51,6 @@ function definitionMenu(node: JobTreeNode, t: TFunction): MenuItem[] {
   items.push(
     { type: "divider" },
     { key: "editTags", icon: <TagsOutlined />, label: t("definitions.editTags") },
-    { key: "editAlerts", icon: <BellOutlined />, label: t("definitions.editAlerts") },
     { key: "copy", icon: <CopyOutlined />, label: t("definitions.copy") },
   );
   // A scheduling definition must be stopped before it can be deleted.
