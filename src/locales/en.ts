@@ -244,9 +244,6 @@ const en = {
     log: "Log",
     viewLog: "View Log",
     noRecords: "No run records",
-    success: "Success",
-    failed: "Failed",
-    running: "Running",
   },
 
   admin: {
@@ -630,11 +627,6 @@ const en = {
     detail: "Run Detail",
     fullscreen: "Fullscreen",
     exitFullscreen: "Exit fullscreen",
-    type_flow: "Flow",
-    type_spark: "Spark",
-    type_flink: "Flink",
-    type_shell: "Shell",
-    type_sql: "SQL",
     killConfirm: "Terminate this run?",
     flowTitle: "Workflow Instances",
     jobTitle: "Job Run Records",
@@ -656,11 +648,6 @@ const en = {
     instanceId: "Instance ID",
     jobId: "Job ID",
     logLoadFailed: "Failed to load log",
-    statusWaiting: "Waiting",
-    statusRunning: "Running",
-    statusSuccess: "Success",
-    statusFailed: "Failed",
-    statusKilled: "Terminated",
   },
 
   definitions: {

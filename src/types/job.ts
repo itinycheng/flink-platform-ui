@@ -27,15 +27,5 @@ export interface JobTreeNode {
   alertRuleIds?: string[];
 }
 
-export interface WorkflowRunRecord {
-  id: string;
-  workflowId: string;
-  startTime: string;
-  endTime: string;
-  status: "success" | "failed" | "running";
-  duration: number;
-  logUrl?: string;
-}
-
 /** Lifecycle status of a workflow definition (mirrors the legacy project). */
 export type WorkflowLifecycleStatus = "OFFLINE" | "ONLINE" | "SCHEDULING" | "DELETE";

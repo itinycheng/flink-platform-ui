@@ -1,5 +1,5 @@
 import { http } from "@/utils/request";
-import type { JobTreeNode, WorkflowRunRecord } from "@/types/job";
+import type { JobTreeNode } from "@/types/job";
 import type { JobInfo } from "@/types/entities";
 
 /** 获取顶层分组（不含子节点） */
@@ -25,10 +25,6 @@ export function searchJobs(params: {
       statuses: params.statuses?.length ? params.statuses.join(",") : undefined,
     },
   });
-}
-
-export function getWorkflowRuns(id: string): Promise<WorkflowRunRecord[]> {
-  return http.get<WorkflowRunRecord[]>(`/workflows/${id}/runs`);
 }
 
 // ---- Group writes (create/rename/delete) ----

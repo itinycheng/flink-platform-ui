@@ -244,9 +244,6 @@ const zh = {
     log: "日志",
     viewLog: "查看日志",
     noRecords: "暂无运行记录",
-    success: "成功",
-    failed: "失败",
-    running: "运行中",
   },
 
   admin: {
@@ -628,11 +625,6 @@ const zh = {
     detail: "运行详情",
     fullscreen: "全屏",
     exitFullscreen: "退出全屏",
-    type_flow: "工作流",
-    type_spark: "Spark",
-    type_flink: "Flink",
-    type_shell: "Shell",
-    type_sql: "SQL",
     killConfirm: "确认终止该运行？",
     flowTitle: "工作流实例",
     jobTitle: "作业运行记录",
@@ -654,11 +646,6 @@ const zh = {
     instanceId: "实例 ID",
     jobId: "作业 ID",
     logLoadFailed: "日志加载失败",
-    statusWaiting: "等待中",
-    statusRunning: "运行中",
-    statusSuccess: "成功",
-    statusFailed: "失败",
-    statusKilled: "已终止",
   },
 
   definitions: {

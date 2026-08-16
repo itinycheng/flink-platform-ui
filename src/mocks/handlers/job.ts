@@ -1,5 +1,4 @@
-import { http, HttpResponse, delay, type RequestHandler } from "msw";
-import { faker } from "@faker-js/faker";
+import { http, delay, type RequestHandler } from "msw";
 import { ok, fail } from "@/mocks/lib/response";
 import {
   jobTreeStore,
@@ -13,34 +12,11 @@ import {
   renameLeaf,
   deleteLeaf,
 } from "@/mocks/data/jobTree";
-import type { WorkflowRunRecord } from "@/types/job";
 import type { JobInfo } from "@/types/entities";
 import type { JobType } from "@/constants/enums";
 
 // ---- Seed data generated with faker ----
 // Tree seeding (job_group + job_tree stores) now lives in `@/mocks/data/jobTree`.
-
-function generateRuns(workflowId: string): WorkflowRunRecord[] {
-  const runs: WorkflowRunRecord[] = [];
-  const now = Date.now();
-
-  for (let i = 0; i < 10; i++) {
-    const startMs = now - (i + 1) * 3600_000;
-    const duration = faker.number.int({ min: 30, max: 600 });
-    const status: WorkflowRunRecord["status"] = i === 0 ? "running" : faker.helpers.arrayElement(["success", "failed"]);
-
-    runs.push({
-      id: `run-${workflowId}-${faker.string.nanoid(4)}`,
-      workflowId,
-      startTime: new Date(startMs).toISOString(),
-      endTime: status === "running" ? "" : new Date(startMs + duration * 1000).toISOString(),
-      status,
-      duration: status === "running" ? 0 : duration,
-      logUrl: status !== "running" ? `/logs/${workflowId}/${faker.string.nanoid(4)}` : undefined,
-    });
-  }
-  return runs;
-}
 
 // ---- JobInfo (backend-shaped task entity) store ----
 
@@ -119,13 +95,6 @@ export const workflowHandlers: RequestHandler[] = [
   http.get("/api/jobGroup/delete/:id", async ({ params }) => {
     await delay(150);
     return ok(deleteGroupSubtree((params as { id: string }).id));
-  }),
-
-  // GET /api/workflows/:id/runs
-  http.get("/api/workflows/:id/runs", async ({ params }) => {
-    await delay(200);
-    const { id } = params as { id: string };
-    return HttpResponse.json(generateRuns(id));
   }),
 
   // ---- Definition lifecycle (Task & Workflow nodes) ----
