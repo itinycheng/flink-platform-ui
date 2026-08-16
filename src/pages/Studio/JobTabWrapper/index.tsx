@@ -6,8 +6,9 @@ import DAGEditor from "@/pages/Studio/DAGEditor";
 import JobForm from "@/pages/Studio/JobForm";
 import SchedulePanel from "./SchedulePanel";
 import ParamsPanel from "./ParamsPanel";
+import AlertsPanel from "./AlertsPanel";
 
-type PanelKey = "schedule" | "params";
+type PanelKey = "schedule" | "params" | "alerts";
 
 interface PanelDef {
   key: PanelKey;
@@ -17,6 +18,7 @@ interface PanelDef {
 const PANELS: PanelDef[] = [
   { key: "schedule", titleKey: "sidePanel.schedule" },
   { key: "params", titleKey: "sidePanel.params" },
+  { key: "alerts", titleKey: "sidePanel.alerts" },
 ];
 
 const BAR_WIDTH = 24;
@@ -94,6 +96,7 @@ export default function JobTabWrapper({ node }: { node: JobTreeNode }) {
           >
             {activePanel === "schedule" && <SchedulePanel nodeId={node.id} />}
             {activePanel === "params" && <ParamsPanel nodeId={node.id} />}
+            {activePanel === "alerts" && <AlertsPanel nodeId={node.id} />}
           </Drawer>
         )}
       </div>

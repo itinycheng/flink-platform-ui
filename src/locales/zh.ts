@@ -347,6 +347,11 @@ const zh = {
     paramKeyPlaceholder: "例如 date",
     paramValuePlaceholder: "例如 2025-01-01",
     addParam: "添加参数",
+    alerts: "告警",
+    addAlert: "新增告警",
+    selectAlert: "选择告警",
+    alertStatuses: "触发状态",
+    alertSelectRequired: "请选择告警",
   },
 
   theme: {

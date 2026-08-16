@@ -348,6 +348,11 @@ const en = {
     paramKeyPlaceholder: "e.g. date",
     paramValuePlaceholder: "e.g. 2025-01-01",
     addParam: "Add Parameter",
+    alerts: "Alerts",
+    addAlert: "Add alert",
+    selectAlert: "Select alert",
+    alertStatuses: "Trigger on statuses",
+    alertSelectRequired: "Select an alert",
   },
 
   theme: {
