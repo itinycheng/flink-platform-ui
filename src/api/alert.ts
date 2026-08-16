@@ -17,12 +17,12 @@ export function createAlertRule(data: Omit<AlertRule, "id" | "createdAt" | "upda
 }
 
 export function updateAlertRule(
-  id: string,
+  id: number,
   data: Partial<Omit<AlertRule, "id" | "createdAt" | "updatedAt">>,
 ): Promise<number> {
   return http.post<number>("/alert/update", { ...data, id });
 }
 
-export function deleteAlertRule(id: string): Promise<boolean> {
+export function deleteAlertRule(id: number): Promise<boolean> {
   return http.get<boolean>(`/alert/delete/${id}`);
 }

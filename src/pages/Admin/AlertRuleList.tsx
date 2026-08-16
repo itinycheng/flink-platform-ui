@@ -18,7 +18,7 @@ function AlertChannelTag({ type }: { type: AlertChannelType }) {
 interface AlertRuleActionsCellProps {
   record: AlertRule;
   onEdit: (record: AlertRule) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }
 
 function AlertRuleActionsCell({ record, onEdit, onDelete }: AlertRuleActionsCellProps) {
@@ -157,7 +157,7 @@ function useAlertRuleCrud() {
     setEditingRule(null);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await deleteAlertRule(id);
       message.success(t("common.deleteSuccess"));

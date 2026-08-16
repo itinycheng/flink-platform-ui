@@ -11,7 +11,7 @@ export interface AlertRuleConfig {
 
 /** A reusable notification rule that can be bound to workflows (mirrors backend AlertInfo). */
 export interface AlertRule {
-  id: string;
+  id: number;
   name: string;
   type: AlertType;
   config?: AlertRuleConfig;

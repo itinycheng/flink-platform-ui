@@ -17,4 +17,10 @@ describe("alertRule mock — backend-aligned AlertType + polymorphic config", ()
       else expect(r.config).toBeUndefined();
     }
   });
+
+  it("assigns numeric ids", async () => {
+    const page = await getAlertRules({ page: 1, pageSize: 20 });
+    expect(page.data.length).toBeGreaterThan(0);
+    expect(page.data.every((r) => typeof r.id === "number")).toBe(true);
+  });
 });

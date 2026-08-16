@@ -1,6 +1,5 @@
 // Backend entity shapes (mirror com.flink.platform ...dao.entity.*)
 import type {
-  AlertType,
   CatalogType,
   DbType,
   DeployMode,
@@ -119,30 +118,6 @@ export interface CatalogInfo {
   description?: string;
   type: CatalogType;
   createSql: string;
-}
-
-// ---- Alert ----
-export interface EmailAlert {
-  type: "EMAIL";
-}
-export interface FeiShuAlert {
-  type: "FEI_SHU";
-  webhook: string;
-  content?: Record<string, unknown>;
-}
-export interface DingDingAlert {
-  type: "DING_DING";
-}
-export interface SmsAlert {
-  type: "SMS";
-}
-export type AlertPayload = EmailAlert | FeiShuAlert | DingDingAlert | SmsAlert;
-export interface AlertInfo {
-  id?: number;
-  name: string;
-  description?: string;
-  type: AlertType;
-  config?: AlertPayload;
 }
 
 // ---- Resource ----
