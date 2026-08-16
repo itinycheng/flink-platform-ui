@@ -6,10 +6,11 @@ import { useTranslation } from "react-i18next";
 import { type Edge, type Node } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { FlowCanvas } from "@/components/FlowCanvas";
-import type { RunGraph } from "@/types/run";
+import type { FlowRunGraph } from "@/types/run";
+import { execStatusSemantic } from "./runStatus";
 
 interface RunFlowGraphProps {
-  graph: RunGraph;
+  graph: FlowRunGraph;
   onNodeClick?: (nodeId: string) => void;
 }
 
@@ -25,7 +26,7 @@ export function RunFlowGraph({ graph, onNodeClick }: RunFlowGraphProps) {
         id: n.id,
         type: "taskNode",
         position: { x: n.x, y: n.y },
-        data: { label: n.label, taskType: n.type, status: n.status },
+        data: { label: n.label, taskType: n.type, status: execStatusSemantic(n.status) },
       })),
     [graph],
   );

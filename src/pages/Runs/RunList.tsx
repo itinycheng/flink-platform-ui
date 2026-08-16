@@ -1,28 +1,43 @@
 import { useRef, useState, useCallback, useMemo } from "react";
 import { Button, Popconfirm, Space, Tag, message } from "antd";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useSearchParams } from "react-router-dom";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
-import type { Run, RunListParams, RunType } from "@/types/run";
-import { getRuns, killRun } from "@/api/run";
-import { getRunStatusOptions, formatDuration, isRunning } from "./runStatus";
+import type { FlowRun, FlowRunListParams } from "@/types/run";
+import { getFlowRuns, killFlowRun } from "@/api/run";
+import { JOB_TYPES, JOB_FLOW_TYPES, type JobType, type JobFlowType } from "@/constants/enums";
+import { getExecStatusOptions, formatDuration, execIsRunning } from "./runStatus";
 import { RunStatusTag } from "./RunStatusTag";
 import RunDetailDrawer from "./RunDetailDrawer";
 
-const RUN_TYPES: RunType[] = ["flow", "spark", "flink", "shell", "sql"];
+type RunType = JobType | JobFlowType;
 
-function toParams(p: Record<string, unknown>): RunListParams {
+function toParams(p: Record<string, unknown>): FlowRunListParams {
   const range = p.startRange as [string, string] | undefined;
   return {
     page: (p.current as number) ?? 1,
     pageSize: (p.pageSize as number) ?? 10,
     name: (p.name as string) || undefined,
     type: (p.type as RunType) || undefined,
-    status: (p.status as RunListParams["status"]) || undefined,
+    status: (p.status as FlowRunListParams["status"]) || undefined,
     startFrom: range?.[0],
     startTo: range?.[1],
   };
 }
+
+const isFlowType = (type: RunType) => JOB_FLOW_TYPES.includes(type as never);
+const typeLabel = (type: RunType, t: (key: string) => string) =>
+  t(`enums.${isFlowType(type) ? "JobFlowType" : "JobType"}.${type}`);
+
+const buildStatusEnum = (t: TFunction) =>
+  Object.fromEntries(getExecStatusOptions(t).map((o) => [o.value, { text: o.label }]));
+
+const buildTypeEnum = (t: TFunction) =>
+  Object.fromEntries([
+    ...JOB_TYPES.map((v) => [v, { text: t(`enums.JobType.${v}`) }]),
+    ...JOB_FLOW_TYPES.map((v) => [v, { text: t(`enums.JobFlowType.${v}`) }]),
+  ]);
 
 export default function RunList() {
   const { t } = useTranslation();
@@ -39,7 +54,7 @@ export default function RunList() {
   const onKill = useCallback(
     async (id: string) => {
       try {
-        await killRun(id);
+        await killFlowRun(id);
         message.success(t("runs.killSent"));
         void actionRef.current?.reload();
       } catch {
@@ -49,23 +64,21 @@ export default function RunList() {
     [t],
   );
 
-  const columns = useMemo<ProColumns<Run>[]>(() => {
-    const statusEnum = Object.fromEntries(getRunStatusOptions(t).map((o) => [o.value, { text: o.label }]));
-    const typeEnum = Object.fromEntries(RUN_TYPES.map((v) => [v, { text: t(`runs.type_${v}`) }]));
-    return [
+  const columns = useMemo<ProColumns<FlowRun>[]>(
+    () => [
       { title: t("common.name"), dataIndex: "name", ellipsis: true },
       {
         title: t("runs.type"),
         dataIndex: "type",
         width: 110,
         valueType: "select",
-        valueEnum: typeEnum,
-        render: (_, r) => <Tag color={r.type === "flow" ? "purple" : "default"}>{t(`runs.type_${r.type}`)}</Tag>,
+        valueEnum: buildTypeEnum(t),
+        render: (_, r) => <Tag color={isFlowType(r.type) ? "purple" : "default"}>{typeLabel(r.type, t)}</Tag>,
       },
-      { title: t("common.status"), dataIndex: "status", width: 110, valueType: "select", valueEnum: statusEnum, render: (_, r) => <RunStatusTag status={r.status} /> },
+      { title: t("common.status"), dataIndex: "status", width: 110, valueType: "select", valueEnum: buildStatusEnum(t), render: (_, r) => <RunStatusTag status={r.status} /> },
       { title: t("runs.startTime"), dataIndex: "startTime", valueType: "dateTime", search: false, width: 170 },
       { title: t("runs.duration"), dataIndex: "duration", search: false, width: 100, render: (_, r) => formatDuration(r.duration) },
-      { title: t("runs.owner"), dataIndex: "owner", search: false, width: 140 },
+      { title: t("runs.owner"), dataIndex: "submitter", search: false, width: 140 },
       { title: t("runs.startTime"), dataIndex: "startRange", valueType: "dateTimeRange", hideInTable: true },
       {
         title: t("common.operation"),
@@ -74,7 +87,7 @@ export default function RunList() {
         render: (_, record) => (
           <Space>
             <a onClick={() => openDetail(record.id)}>{t("runs.detail")}</a>
-            {isRunning(record.status) && (
+            {execIsRunning(record.status) && (
               <Popconfirm title={t("runs.killConfirm")} onConfirm={() => void onKill(record.id)} okText={t("common.ok")} cancelText={t("common.cancel")}>
                 <a style={{ color: "var(--ant-color-error)" }}>{t("runs.kill")}</a>
               </Popconfirm>
@@ -82,12 +95,13 @@ export default function RunList() {
           </Space>
         ),
       },
-    ];
-  }, [t, openDetail, onKill]);
+    ],
+    [t, openDetail, onKill],
+  );
 
   return (
     <div data-testid="run-list">
-      <ProTable<Run>
+      <ProTable<FlowRun>
         headerTitle={t("runs.title")}
         actionRef={actionRef}
         rowKey="id"
@@ -96,7 +110,7 @@ export default function RunList() {
         form={{ initialValues: { status: searchParams.get("status") ?? undefined, type: searchParams.get("type") ?? undefined } }}
         toolBarRender={() => [<Button key="refresh" onClick={() => void actionRef.current?.reload()}>{t("common.refresh")}</Button>]}
         request={async (params) => {
-          const result = await getRuns(toParams(params));
+          const result = await getFlowRuns(toParams(params));
           return { data: result.data, total: result.total, success: true };
         }}
         pagination={{ defaultPageSize: 10, showSizeChanger: true }}

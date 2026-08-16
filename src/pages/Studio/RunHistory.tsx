@@ -1,20 +1,22 @@
 import { useEffect, useState, useCallback } from "react";
-import { Table, Tag } from "antd";
+import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useTranslation } from "react-i18next";
-import { getWorkflowRuns } from "@/api/job";
-import type { WorkflowRunRecord } from "@/types/job";
+import { getFlowRuns } from "@/api/run";
+import type { FlowRun } from "@/types/run";
+import { RunStatusTag } from "@/pages/Runs/RunStatusTag";
+import { formatDuration } from "@/pages/Runs/runStatus";
 
 interface RunHistoryProps {
   workflowId: string;
 }
 
 export default function RunHistory({ workflowId }: RunHistoryProps) {
-  const [records, setRecords] = useState<WorkflowRunRecord[]>([]);
+  const [records, setRecords] = useState<FlowRun[]>([]);
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
 
-  const columns: ColumnsType<WorkflowRunRecord> = [
+  const columns: ColumnsType<FlowRun> = [
     {
       title: t("runHistory.startTime"),
       dataIndex: "startTime",
@@ -31,46 +33,27 @@ export default function RunHistory({ workflowId }: RunHistoryProps) {
       title: t("runHistory.status"),
       dataIndex: "status",
       key: "status",
-      render: (status: WorkflowRunRecord["status"]) => {
-        const map: Record<string, { color: string; key: string }> = {
-          success: { color: "success", key: "runHistory.success" },
-          failed: { color: "error", key: "runHistory.failed" },
-          running: { color: "processing", key: "runHistory.running" },
-        };
-        const cfg = map[status];
-        return <Tag color={cfg.color}>{t(cfg.key)}</Tag>;
-      },
+      render: (_, r) => <RunStatusTag status={r.status} />,
     },
     {
       title: t("runHistory.duration"),
       dataIndex: "duration",
       key: "duration",
-      render: (duration: number) => {
-        if (duration < 1000) return `${duration}ms`;
-        if (duration < 60000) return `${(duration / 1000).toFixed(1)}s`;
-        return `${(duration / 60000).toFixed(1)}min`;
-      },
+      render: (duration: number) => formatDuration(duration),
     },
     {
-      title: t("runHistory.log"),
-      dataIndex: "logUrl",
-      key: "logUrl",
-      render: (logUrl: string | undefined) =>
-        logUrl ? (
-          <a href={logUrl} target="_blank" rel="noopener noreferrer">
-            {t("runHistory.viewLog")}
-          </a>
-        ) : (
-          "-"
-        ),
+      title: t("common.name"),
+      dataIndex: "name",
+      key: "name",
+      ellipsis: true,
     },
   ];
 
   const fetchRuns = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getWorkflowRuns(workflowId);
-      setRecords(data);
+      const res = await getFlowRuns({ flowId: workflowId, page: 1, pageSize: 20 });
+      setRecords(res.data);
     } finally {
       setLoading(false);
     }
@@ -82,7 +65,7 @@ export default function RunHistory({ workflowId }: RunHistoryProps) {
 
   return (
     <div data-testid="run-history">
-      <Table<WorkflowRunRecord>
+      <Table<FlowRun>
         columns={columns}
         dataSource={records}
         rowKey="id"

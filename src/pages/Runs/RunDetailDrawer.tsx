@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Descriptions, Drawer, Flex, Modal, Spin, Table, Tabs, Tag, Typography, type TableColumnsType } from "antd";
 import { useTranslation } from "react-i18next";
-import { getRunDetail, getRunLog } from "@/api/run";
-import type { RunDetail, RunNode } from "@/types/run";
+import { getFlowRunDetail, getJobRunLog } from "@/api/run";
+import type { FlowRunDetail, JobRun } from "@/types/run";
+import { JOB_FLOW_TYPES } from "@/constants/enums";
 import { RunStatusTag } from "./RunStatusTag";
 import { formatDuration } from "./runStatus";
 import { RunFlowGraph } from "./RunFlowGraph";
@@ -19,7 +20,7 @@ const preStyle: React.CSSProperties = {
   overflow: "auto",
 };
 
-function LogView({ runId, nodeId }: { runId: string; nodeId?: string }) {
+function LogView({ jobRunId }: { jobRunId: string }) {
   const { t } = useTranslation();
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
@@ -28,7 +29,7 @@ function LogView({ runId, nodeId }: { runId: string; nodeId?: string }) {
     const load = async () => {
       setLoading(true);
       try {
-        const l = await getRunLog(runId, nodeId);
+        const l = await getJobRunLog(jobRunId);
         if (!cancelled) setContent(l.content);
       } catch {
         if (!cancelled) setContent(t("runs.logLoadFailed"));
@@ -40,22 +41,23 @@ function LogView({ runId, nodeId }: { runId: string; nodeId?: string }) {
     return () => {
       cancelled = true;
     };
-  }, [runId, nodeId, t]);
+  }, [jobRunId, t]);
   if (loading) return <Spin />;
   return <pre style={preStyle}>{content}</pre>;
 }
 
-function RunMeta({ run }: { run: RunDetail }) {
+function RunMeta({ run }: { run: FlowRunDetail }) {
   const { t } = useTranslation();
+  const typeGroup = JOB_FLOW_TYPES.includes(run.type as never) ? "JobFlowType" : "JobType";
   return (
     <>
       <Flex align="center" gap={8} style={{ marginBottom: 12 }}>
-        <Tag>{run.type}</Tag>
+        <Tag>{t(`enums.${typeGroup}.${run.type}`)}</Tag>
         <Typography.Text strong>{run.name}</Typography.Text>
         <RunStatusTag status={run.status} />
       </Flex>
       <Descriptions size="small" column={2} style={{ marginBottom: 16 }}>
-        <Descriptions.Item label={t("runs.owner")}>{run.owner}</Descriptions.Item>
+        <Descriptions.Item label={t("runs.owner")}>{run.submitter}</Descriptions.Item>
         <Descriptions.Item label={t("runs.duration")}>{formatDuration(run.duration)}</Descriptions.Item>
         <Descriptions.Item label={t("runs.startTime")}>{new Date(run.startTime).toLocaleString()}</Descriptions.Item>
         <Descriptions.Item label={t("runs.endTime")}>
@@ -66,14 +68,19 @@ function RunMeta({ run }: { run: RunDetail }) {
   );
 }
 
-function FlowDetail({ run }: { run: RunDetail }) {
+function FlowDetail({ run }: { run: FlowRunDetail }) {
   const { t } = useTranslation();
-  const [node, setNode] = useState<RunNode | null>(null);
+  const [node, setNode] = useState<JobRun | null>(null);
   const byId = (id: string) => run.nodes?.find((n) => n.id === id) ?? null;
 
-  const columns: TableColumnsType<RunNode> = [
+  const columns: TableColumnsType<JobRun> = [
     { title: t("common.name"), dataIndex: "name", ellipsis: true },
-    { title: t("common.type"), dataIndex: "type", width: 90, render: (v: string) => <Tag>{v}</Tag> },
+    {
+      title: t("common.type"),
+      dataIndex: "type",
+      width: 90,
+      render: (v: string) => <Tag>{t(`enums.JobType.${v}`)}</Tag>,
+    },
     { title: t("common.status"), dataIndex: "status", width: 100, render: (_, r) => <RunStatusTag status={r.status} /> },
     { title: t("runs.duration"), dataIndex: "duration", width: 100, render: (_, r) => formatDuration(r.duration) },
     { title: "", width: 60, render: (_, r) => <a onClick={() => setNode(r)}>{t("runs.viewLog")}</a> },
@@ -82,12 +89,12 @@ function FlowDetail({ run }: { run: RunDetail }) {
   return (
     <Flex vertical gap={16}>
       {run.graph && <RunFlowGraph graph={run.graph} onNodeClick={(id) => setNode(byId(id))} />}
-      <Table<RunNode> size="small" rowKey="id" columns={columns} dataSource={run.nodes ?? []} pagination={false} />
+      <Table<JobRun> size="small" rowKey="id" columns={columns} dataSource={run.nodes ?? []} pagination={false} />
       <Modal title={node?.name} open={!!node} footer={null} width={720} onCancel={() => setNode(null)}>
         {node && (
           <Tabs
             items={[
-              { key: "log", label: t("runs.viewLog"), children: <LogView runId={run.id} nodeId={node.id} /> },
+              { key: "log", label: t("runs.viewLog"), children: <LogView jobRunId={node.id} /> },
               {
                 key: "params",
                 label: t("runs.params"),
@@ -101,13 +108,14 @@ function FlowDetail({ run }: { run: RunDetail }) {
   );
 }
 
-function AtomicDetail({ run }: { run: RunDetail }) {
+function AtomicDetail({ run }: { run: FlowRunDetail }) {
   const { t } = useTranslation();
+  const node = run.nodes[0];
   return (
     <Tabs
       items={[
-        { key: "log", label: t("runs.viewLog"), children: <LogView runId={run.id} /> },
-        { key: "params", label: t("runs.params"), children: <pre style={preStyle}>{run.params ?? "-"}</pre> },
+        { key: "log", label: t("runs.viewLog"), children: <LogView jobRunId={node.id} /> },
+        { key: "params", label: t("runs.params"), children: <pre style={preStyle}>{node.params ?? "-"}</pre> },
       ]}
     />
   );
@@ -121,7 +129,7 @@ interface RunDetailDrawerProps {
 
 export default function RunDetailDrawer({ runId, open, onClose }: RunDetailDrawerProps) {
   const { t } = useTranslation();
-  const [detail, setDetail] = useState<RunDetail | null>(null);
+  const [detail, setDetail] = useState<FlowRunDetail | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -131,7 +139,7 @@ export default function RunDetailDrawer({ runId, open, onClose }: RunDetailDrawe
       setLoading(true);
       setDetail(null);
       try {
-        const d = await getRunDetail(runId);
+        const d = await getFlowRunDetail(runId);
         if (!cancelled) setDetail(d);
       } finally {
         if (!cancelled) setLoading(false);
@@ -159,7 +167,7 @@ export default function RunDetailDrawer({ runId, open, onClose }: RunDetailDrawe
       ) : (
         <>
           <RunMeta run={detail} />
-          {detail.type === "flow" && detail.graph ? <FlowDetail run={detail} /> : <AtomicDetail run={detail} />}
+          {detail.nodes.length > 1 ? <FlowDetail run={detail} /> : <AtomicDetail run={detail} />}
         </>
       )}
     </Drawer>

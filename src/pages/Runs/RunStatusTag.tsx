@@ -1,9 +1,9 @@
 import { Tag } from "antd";
 import { useTranslation } from "react-i18next";
-import type { RunStatus } from "@/types/run";
-import { RUN_STATUS_LABEL_KEYS, STATUS_CONFIG } from "./runStatus";
+import type { ExecutionStatus } from "@/constants/enums";
+import { getExecStatusColor } from "./runStatus";
 
-export function RunStatusTag({ status }: { status: RunStatus }) {
+export function RunStatusTag({ status }: { status: ExecutionStatus }) {
   const { t } = useTranslation();
-  return <Tag color={STATUS_CONFIG[status].color}>{t(RUN_STATUS_LABEL_KEYS[status])}</Tag>;
+  return <Tag color={getExecStatusColor(status)}>{t(`enums.ExecutionStatus.${status}`)}</Tag>;
 }

@@ -3,8 +3,9 @@ import { Empty, Flex, Spin, Tag, Typography } from "antd";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { getRuns } from "@/api/run";
-import type { Run, RunStatus } from "@/types/run";
+import { getFlowRuns } from "@/api/run";
+import type { FlowRun } from "@/types/run";
+import { JOB_FLOW_TYPES, type ExecutionStatus } from "@/constants/enums";
 import type { DashboardStats } from "@/api/dashboard";
 import { RunStatusTag } from "@/pages/Runs/RunStatusTag";
 import { formatDuration } from "@/pages/Runs/runStatus";
@@ -35,7 +36,7 @@ function CardHeader({ title, onViewAll }: { title: string; onViewAll?: () => voi
 // ---- Status donut (aggregates all run statuses into 3 buckets + Other) ----
 
 interface DonutSlice {
-  status: RunStatus | "";
+  status: ExecutionStatus | "";
   name: string;
   value: number;
   color: string;
@@ -52,9 +53,9 @@ export function StatusDonut({ stats }: { stats: DashboardStats | null }) {
   const rate = total ? Math.round((success / total) * 100) : 0;
 
   const data: DonutSlice[] = [
-    { status: "success", name: t("dashboard.success"), value: success, color: "#52c41a" },
-    { status: "failed", name: t("dashboard.failed"), value: failed, color: "#ff4d4f" },
-    { status: "running", name: t("dashboard.running"), value: running, color: "#faad14" },
+    { status: "SUCCESS", name: t("dashboard.success"), value: success, color: "#52c41a" },
+    { status: "FAILURE", name: t("dashboard.failed"), value: failed, color: "#ff4d4f" },
+    { status: "RUNNING", name: t("dashboard.running"), value: running, color: "#faad14" },
     ...(other > 0 ? [{ status: "" as const, name: t("dashboard.other"), value: other, color: "#bfbfbf" }] : []),
   ];
 
@@ -99,7 +100,7 @@ export function StatusDonut({ stats }: { stats: DashboardStats | null }) {
 // ---- Reusable run list (Recent failures / Running now) ----
 
 interface RunListCardProps {
-  status: Extract<RunStatus, "failed" | "running">;
+  status: Extract<ExecutionStatus, "FAILURE" | "RUNNING">;
   title: string;
   emptyText: string;
 }
@@ -107,7 +108,7 @@ interface RunListCardProps {
 export function RunListCard({ status, title, emptyText }: RunListCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [items, setItems] = useState<Run[]>([]);
+  const [items, setItems] = useState<FlowRun[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -115,7 +116,7 @@ export function RunListCard({ status, title, emptyText }: RunListCardProps) {
     const load = async () => {
       setLoading(true);
       try {
-        const res = await getRuns({ page: 1, pageSize: 6, status });
+        const res = await getFlowRuns({ page: 1, pageSize: 6, status });
         if (!cancelled) setItems(res.data);
       } catch {
         if (!cancelled) setItems([]);
@@ -149,14 +150,16 @@ export function RunListCard({ status, title, emptyText }: RunListCardProps) {
               style={{ padding: "8px 0", borderTop: i ? "1px solid var(--ant-color-split)" : undefined }}
             >
               <Flex align="center" gap={8} style={{ minWidth: 0 }}>
-                <Tag style={{ margin: 0 }}>{run.type}</Tag>
+                <Tag style={{ margin: 0 }}>
+                  {t(`enums.${JOB_FLOW_TYPES.includes(run.type as never) ? "JobFlowType" : "JobType"}.${run.type}`)}
+                </Tag>
                 <Typography.Text ellipsis style={{ maxWidth: 220 }}>
                   {run.name}
                 </Typography.Text>
                 <RunStatusTag status={run.status} />
               </Flex>
               <Typography.Text type="secondary" style={{ fontSize: 12, flexShrink: 0 }}>
-                {status === "running" ? t("dashboard.running") : formatDuration(run.duration)}
+                {status === "RUNNING" ? t("dashboard.running") : formatDuration(run.duration)}
               </Typography.Text>
             </Flex>
           ))}

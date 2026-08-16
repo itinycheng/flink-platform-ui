@@ -203,10 +203,10 @@ export default function Dashboard() {
         <TaskTrendCard trend={trend} timeRange={timeRange} onTimeRangeChange={setTimeRange} />
 
         <Col xs={24} lg={12}>
-          <RunListCard status="failed" title={t("dashboard.recentFailed")} emptyText={t("dashboard.noFailures")} />
+          <RunListCard status="FAILURE" title={t("dashboard.recentFailed")} emptyText={t("dashboard.noFailures")} />
         </Col>
         <Col xs={24} lg={12}>
-          <RunListCard status="running" title={t("dashboard.runningNow")} emptyText={t("dashboard.nothingRunning")} />
+          <RunListCard status="RUNNING" title={t("dashboard.runningNow")} emptyText={t("dashboard.nothingRunning")} />
         </Col>
       </Row>
     </div>
