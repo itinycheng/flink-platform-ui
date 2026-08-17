@@ -19,4 +19,10 @@ describe("workspace mock — backend-aligned Status + /workspace/{page,list}", (
     expect(all.length).toBeGreaterThan(0);
     expect(all.every((w) => w.status === "ENABLE")).toBe(true);
   });
+
+  it("assigns numeric ids (default workspace is 1)", async () => {
+    const all = await getAllWorkspaces();
+    expect(all.every((w) => typeof w.id === "number")).toBe(true);
+    expect(all.some((w) => w.id === 1)).toBe(true);
+  });
 });

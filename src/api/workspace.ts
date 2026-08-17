@@ -16,10 +16,10 @@ export function createWorkspace(data: Omit<Workspace, "id" | "createdAt">): Prom
   return http.post<number>("/workspace/create", data);
 }
 
-export function updateWorkspace(id: string, data: Partial<Omit<Workspace, "id" | "createdAt">>): Promise<number> {
+export function updateWorkspace(id: number, data: Partial<Omit<Workspace, "id" | "createdAt">>): Promise<number> {
   return http.post<number>("/workspace/update", { ...data, id });
 }
 
-export function deleteWorkspace(id: string): Promise<boolean> {
+export function deleteWorkspace(id: number): Promise<boolean> {
   return http.get<boolean>(`/workspace/delete/${id}`);
 }

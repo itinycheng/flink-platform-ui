@@ -3,7 +3,7 @@ import type { Status } from "@/constants/enums";
 export type WorkspaceStatus = Status;
 
 export interface Workspace {
-  id: string;
+  id: number;
   name: string;
   description?: string;
   status: WorkspaceStatus;

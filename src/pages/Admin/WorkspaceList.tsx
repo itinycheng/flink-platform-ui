@@ -21,7 +21,7 @@ function WorkspaceStatusTag({ status }: { status: WorkspaceStatus }) {
 interface WorkspaceActionsCellProps {
   record: Workspace;
   onEdit: (record: Workspace) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
 }
 
 function WorkspaceActionsCell({ record, onEdit, onDelete }: WorkspaceActionsCellProps) {
@@ -141,7 +141,7 @@ function useWorkspaceCrud() {
     setEditingWorkspace(null);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await deleteWorkspace(id);
       message.success(t("common.deleteSuccess"));
