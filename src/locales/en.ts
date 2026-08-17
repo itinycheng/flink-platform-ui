@@ -444,6 +444,9 @@ const en = {
     disableConfirmDesc: 'Disable user "{{name}}"?',
     enableSuccess: "User enabled",
     disableSuccess: "User disabled",
+    workspaceRolesLabel: "Workspace roles",
+    addWorkspaceRole: "Add workspace role",
+    selectWorkspace: "Select workspace",
   },
 
   envConfig: {

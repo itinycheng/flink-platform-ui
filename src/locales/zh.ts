@@ -443,6 +443,9 @@ const zh = {
     disableConfirmDesc: '确定要禁用用户 "{{name}}" 吗？',
     enableSuccess: "用户已启用",
     disableSuccess: "用户已禁用",
+    workspaceRolesLabel: "工作区角色",
+    addWorkspaceRole: "新增工作区角色",
+    selectWorkspace: "选择工作区",
   },
 
   envConfig: {
