@@ -9,6 +9,7 @@ import {
   getResources,
   moveResource,
   renameResource,
+  uploadResource,
 } from "@/api/admin";
 import { listResourceFiles } from "@/api/picker";
 
@@ -48,5 +49,33 @@ describe("resource /resource/* endpoints", () => {
   it("folder tree lists only DIR; picker lists FILE by ext", async () => {
     expect((await getFolderTree()).every((r) => r.type === "DIR")).toBe(true);
     expect((await listResourceFiles("jar")).every((r) => r.type === "FILE")).toBe(true);
+  });
+  it("moveResource to a non-root folder relocates it (not just to root)", async () => {
+    const a = await createFolder("MoveA");
+    const b = await createFolder("MoveB");
+    const c = await createFolder("MoveC", a);
+    expect(await moveResource(c, b)).toBe(c);
+    const inB = await getResources({ pid: b, page: 1, pageSize: 50 });
+    expect(inB.data.some((r) => r.id === c)).toBe(true);
+    const inA = await getResources({ pid: a, page: 1, pageSize: 50 });
+    expect(inA.data.some((r) => r.id === c)).toBe(false);
+  });
+  it("name filter on /resource/page returns only matches", async () => {
+    await createFolder("UniqueFilterTarget");
+    await createFolder("Other");
+    const filtered = await getResources({ name: "uniquefiltertarget", page: 1, pageSize: 50 });
+    expect(filtered.data.length).toBeGreaterThan(0);
+    expect(filtered.data.every((r) => r.name.toLowerCase().includes("uniquefiltertarget"))).toBe(true);
+  });
+  it("uploadResource creates a FILE under the given pid", async () => {
+    const folder = await createFolder("UploadTarget");
+    // Note: jsdom's fetch/FormData polyfill doesn't preserve File.name across a fetch body
+    // (reproduced even with a bare `fetch()` call, independent of this app's code), so we
+    // don't assert the exact filename here — only that a FILE resource lands under `folder`.
+    const file = new File(["x"], "lib.jar");
+    const uploaded = await uploadResource(file, folder);
+    expect(uploaded.type).toBe("FILE");
+    const inFolder = await getResources({ pid: folder, page: 1, pageSize: 50 });
+    expect(inFolder.data.some((r) => r.id === uploaded.id && r.type === "FILE")).toBe(true);
   });
 });

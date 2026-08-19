@@ -460,18 +460,14 @@ const en = {
   },
 
   resource: {
-    title: "Resource List",
     uploadButton: "Upload File",
     fileNameLabel: "File Name",
-    sizeLabel: "Size",
-    uploadTimeLabel: "Upload Time",
     uploadSuccess: 'File "{{name}}" uploaded successfully',
     uploadFailed: "File upload failed, please retry",
     fileTooLarge: 'File "{{name}}" exceeds the size limit (max {{max}})',
     deleteConfirmDesc: 'Delete file "{{name}}"?',
     deleteFolderConfirm: 'Delete folder "{{name}}" and everything inside it?',
     home: "Home",
-    folder: "Folder",
     newFolder: "New Folder",
     folderNamePlaceholder: "Folder name",
     folderCreated: "Folder created",

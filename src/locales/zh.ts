@@ -459,18 +459,14 @@ const zh = {
   },
 
   resource: {
-    title: "资源列表",
     uploadButton: "上传文件",
     fileNameLabel: "文件名",
-    sizeLabel: "大小",
-    uploadTimeLabel: "上传时间",
     uploadSuccess: '文件 "{{name}}" 上传成功',
     uploadFailed: "文件上传失败，请重试",
     fileTooLarge: '文件 "{{name}}" 大小超过限制（最大 {{max}}）',
     deleteConfirmDesc: '确定要删除文件 "{{name}}" 吗？',
     deleteFolderConfirm: '确定要删除目录 "{{name}}" 及其中所有内容吗？',
     home: "根目录",
-    folder: "目录",
     newFolder: "新建目录",
     folderNamePlaceholder: "目录名称",
     folderCreated: "目录已创建",
