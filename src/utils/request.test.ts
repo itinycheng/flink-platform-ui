@@ -1,5 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { unwrapEnvelope } from "./request";
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { setupServer } from "msw/node";
+import { http as mswHttp, HttpResponse } from "msw";
+import { message } from "antd";
+import { unwrapEnvelope, http } from "./request";
 
 describe("unwrapEnvelope", () => {
   it("unwraps a success envelope to its data", () => {
@@ -19,5 +22,30 @@ describe("unwrapEnvelope", () => {
   it("passes through primitives and null", () => {
     expect(unwrapEnvelope(null)).toBeNull();
     expect(unwrapEnvelope("ok")).toBe("ok");
+  });
+});
+
+const server = setupServer(
+  mswHttp.get("/api/ok", () => HttpResponse.json({ code: 0, desc: "success", data: { v: 1 } })),
+  mswHttp.get("/api/biz", () => HttpResponse.json({ code: 1, desc: "boom", data: null })),
+);
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+afterAll(() => server.close());
+
+describe("http interceptor envelope handling", () => {
+  it("resolves code:0 to data", async () => {
+    await expect(http.get("/ok")).resolves.toEqual({ v: 1 });
+  });
+  it("rejects code!==0 AND toasts the desc", async () => {
+    const spy = vi.spyOn(message, "error").mockImplementation(() => ({}) as never);
+    await expect(http.get("/biz")).rejects.toThrow("boom");
+    expect(spy).toHaveBeenCalledWith("boom");
+    spy.mockRestore();
+  });
+  it("suppressErrorToast rejects WITHOUT toasting", async () => {
+    const spy = vi.spyOn(message, "error").mockImplementation(() => ({}) as never);
+    await expect(http.get("/biz", { suppressErrorToast: true })).rejects.toThrow("boom");
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

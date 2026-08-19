@@ -4,6 +4,13 @@ import i18n from "@/i18n";
 import { API } from "@/config";
 import { STORAGE_KEYS } from "@/constants/storage";
 
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    /** Skip the global error toast for this request (caller handles it). */
+    suppressErrorToast?: boolean;
+  }
+}
+
 const request = axios.create({
   baseURL: API.baseURL,
   timeout: API.timeout,
@@ -28,12 +35,29 @@ request.interceptors.request.use(
   },
 );
 
-// Response interceptor: handle 401 and unified error messages
+/** i18n key for each non-401 HTTP status with a dedicated message; falls back to "http.requestFailed". */
+const HTTP_STATUS_MESSAGE_KEYS: Record<number, string> = {
+  403: "http.forbidden",
+  404: "http.notFound",
+  500: "http.serverError",
+};
+
+// Response interceptor: unwrap the envelope + unified error messages
 request.interceptors.response.use(
   (response) => {
-    return response;
+    try {
+      response.data = unwrapEnvelope(response.data);
+      return response;
+    } catch (err) {
+      // Business error (code!==0). Toast here (a rejection from the success
+      // handler bypasses this same interceptor's error handler), then propagate.
+      if (!response.config?.suppressErrorToast) message.error((err as Error).message);
+      return Promise.reject(err);
+    }
   },
   (error: AxiosError) => {
+    const suppressErrorToast = error.config?.suppressErrorToast;
+
     if (error.response) {
       const { status } = error.response;
 
@@ -41,24 +65,17 @@ request.interceptors.response.use(
         // Clear token and redirect to login
         localStorage.removeItem(STORAGE_KEYS.token);
         localStorage.removeItem(STORAGE_KEYS.user);
-        // Avoid redirect loop if already on login page
+        // Avoid redirect loop if already on login page (redirect itself is unconditional;
+        // only the toast is gated by suppressErrorToast).
         if (window.location.pathname !== "/login") {
-          message.error(i18n.t("http.authExpired"));
+          if (!suppressErrorToast) message.error(i18n.t("http.authExpired"));
           window.location.href = "/login";
         }
-      } else if (status === 403) {
-        message.error(i18n.t("http.forbidden"));
-      } else if (status === 404) {
-        message.error(i18n.t("http.notFound"));
-      } else if (status === 500) {
-        message.error(i18n.t("http.serverError"));
-      } else {
-        message.error(i18n.t("http.requestFailed", { status }));
+      } else if (!suppressErrorToast) {
+        message.error(i18n.t(HTTP_STATUS_MESSAGE_KEYS[status] ?? "http.requestFailed", { status }));
       }
-    } else if (error.code === "ECONNABORTED") {
-      message.error(i18n.t("http.timeout"));
-    } else {
-      message.error(i18n.t("http.networkError"));
+    } else if (!suppressErrorToast) {
+      message.error(i18n.t(error.code === "ECONNABORTED" ? "http.timeout" : "http.networkError"));
     }
 
     return Promise.reject(error);
@@ -78,7 +95,10 @@ export function unwrapEnvelope<T>(body: unknown): T {
     const env = body as { code: number; desc?: string; data: T };
     if (typeof env.code === "number") {
       if (env.code !== 0) {
-        throw new Error(env.desc || i18n.t("http.requestFailed", { status: env.code }));
+        throw Object.assign(new Error(env.desc || i18n.t("http.requestFailed", { status: env.code })), {
+          code: env.code,
+          isBusiness: true,
+        });
       }
       return env.data;
     }
@@ -88,17 +108,16 @@ export function unwrapEnvelope<T>(body: unknown): T {
 
 /**
  * Thin wrapper around axios that returns unwrapped response data.
- * Automatically unwraps backend response envelopes `{ code, desc, data }`,
- * while maintaining backward compatibility with plain-body legacy MSW mocks.
- * Use this in api/*.ts to avoid repeating `.then((r) => unwrapEnvelope(r.data))`.
+ * The response interceptor already unwraps backend envelopes `{ code, desc, data }`
+ * (and toasts business errors), while maintaining backward compatibility with
+ * plain-body legacy MSW mocks. Use this in api/*.ts to avoid repeating `.then((r) => r.data)`.
  */
 export const http = {
-  get: <T>(url: string, config?: AxiosRequestConfig) =>
-    request.get<T>(url, config).then((r) => unwrapEnvelope<T>(r.data)),
+  get: <T>(url: string, config?: AxiosRequestConfig) => request.get<T>(url, config).then((r) => r.data as T),
   post: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
-    request.post<T>(url, data, config).then((r) => unwrapEnvelope<T>(r.data)),
+    request.post<T>(url, data, config).then((r) => r.data as T),
   put: <T>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
-    request.put<T>(url, data, config).then((r) => unwrapEnvelope<T>(r.data)),
+    request.put<T>(url, data, config).then((r) => r.data as T),
   delete: <T = void>(url: string, config?: AxiosRequestConfig) =>
-    request.delete<T>(url, config).then((r) => unwrapEnvelope<T>(r.data)),
+    request.delete<T>(url, config).then((r) => r.data as T),
 };
