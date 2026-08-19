@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { setupServer } from "msw/node";
 import { pickerHandlers } from "@/mocks/handlers/picker";
+import { resourceHandlers } from "@/mocks/handlers/resource";
 import { listWorkers, listDatasources, listCatalogs, listResourceFiles } from "./picker";
 
-const server = setupServer(...pickerHandlers);
+// `/resource/list` is served by the unified resource mock; register both.
+const server = setupServer(...pickerHandlers, ...resourceHandlers);
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());

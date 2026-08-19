@@ -1,7 +1,7 @@
 import { http as mswHttp, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import { ok } from "@/mocks/lib/response";
-import type { Worker, Datasource, CatalogInfo, Resource } from "@/types/entities";
+import type { Worker, Datasource, CatalogInfo } from "@/types/entities";
 import { DB_TYPES, CATALOG_TYPES, JOB_TYPE_DBTYPE, type JobType } from "@/constants/enums";
 
 const workers: Worker[] = [
@@ -39,11 +39,6 @@ const catalogs: CatalogInfo[] = CATALOG_TYPES.map((type, i) => ({
   createSql: `CREATE CATALOG cat_${type.toLowerCase()} WITH ('type'='${type.toLowerCase()}');`,
 }));
 
-const resources: Resource[] = [
-  ...Array.from({ length: 4 }, (_, i) => ({ id: i + 1, name: `${faker.word.noun()}.jar`, type: "FILE" as const })),
-  ...Array.from({ length: 2 }, (_, i) => ({ id: 100 + i, name: `${faker.word.noun()}.py`, type: "FILE" as const })),
-];
-
 export const pickerHandlers: RequestHandler[] = [
   mswHttp.get("/api/worker/list", async () => {
     await delay(150);
@@ -58,15 +53,5 @@ export const pickerHandlers: RequestHandler[] = [
   mswHttp.get("/api/catalog/list", async () => {
     await delay(150);
     return ok(catalogs);
-  }),
-  mswHttp.get("/api/resource/list", async ({ request }) => {
-    await delay(150);
-    const url = new URL(request.url);
-    const type = url.searchParams.get("type");
-    const ext = url.searchParams.get("ext");
-    let out = resources;
-    if (type) out = out.filter((r) => r.type === type);
-    if (ext) out = out.filter((r) => r.name.endsWith("." + ext));
-    return ok(out);
   }),
 ];

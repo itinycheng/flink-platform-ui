@@ -12,15 +12,15 @@ import {
 } from "@ant-design/icons";
 import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
-import type { FolderNode, ResourceFile, ResourcePathItem } from "@/types/admin";
+import type { Resource } from "@/types/entities";
 import { getFolderTree, getResources } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import { MAX_FILE_SIZE, validateFileSize } from "@/utils/file";
 import { formatFileSize, useResourceActions, useResourcePath } from "./ResourceList.hooks";
 
 interface ResourceBreadcrumbProps {
-  path: ResourcePathItem[];
-  onNavigate: (id?: string) => void;
+  path: Resource[];
+  onNavigate: (id?: number) => void;
 }
 
 /** Folder trail shown as the resource table's title: Home / … / current. */
@@ -45,16 +45,16 @@ function ResourceBreadcrumb({ path, onNavigate }: ResourceBreadcrumbProps) {
 }
 
 interface ResourceNameCellProps {
-  record: ResourceFile;
+  record: Resource;
   /** Open a folder (navigates into it). Not called for files. */
-  onOpen: (id: string) => void;
+  onOpen: (id: number) => void;
 }
 
 /** Folder names are clickable (navigate in); file names are plain. */
 function ResourceNameCell({ record, onOpen }: ResourceNameCellProps) {
-  if (record.isDir) {
+  if (record.type === "DIR") {
     return (
-      <a onClick={() => onOpen(record.id)}>
+      <a onClick={() => record.id != null && onOpen(record.id)}>
         <FolderFilled style={{ marginRight: 8, color: "#e8b339" }} />
         {record.name}
       </a>
@@ -69,17 +69,18 @@ function ResourceNameCell({ record, onOpen }: ResourceNameCellProps) {
 }
 
 interface ResourceActionsCellProps {
-  record: ResourceFile;
-  onRename: (record: ResourceFile) => void;
-  onMove: (record: ResourceFile) => void;
-  onDelete: (id: string) => void;
+  record: Resource;
+  onRename: (record: Resource) => void;
+  onMove: (record: Resource) => void;
+  onDelete: (id: number) => void;
 }
 
 function ResourceActionsCell({ record, onRename, onMove, onDelete }: ResourceActionsCellProps) {
   const { t } = useTranslation();
-  const confirm = record.isDir
-    ? t("resource.deleteFolderConfirm", { name: record.name })
-    : t("resource.deleteConfirmDesc", { name: record.name });
+  const confirm =
+    record.type === "DIR"
+      ? t("resource.deleteFolderConfirm", { name: record.name })
+      : t("resource.deleteConfirmDesc", { name: record.name });
   return (
     <RowActions
       actions={[
@@ -101,7 +102,7 @@ function ResourceActionsCell({ record, onRename, onMove, onDelete }: ResourceAct
           icon: <DeleteOutlined />,
           danger: true,
           confirm,
-          onClick: () => onDelete(record.id),
+          onClick: () => record.id != null && onDelete(record.id),
         },
       ]}
     />
@@ -109,13 +110,13 @@ function ResourceActionsCell({ record, onRename, onMove, onDelete }: ResourceAct
 }
 
 interface UseResourceColumnsArgs {
-  onOpen: (id: string) => void;
-  onRename: (record: ResourceFile) => void;
-  onMove: (record: ResourceFile) => void;
-  onDelete: (id: string) => void;
+  onOpen: (id: number) => void;
+  onRename: (record: Resource) => void;
+  onMove: (record: Resource) => void;
+  onDelete: (id: number) => void;
 }
 
-function useResourceColumns(args: UseResourceColumnsArgs): ProColumns<ResourceFile>[] {
+function useResourceColumns(args: UseResourceColumnsArgs): ProColumns<Resource>[] {
   const { t } = useTranslation();
   const { onOpen, onRename, onMove, onDelete } = args;
 
@@ -129,26 +130,17 @@ function useResourceColumns(args: UseResourceColumnsArgs): ProColumns<ResourceFi
         render: (_, r) => <ResourceNameCell record={r} onOpen={onOpen} />,
       },
       {
-        title: t("resource.sizeLabel"),
-        dataIndex: "size",
-        key: "size",
-        width: 120,
-        render: (_, r) => (r.isDir ? "-" : formatFileSize(r.size)),
-      },
-      {
         title: t("common.type"),
         dataIndex: "type",
         key: "type",
-        width: 180,
-        ellipsis: true,
-        render: (_, r) => (r.isDir ? t("resource.folder") : r.type),
+        width: 140,
+        render: (_, r) => t(`enums.ResourceType.${r.type}`),
       },
       {
-        title: t("resource.uploadTimeLabel"),
-        dataIndex: "uploadTime",
-        key: "uploadTime",
-        width: 200,
-        valueType: "dateTime",
+        title: t("common.description"),
+        dataIndex: "description",
+        key: "description",
+        ellipsis: true,
       },
       {
         title: t("common.operation"),
@@ -169,9 +161,9 @@ type TreeNode = NonNullable<TreeSelectProps["treeData"]>[number];
 const ROOT_VALUE = "__root__";
 
 interface RenameModalProps {
-  target: ResourceFile;
+  target: Resource;
   onClose: () => void;
-  onSubmit: (id: string, name: string) => void;
+  onSubmit: (id: number, name: string) => void;
 }
 
 /** Rendered with a `key={target.id}` so its input resets per target — no effect needed. */
@@ -181,7 +173,7 @@ function RenameModal({ target, onClose, onSubmit }: RenameModalProps) {
 
   const submit = () => {
     const trimmed = name.trim();
-    if (!trimmed || trimmed === target.name) {
+    if (!trimmed || trimmed === target.name || target.id == null) {
       onClose();
       return;
     }
@@ -209,45 +201,44 @@ function RenameModal({ target, onClose, onSubmit }: RenameModalProps) {
   );
 }
 
-/** Collect a folder's own id plus all descendant ids (disallowed move targets). */
-function subtreeIds(nodes: FolderNode[], id: string): Set<string> {
-  const result = new Set<string>();
-  const find = (list: FolderNode[]): FolderNode | undefined => {
-    for (const n of list) {
-      if (n.id === id) return n;
-      const hit = find(n.children);
-      if (hit) return hit;
+/** Collect a folder's own id plus all descendant ids (disallowed move targets), from the flat DIR list. */
+function subtreeIds(list: Resource[], id: number): Set<number> {
+  const result = new Set<number>([id]);
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const r of list) {
+      if (r.id != null && r.pid != null && result.has(r.pid) && !result.has(r.id)) {
+        result.add(r.id);
+        changed = true;
+      }
     }
-    return undefined;
-  };
-  const walk = (n: FolderNode) => {
-    result.add(n.id);
-    n.children.forEach(walk);
-  };
-  const node = find(nodes);
-  if (node) walk(node);
+  }
   return result;
 }
 
-function toTreeData(nodes: FolderNode[], disallowed: Set<string>): TreeNode[] {
-  return nodes.map((n) => ({
-    title: n.name,
-    value: n.id,
-    disabled: disallowed.has(n.id),
-    children: toTreeData(n.children, disallowed),
-  }));
+/** Nest the flat DIR list by `pid` into TreeSelect nodes (root = items with `pid == null`). */
+function buildFolderTree(list: Resource[], pid: number | undefined, disallowed: Set<number>): TreeNode[] {
+  return list
+    .filter((r) => (pid === undefined ? r.pid == null : r.pid === pid))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((n) => ({
+      title: n.name,
+      value: n.id as number,
+      disabled: n.id != null && disallowed.has(n.id),
+      children: buildFolderTree(list, n.id, disallowed),
+    }));
 }
 
 interface MoveModalProps {
-  target: ResourceFile;
+  target: Resource;
   onClose: () => void;
-  onSubmit: (id: string, targetParentId?: string) => void;
+  onSubmit: (id: number, targetPid?: number) => void;
 }
 
 function MoveModal({ target, onClose, onSubmit }: MoveModalProps) {
   const { t } = useTranslation();
-  const [tree, setTree] = useState<FolderNode[]>([]);
-  const [value, setValue] = useState<string>();
+  const [tree, setTree] = useState<Resource[]>([]);
+  const [value, setValue] = useState<string | number>();
 
   useEffect(() => {
     let cancelled = false;
@@ -266,15 +257,18 @@ function MoveModal({ target, onClose, onSubmit }: MoveModalProps) {
   }, []);
 
   // A folder can't move into itself or its own descendants.
-  const disallowed = useMemo(() => (target.isDir ? subtreeIds(tree, target.id) : new Set<string>()), [tree, target]);
+  const disallowed = useMemo(
+    () => (target.type === "DIR" && target.id != null ? subtreeIds(tree, target.id) : new Set<number>()),
+    [tree, target],
+  );
   const treeData = useMemo<TreeNode[]>(
-    () => [{ title: t("resource.home"), value: ROOT_VALUE, children: toTreeData(tree, disallowed) }],
+    () => [{ title: t("resource.home"), value: ROOT_VALUE, children: buildFolderTree(tree, undefined, disallowed) }],
     [t, tree, disallowed],
   );
 
   const submit = () => {
-    if (value === undefined) return;
-    onSubmit(target.id, value === ROOT_VALUE ? undefined : value);
+    if (value === undefined || target.id == null) return;
+    onSubmit(target.id, value === ROOT_VALUE ? undefined : Number(value));
     onClose();
   };
 
@@ -367,8 +361,8 @@ export default function ResourceList() {
   const actions = useResourceActions();
   const { actionRef, folder, uploadProgress, navigateFolder } = actions;
   const path = useResourcePath(folder);
-  const [renameTarget, setRenameTarget] = useState<ResourceFile | null>(null);
-  const [moveTarget, setMoveTarget] = useState<ResourceFile | null>(null);
+  const [renameTarget, setRenameTarget] = useState<Resource | null>(null);
+  const [moveTarget, setMoveTarget] = useState<Resource | null>(null);
 
   const columns = useResourceColumns({
     onOpen: navigateFolder,
@@ -379,7 +373,7 @@ export default function ResourceList() {
 
   return (
     <>
-      <ProTable<ResourceFile, { folder?: string }>
+      <ProTable<Resource, { folder?: number }>
         headerTitle={<ResourceBreadcrumb path={path} onNavigate={navigateFolder} />}
         actionRef={actionRef}
         rowKey="id"
@@ -396,7 +390,7 @@ export default function ResourceList() {
         ]}
         request={async (params) => {
           const result = await getResources({
-            parentId: params.folder,
+            pid: params.folder ? Number(params.folder) : undefined,
             page: params.current ?? 1,
             pageSize: params.pageSize ?? 10,
           });
@@ -417,7 +411,7 @@ export default function ResourceList() {
           key={moveTarget.id}
           target={moveTarget}
           onClose={() => setMoveTarget(null)}
-          onSubmit={(id, targetParentId) => void actions.handleMove(id, targetParentId)}
+          onSubmit={(id, targetPid) => void actions.handleMove(id, targetPid)}
         />
       )}
     </>

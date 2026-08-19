@@ -11,23 +11,24 @@ import {
   renameResource,
   moveResource,
 } from "@/api/admin";
-import type { ResourcePathItem } from "@/types/admin";
+import type { Resource } from "@/types/entities";
 
 /** Folder navigation, upload, create-folder and delete actions for the resource browser. */
 export function useResourceActions() {
   const { t } = useTranslation();
   const actionRef = useRef<ActionType>(null);
   const [searchParams, setSearchParams] = useSearchParams();
-  const folder = searchParams.get("folder") ?? undefined;
+  const folder = searchParams.get("folder");
+  const folderId = folder ? Number(folder) : undefined;
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const reload = () => void actionRef.current?.reload();
-  const navigateFolder = (id?: string) => setSearchParams(id ? { folder: id } : {});
+  const navigateFolder = (id?: number) => setSearchParams(id != null ? { folder: String(id) } : {});
 
   const handleUpload = async (file: File) => {
     setUploadProgress(0);
     try {
-      await uploadResource(file, folder, (percent) => setUploadProgress(percent));
+      await uploadResource(file, folderId, (percent) => setUploadProgress(percent));
       message.success(t("resource.uploadSuccess", { name: file.name }));
       reload();
     } catch {
@@ -39,7 +40,7 @@ export function useResourceActions() {
 
   const handleCreateFolder = async (name: string) => {
     try {
-      await createFolder(name, folder);
+      await createFolder(name, folderId);
       message.success(t("resource.folderCreated"));
       reload();
     } catch {
@@ -47,7 +48,7 @@ export function useResourceActions() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: number) => {
     try {
       await deleteResource(id);
       message.success(t("common.deleteSuccess"));
@@ -57,7 +58,7 @@ export function useResourceActions() {
     }
   };
 
-  const handleRename = async (id: string, name: string) => {
+  const handleRename = async (id: number, name: string) => {
     try {
       await renameResource(id, name);
       message.success(t("resource.renameSuccess"));
@@ -67,9 +68,9 @@ export function useResourceActions() {
     }
   };
 
-  const handleMove = async (id: string, targetParentId?: string) => {
+  const handleMove = async (id: number, targetPid?: number) => {
     try {
-      await moveResource(id, targetParentId);
+      await moveResource(id, targetPid);
       message.success(t("resource.moveSuccess"));
       reload();
     } catch {
@@ -79,7 +80,7 @@ export function useResourceActions() {
 
   return {
     actionRef,
-    folder,
+    folder: folderId,
     uploadProgress,
     navigateFolder,
     handleUpload,
@@ -90,19 +91,19 @@ export function useResourceActions() {
   };
 }
 
-/** Resolve the ancestor path (root → … → current) of `folder` for the breadcrumb. */
-export function useResourcePath(folder?: string): ResourcePathItem[] {
-  const [path, setPath] = useState<ResourcePathItem[]>([]);
+/** Resolve the ancestor path (root → … → current) of `folderId` for the breadcrumb. */
+export function useResourcePath(folderId?: number): Resource[] {
+  const [path, setPath] = useState<Resource[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      if (!folder) {
+      if (folderId == null) {
         setPath([]);
         return;
       }
       try {
-        const result = await getResourcePath(folder);
+        const result = await getResourcePath(folderId);
         if (!cancelled) setPath(result);
       } catch (err) {
         console.error("[Resource] load path failed", err);
@@ -112,7 +113,7 @@ export function useResourcePath(folder?: string): ResourcePathItem[] {
     return () => {
       cancelled = true;
     };
-  }, [folder]);
+  }, [folderId]);
 
   return path;
 }

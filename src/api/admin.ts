@@ -1,49 +1,36 @@
 import { http } from "@/utils/request";
-import type {
-  ResourceFile,
-  ResourcePathItem,
-  FolderNode,
-  ManagedUser,
-  CustomParam,
-  DataSource,
-  Catalog,
-  Worker,
-  Tag,
-  SysConfig,
-  AuditLog,
-  AuditResult,
-} from "@/types/admin";
+import type { ManagedUser, CustomParam, DataSource, Catalog, Worker, Tag, SysConfig, AuditLog, AuditResult } from "@/types/admin";
+import type { Resource } from "@/types/entities";
 import type { PaginatedResponse, PaginationParams, IPage } from "@/types/common";
 import { ipageToPaginated, toPageParams } from "@/types/common";
 
-// ---- Resource Management ----
+// ---- Resource Management ---- (backend: /resource/*)
 
-export interface ResourceQuery {
-  /** Folder to list; omit for the root. */
-  parentId?: string;
+export function getResources(params: {
+  pid?: number;
   name?: string;
   page: number;
   pageSize: number;
+}): Promise<PaginatedResponse<Resource>> {
+  return http
+    .get<IPage<Resource>>("/resource/page", { params: { pid: params.pid, name: params.name, ...toPageParams(params) } })
+    .then(ipageToPaginated);
 }
 
-export function getResources(params: ResourceQuery): Promise<PaginatedResponse<ResourceFile>> {
-  return http.get<PaginatedResponse<ResourceFile>>("/resources", { params });
-}
-
-/** Create a folder under `parentId` (root when omitted). */
-export function createFolder(name: string, parentId?: string): Promise<ResourceFile> {
-  return http.post<ResourceFile>("/resources/folder", { name, parentId: parentId ?? null });
+/** Create a folder under `pid` (root when omitted). */
+export function createFolder(name: string, pid?: number): Promise<number> {
+  return http.post<number>("/resource/create", { name, type: "DIR", pid });
 }
 
 export function uploadResource(
   file: File,
-  parentId?: string,
+  pid?: number,
   onProgress?: (percent: number) => void,
-): Promise<ResourceFile> {
+): Promise<Resource> {
   const formData = new FormData();
   formData.append("file", file);
-  if (parentId) formData.append("parentId", parentId);
-  return http.post<ResourceFile>("/resources/upload", formData, {
+  if (pid !== undefined) formData.append("pid", String(pid));
+  return http.post<Resource>("/resource/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress: (event) => {
       if (event.total && onProgress) {
@@ -53,27 +40,27 @@ export function uploadResource(
   });
 }
 
-/** Ancestor path (root → … → the folder) for the breadcrumb. */
-export function getResourcePath(id: string): Promise<ResourcePathItem[]> {
-  return http.get<ResourcePathItem[]>(`/resources/${id}/path`);
+/** Ancestor path (root → … → the resource) for the breadcrumb. */
+export function getResourcePath(id: number): Promise<Resource[]> {
+  return http.get<Resource[]>(`/resource/getWithParents/${id}`);
 }
 
-export function renameResource(id: string, name: string): Promise<ResourceFile> {
-  return http.put<ResourceFile>(`/resources/${id}`, { name });
+export function renameResource(id: number, name: string): Promise<number> {
+  return http.post<number>("/resource/update", { id, name });
 }
 
-/** Move a resource under a new parent folder (root when omitted). */
-export function moveResource(id: string, targetParentId?: string): Promise<ResourceFile> {
-  return http.post<ResourceFile>(`/resources/${id}/move`, { targetParentId: targetParentId ?? null });
+/** Move a resource under a new parent folder. `pid` omitted moves it to the root. */
+export function moveResource(id: number, pid?: number): Promise<number> {
+  return http.post<number>("/resource/update", { id, pid: pid ?? null });
 }
 
-/** The full folder hierarchy, for the move-target picker. */
-export function getFolderTree(): Promise<FolderNode[]> {
-  return http.get<FolderNode[]>("/resources/folders");
+/** The flat DIR list, for the move-target picker (nested client-side by `pid`). */
+export function getFolderTree(): Promise<Resource[]> {
+  return http.get<Resource[]>("/resource/list", { params: { type: "DIR" } });
 }
 
-export function deleteResource(id: string): Promise<void> {
-  return http.delete(`/resources/${id}`);
+export function deleteResource(id: number): Promise<boolean> {
+  return http.get<boolean>(`/resource/delete/${id}`);
 }
 
 // ---- User Management ---- (backend: /user/*)
