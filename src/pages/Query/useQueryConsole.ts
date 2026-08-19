@@ -53,7 +53,7 @@ export function useQueryConsole() {
       setResult(res);
       history.add(toRun, datasourceId, Date.now());
     } catch {
-      message.error(t("query.queryFailed"));
+      // handled by the global interceptor toast
     } finally {
       setRunning(false);
     }

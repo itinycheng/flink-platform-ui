@@ -139,7 +139,6 @@ function useParamCrud() {
       void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
-      message.error(editingParam ? t("common.updateFailed") : t("common.createFailed"));
     } finally {
       setConfirmLoading(false);
     }
@@ -157,7 +156,7 @@ function useParamCrud() {
       message.success(t("common.deleteSuccess"));
       void actionRef.current?.reload();
     } catch {
-      message.error(t("common.deleteFailed"));
+      // handled by the global interceptor toast
     }
   };
 

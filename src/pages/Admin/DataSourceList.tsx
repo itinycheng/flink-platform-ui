@@ -119,7 +119,7 @@ async function handleTest(id: string) {
       message.error(i18n.t("datasource.testFailed"));
     }
   } catch {
-    message.error(i18n.t("datasource.testFailed"));
+    // handled by the global interceptor toast
   }
 }
 
@@ -166,7 +166,6 @@ function useDataSourceCrud() {
       void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
-      message.error(editingDataSource ? t("common.updateFailed") : t("common.createFailed"));
     } finally {
       setConfirmLoading(false);
     }
@@ -184,7 +183,7 @@ function useDataSourceCrud() {
       message.success(t("common.deleteSuccess"));
       void actionRef.current?.reload();
     } catch {
-      message.error(t("common.deleteFailed"));
+      // handled by the global interceptor toast
     }
   };
 

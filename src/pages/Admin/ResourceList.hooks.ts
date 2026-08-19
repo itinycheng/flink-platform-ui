@@ -32,7 +32,7 @@ export function useResourceActions() {
       message.success(t("resource.uploadSuccess", { name: file.name }));
       reload();
     } catch {
-      message.error(t("resource.uploadFailed"));
+      // handled by the global interceptor toast
     } finally {
       setUploadProgress(null);
     }
@@ -44,7 +44,7 @@ export function useResourceActions() {
       message.success(t("resource.folderCreated"));
       reload();
     } catch {
-      message.error(t("resource.createFolderFailed"));
+      // handled by the global interceptor toast
     }
   };
 
@@ -54,7 +54,7 @@ export function useResourceActions() {
       message.success(t("common.deleteSuccess"));
       reload();
     } catch {
-      message.error(t("common.deleteFailed"));
+      // handled by the global interceptor toast
     }
   };
 
@@ -64,7 +64,7 @@ export function useResourceActions() {
       message.success(t("resource.renameSuccess"));
       reload();
     } catch {
-      message.error(t("resource.renameFailed"));
+      // handled by the global interceptor toast
     }
   };
 
@@ -74,7 +74,7 @@ export function useResourceActions() {
       message.success(t("resource.moveSuccess"));
       reload();
     } catch {
-      message.error(t("resource.moveFailed"));
+      // handled by the global interceptor toast
     }
   };
 

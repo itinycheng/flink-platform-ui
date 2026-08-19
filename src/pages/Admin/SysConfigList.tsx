@@ -213,7 +213,6 @@ function useSysConfigCrud() {
       void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
-      message.error(editingConfig ? t("common.updateFailed") : t("common.createFailed"));
     } finally {
       setConfirmLoading(false);
     }
@@ -225,20 +224,18 @@ function useSysConfigCrud() {
     setEditingConfig(null);
   };
 
-  const runRowAction = async (action: (id: string) => Promise<unknown>, id: string, ok: string, fail: string) => {
+  const runRowAction = async (action: (id: string) => Promise<unknown>, id: string, ok: string) => {
     try {
       await action(id);
       message.success(ok);
       void actionRef.current?.reload();
     } catch {
-      message.error(fail);
+      // handled by the global interceptor toast
     }
   };
 
-  const handleDelete = (id: string) =>
-    runRowAction(deleteSysConfig, id, t("common.deleteSuccess"), t("common.deleteFailed"));
-  const handlePurge = (id: string) =>
-    runRowAction(purgeSysConfig, id, t("sysConfig.purgeSuccess"), t("sysConfig.purgeFailed"));
+  const handleDelete = (id: string) => runRowAction(deleteSysConfig, id, t("common.deleteSuccess"));
+  const handlePurge = (id: string) => runRowAction(purgeSysConfig, id, t("sysConfig.purgeSuccess"));
 
   return {
     actionRef,

@@ -38,7 +38,7 @@ export function useDefinitionLifecycle(messageApi: MessageInstance) {
           setTagNode(node);
         }
       } catch {
-        void messageApi.error(t("common.actionFailed"));
+        // handled by the global interceptor toast
       }
     },
     [runOnce, setLifecycleStatus, copyDefinition, messageApi, t],
@@ -53,7 +53,7 @@ export function useDefinitionLifecycle(messageApi: MessageInstance) {
         void messageApi.success(t("definitions.tagsUpdated"));
         setTagNode(null);
       } catch {
-        void messageApi.error(t("definitions.tagsUpdateFailed"));
+        // handled by the global interceptor toast
       } finally {
         setSaving(false);
       }

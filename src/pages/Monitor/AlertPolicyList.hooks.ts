@@ -35,7 +35,7 @@ export function useAlertPolicyCrud() {
       setModalOpen(false);
       void actionRef.current?.reload();
     } catch {
-      message.error(editingPolicy ? t("monitor.policyUpdateFailed") : t("monitor.policyCreateFailed"));
+      // handled by the global interceptor toast
     } finally {
       setConfirmLoading(false);
     }
@@ -52,7 +52,7 @@ export function useAlertPolicyCrud() {
       message.success(checked ? t("monitor.policyEnabled") : t("monitor.policyDisabled"));
       void actionRef.current?.reload();
     } catch {
-      message.error(t("common.actionFailed"));
+      // handled by the global interceptor toast
     }
   };
 

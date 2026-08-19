@@ -23,14 +23,14 @@ describe("performDelete", () => {
     expect(messageApi.error).not.toHaveBeenCalled();
   });
 
-  it("shows the error toast (and not the success toast) when deleteNode rejects", async () => {
+  it("shows neither toast when deleteNode rejects (the global interceptor toasts the failure)", async () => {
     const deleteNode = vi.fn().mockRejectedValue(new Error("backend rejected delete"));
     const messageApi = makeMessageApi();
 
     await performDelete(node, deleteNode, messageApi, t);
 
     expect(deleteNode).toHaveBeenCalledWith(node);
-    expect(messageApi.error).toHaveBeenCalledWith(t("common.deleteFailed"));
+    expect(messageApi.error).not.toHaveBeenCalled();
     expect(messageApi.success).not.toHaveBeenCalled();
   });
 });

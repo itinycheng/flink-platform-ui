@@ -57,7 +57,7 @@ export default function RunList() {
         message.success(t("runs.killSent"));
         void actionRef.current?.reload();
       } catch {
-        message.error(t("runs.killFailed"));
+        // handled by the global interceptor toast
       }
     },
     [t],

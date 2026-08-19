@@ -52,7 +52,7 @@ export function useFlowPersistence({ workflowId, nodes, edges, setNodes, setEdge
       await saveFlowGraph(workflowId, serializeFlow(nodes, edges));
       void messageApi.success(t("dag.flowSaved"));
     } catch {
-      void messageApi.error(t("dag.flowSaveFailed"));
+      // handled by the global interceptor toast
     }
   }, [saveFlowGraph, workflowId, nodes, edges, messageApi, t]);
 

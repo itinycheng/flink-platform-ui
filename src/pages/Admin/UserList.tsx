@@ -243,7 +243,6 @@ function useUserCrud() {
       void actionRef.current?.reload();
     } catch (error) {
       if (isFormValidationError(error)) return;
-      message.error(editingUser ? t("common.updateFailed") : t("common.createFailed"));
     } finally {
       setConfirmLoading(false);
     }
@@ -262,7 +261,7 @@ function useUserCrud() {
       message.success(newStatus === "LOCKED" ? t("user2.disableSuccess") : t("user2.enableSuccess"));
       void actionRef.current?.reload();
     } catch {
-      message.error(t("common.actionFailed"));
+      // handled by the global interceptor toast
     }
   };
 
