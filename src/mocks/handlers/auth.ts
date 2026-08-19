@@ -1,5 +1,6 @@
 import { http, HttpResponse, delay } from "msw";
 import { faker } from "@faker-js/faker";
+import { ok } from "@/mocks/lib/response";
 
 export const authHandlers = [
   // POST /api/auth/login
@@ -17,7 +18,7 @@ export const authHandlers = [
 
     const isAdmin = body.username === "admin";
 
-    return HttpResponse.json({
+    return ok({
       token: faker.string.uuid(),
       user: {
         id: faker.string.uuid(),
@@ -41,6 +42,6 @@ export const authHandlers = [
   // POST /api/auth/logout
   http.post("/api/auth/logout", async () => {
     await delay(100);
-    return new HttpResponse(null, { status: 204 });
+    return ok(null);
   }),
 ];

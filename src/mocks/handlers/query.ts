@@ -1,6 +1,7 @@
-import { http, HttpResponse, delay, type RequestHandler } from "msw";
+import { http, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import type { QueryRequest, QueryResult } from "@/types/query";
+import { ok } from "@/mocks/lib/response";
 
 function buildResult(sql: string): QueryResult {
   const elapsedMs = faker.number.int({ min: 30, max: 1800 });
@@ -66,15 +67,15 @@ export const queryHandlers: RequestHandler[] = [
   http.post("/api/query/execute", async ({ request }) => {
     const { sql } = (await request.json()) as QueryRequest;
     await delay(600);
-    return HttpResponse.json(buildResult(sql));
+    return ok(buildResult(sql));
   }),
 
   http.get("/api/query/databases", async ({ request }) => {
     const datasourceId = new URL(request.url).searchParams.get("datasourceId");
     await delay(250);
-    if (!datasourceId) return HttpResponse.json([]);
+    if (!datasourceId) return ok([]);
     const count = faker.number.int({ min: 2, max: DATABASE_POOL.length });
-    return HttpResponse.json(faker.helpers.arrayElements(DATABASE_POOL, count).sort());
+    return ok(faker.helpers.arrayElements(DATABASE_POOL, count).sort());
   }),
 
   http.get("/api/query/tables", async ({ request }) => {
@@ -82,9 +83,9 @@ export const queryHandlers: RequestHandler[] = [
     const datasourceId = url.searchParams.get("datasourceId");
     const database = url.searchParams.get("database");
     await delay(300);
-    if (!datasourceId || !database) return HttpResponse.json([]);
+    if (!datasourceId || !database) return ok([]);
     // Vary the set per database so expanding different databases feels real.
     const count = faker.number.int({ min: 6, max: TABLE_POOL.length });
-    return HttpResponse.json(faker.helpers.arrayElements(TABLE_POOL, count).sort());
+    return ok(faker.helpers.arrayElements(TABLE_POOL, count).sort());
   }),
 ];
