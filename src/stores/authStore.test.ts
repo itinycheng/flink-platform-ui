@@ -11,7 +11,7 @@ describe("authStore", () => {
     vi.clearAllMocks();
     localStorage.clear();
     useAuthStore.setState({ token: null, user: null, isAuthenticated: false });
-    useWorkspaceStore.setState({ currentId: null });
+    useWorkspaceStore.setState({ currentId: null, workspaces: [] });
   });
 
   it("login stores the token, sets the resolved workspace, and loads the user", async () => {
@@ -63,7 +63,7 @@ describe("authStore", () => {
     });
   });
 
-  it("logout calls the API with the current token, then clears the session", async () => {
+  it("logout calls the API with the current token, then clears the session and workspace", async () => {
     useAuthStore.setState({
       token: "tok-1",
       user: { username: "admin", roles: { global: "SUPER_ADMIN" } },
@@ -71,6 +71,11 @@ describe("authStore", () => {
     });
     localStorage.setItem(STORAGE_KEYS.token, "tok-1");
     localStorage.setItem(STORAGE_KEYS.user, "{}");
+    localStorage.setItem(STORAGE_KEYS.workspaceId, "2");
+    useWorkspaceStore.setState({
+      currentId: 2,
+      workspaces: [{ id: 2, name: "ws-2", status: "ENABLE", createdAt: "2026-01-01" }],
+    });
     vi.mocked(authApi.logout).mockResolvedValue({ redirectUrl: "" });
 
     await useAuthStore.getState().logout();
@@ -81,15 +86,27 @@ describe("authStore", () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
     expect(localStorage.getItem(STORAGE_KEYS.token)).toBeNull();
     expect(localStorage.getItem(STORAGE_KEYS.user)).toBeNull();
+    // Fix 1: logout must also clear the workspace, otherwise the next user on
+    // a shared browser inherits the previous user's stale workspaceId.
+    expect(localStorage.getItem(STORAGE_KEYS.workspaceId)).toBeNull();
+    expect(useWorkspaceStore.getState().currentId).toBeNull();
+    expect(useWorkspaceStore.getState().workspaces).toEqual([]);
   });
 
-  it("logout still clears the local session even if the API call rejects", async () => {
+  it("logout still clears the local session and workspace even if the API call rejects", async () => {
     useAuthStore.setState({ token: "tok-1", user: null, isAuthenticated: true });
+    localStorage.setItem(STORAGE_KEYS.workspaceId, "2");
+    useWorkspaceStore.setState({
+      currentId: 2,
+      workspaces: [{ id: 2, name: "ws-2", status: "ENABLE", createdAt: "2026-01-01" }],
+    });
     vi.mocked(authApi.logout).mockRejectedValue(new Error("network"));
 
     await expect(useAuthStore.getState().logout()).rejects.toThrow("network");
 
     expect(useAuthStore.getState().token).toBeNull();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    expect(localStorage.getItem(STORAGE_KEYS.workspaceId)).toBeNull();
+    expect(useWorkspaceStore.getState().currentId).toBeNull();
   });
 });

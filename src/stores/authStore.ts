@@ -37,6 +37,10 @@ function loadUserFromStorage(): AuthUser | null {
 function clearSession(): void {
   localStorage.removeItem(STORAGE_KEYS.token);
   localStorage.removeItem(STORAGE_KEYS.user);
+  // Clear the workspace too — otherwise the next login on a shared browser
+  // inherits the previous user's stale workspaceId (and X-Workspace-Id header).
+  localStorage.removeItem(STORAGE_KEYS.workspaceId);
+  useWorkspaceStore.setState({ currentId: null, workspaces: [] });
 }
 
 // Runs once at module load, before the store reads token/user from storage.

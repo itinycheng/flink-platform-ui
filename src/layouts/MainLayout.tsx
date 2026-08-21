@@ -166,20 +166,23 @@ export default function MainLayout() {
   const title = t("app.title", { appName: APP.name });
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const user = useAuthStore((s) => s.user);
   const loadUserInfo = useAuthStore((s) => s.loadUserInfo);
   const effectivePermissions = useAuthPermissions();
 
-  // A page refresh restores `token` from storage synchronously, but `user`
-  // isn't persisted with enough trust to skip re-fetching — rehydrate it here
-  // so the header/menu have fresh roles+permissions for the active workspace.
+  // A page refresh restores `token` from storage synchronously, but the
+  // persisted `user` can be stale (server-side role change, or a workspace
+  // switch that just reloaded the page with a new X-Workspace-Id). Refetch on
+  // every authenticated mount — MainLayout mounts once per full page load, not
+  // per SPA navigation, so this fires once per load rather than per route
+  // change. Keep the cached user in place for an instant render; only replace
+  // it once the refetch resolves.
   useEffect(() => {
-    if (isAuthenticated && user === null) {
+    if (isAuthenticated) {
       loadUserInfo().catch(() => {
         // 401s are already handled by the request interceptor (redirect to /login).
       });
     }
-  }, [isAuthenticated, user, loadUserInfo]);
+  }, [isAuthenticated, loadUserInfo]);
 
   const layoutRoutes = buildLayoutRoutes(t);
   const filteredRoutes: ProLayoutProps["route"] = layoutRoutes
