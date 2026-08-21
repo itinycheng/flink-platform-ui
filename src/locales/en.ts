@@ -883,6 +883,15 @@ const en = {
     },
     UserStatus: { NORMAL: "Normal", LOCKED: "Locked" },
     WorkerStatus: { ACTIVE: "Active", INACTIVE: "Inactive", DELETED: "Deleted" },
+    Permission: {
+      SYSTEM_MANAGE: "System manage",
+      WORKSPACE_MANAGE: "Workspace manage",
+      WORKSPACE_VIEW: "Workspace view",
+      TASK_EDIT: "Task edit",
+      TASK_EXEC: "Task exec",
+      TASK_VIEW: "Task view",
+      TASK_PURGE: "Task purge",
+    },
   },
 };
 

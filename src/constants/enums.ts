@@ -15,15 +15,7 @@ export const JOB_TYPES = [
 ] as const;
 export type JobType = (typeof JOB_TYPES)[number];
 
-export const JOB_CLASSIFICATIONS = [
-  "FLINK",
-  "JAVA",
-  "SQL",
-  "SHELL",
-  "CONDITION",
-  "DEPENDENT",
-  "SUB_FLOW",
-] as const;
+export const JOB_CLASSIFICATIONS = ["FLINK", "JAVA", "SQL", "SHELL", "CONDITION", "DEPENDENT", "SUB_FLOW"] as const;
 export type JobClassification = (typeof JOB_CLASSIFICATIONS)[number];
 
 export const DEPLOY_MODES = [
@@ -105,6 +97,34 @@ export type Role = (typeof ROLES)[number];
 
 export const USER_STATUSES = ["NORMAL", "LOCKED"] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
+
+export const PERMISSIONS = [
+  "SYSTEM_MANAGE",
+  "WORKSPACE_MANAGE",
+  "WORKSPACE_VIEW",
+  "TASK_EDIT",
+  "TASK_EXEC",
+  "TASK_VIEW",
+  "TASK_PURGE",
+] as const;
+export type Permission = (typeof PERMISSIONS)[number];
+
+/** Mirrors com.flink.platform.common.enums.Role's EnumSet<Permission> mapping (Role.java). */
+export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+  SUPER_ADMIN: [
+    "SYSTEM_MANAGE",
+    "WORKSPACE_MANAGE",
+    "WORKSPACE_VIEW",
+    "TASK_EDIT",
+    "TASK_EXEC",
+    "TASK_VIEW",
+    "TASK_PURGE",
+  ],
+  ADMIN: ["WORKSPACE_MANAGE", "WORKSPACE_VIEW", "TASK_EDIT", "TASK_EXEC", "TASK_VIEW", "TASK_PURGE"],
+  DEVELOPER: ["WORKSPACE_VIEW", "TASK_EDIT", "TASK_EXEC", "TASK_VIEW"],
+  OPERATOR: ["WORKSPACE_VIEW", "TASK_EXEC", "TASK_VIEW"],
+  VIEWER: ["WORKSPACE_VIEW", "TASK_VIEW"],
+};
 
 export const WORKER_STATUSES = ["ACTIVE", "INACTIVE", "DELETED"] as const;
 export type WorkerStatus = (typeof WORKER_STATUSES)[number];

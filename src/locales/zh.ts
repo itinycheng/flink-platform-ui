@@ -881,6 +881,15 @@ const zh = {
     },
     UserStatus: { NORMAL: "正常", LOCKED: "锁定" },
     WorkerStatus: { ACTIVE: "在线", INACTIVE: "离线", DELETED: "已删除" },
+    Permission: {
+      SYSTEM_MANAGE: "系统管理",
+      WORKSPACE_MANAGE: "工作区管理",
+      WORKSPACE_VIEW: "工作区查看",
+      TASK_EDIT: "任务编辑",
+      TASK_EXEC: "任务执行",
+      TASK_VIEW: "任务查看",
+      TASK_PURGE: "任务清理",
+    },
   },
 };
 
