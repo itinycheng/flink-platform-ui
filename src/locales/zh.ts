@@ -104,6 +104,7 @@ const zh = {
     passwordRequired: "请输入密码",
     ssoLogin: "SSO 登录",
     ssoRedirectHint: "该账号使用单点登录，请前往身份提供方完成登录。",
+    demoHint: "演示账号：admin 或 user · 密码 123456",
   },
 
   dashboard: {

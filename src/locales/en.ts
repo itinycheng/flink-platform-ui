@@ -104,6 +104,7 @@ const en = {
     passwordRequired: "Please enter password",
     ssoLogin: "SSO Login",
     ssoRedirectHint: "This account uses single sign-on. Continue to your identity provider to log in.",
+    demoHint: "Demo: admin or user · password 123456",
   },
 
   dashboard: {
