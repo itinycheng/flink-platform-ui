@@ -1,12 +1,17 @@
+import { useMemo } from "react";
 import { create } from "zustand";
-import type { AuthState, User } from "@/types/auth";
-import { login as apiLogin } from "@/api/auth";
+import type { AuthState, AuthUser } from "@/types/auth";
+import type { Permission } from "@/constants/enums";
+import { login as apiLogin, logout as apiLogout, getUserInfo } from "@/api/auth";
+import { computeEffectivePermissions } from "@/utils/permission";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 import { STORAGE_KEYS } from "@/constants/storage";
 
 // Bump whenever the shape or vocabulary of the persisted auth changes (e.g. a
 // permission-key rename). On mismatch we drop the stale token+user so the user
 // is sent to login and re-authenticates cleanly instead of dead-ending on 403.
-const AUTH_SCHEMA_VERSION = "2";
+// v3: `user.roles` moved from string[] to the backend's UserRoles shape.
+const AUTH_SCHEMA_VERSION = "3";
 
 function migrateAuthSchema(): void {
   if (localStorage.getItem(STORAGE_KEYS.authVersion) === AUTH_SCHEMA_VERSION) return;
@@ -19,14 +24,19 @@ function loadTokenFromStorage(): string | null {
   return localStorage.getItem(STORAGE_KEYS.token);
 }
 
-function loadUserFromStorage(): User | null {
+function loadUserFromStorage(): AuthUser | null {
   const userStr = localStorage.getItem(STORAGE_KEYS.user);
   if (!userStr) return null;
   try {
-    return JSON.parse(userStr) as User;
+    return JSON.parse(userStr) as AuthUser;
   } catch {
     return null;
   }
+}
+
+function clearSession(): void {
+  localStorage.removeItem(STORAGE_KEYS.token);
+  localStorage.removeItem(STORAGE_KEYS.user);
 }
 
 // Runs once at module load, before the store reads token/user from storage.
@@ -38,21 +48,51 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: !!loadTokenFromStorage(),
 
   login: async (username: string, password: string) => {
-    const { token, user } = await apiLogin({ username, password });
+    const { token, workspaceId } = await apiLogin({ username, password });
     localStorage.setItem(STORAGE_KEYS.token, token);
-    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
-    localStorage.setItem(STORAGE_KEYS.authVersion, AUTH_SCHEMA_VERSION);
-    set({ token, user, isAuthenticated: true });
+    if (workspaceId != null) {
+      localStorage.setItem(STORAGE_KEYS.workspaceId, String(workspaceId));
+      // Set directly on the workspace store (not via setCurrent, which reloads
+      // the page) — login is about to navigate anyway.
+      useWorkspaceStore.setState({ currentId: workspaceId });
+    }
+    set({ token, isAuthenticated: true });
+    // X-Workspace-Id is now in place, so /user/info resolves against the
+    // right workspace's role.
+    await get().loadUserInfo();
   },
 
-  logout: () => {
-    localStorage.removeItem(STORAGE_KEYS.token);
-    localStorage.removeItem(STORAGE_KEYS.user);
-    set({ token: null, user: null, isAuthenticated: false });
+  loadUserInfo: async () => {
+    const user = await getUserInfo();
+    localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
+    set({ user });
+  },
+
+  logout: async () => {
+    const token = get().token;
+    try {
+      if (token) await apiLogout(token);
+    } finally {
+      clearSession();
+      set({ token: null, user: null, isAuthenticated: false });
+    }
   },
 
   checkToken: () => {
-    const token = get().token;
-    return !!token;
+    return !!get().token;
   },
 }));
+
+/**
+ * Effective Permissions for the current user, scoped to the active workspace.
+ * Derived (not persisted): union of the global role's permissions and the
+ * current workspace role's permissions.
+ */
+export function useAuthPermissions(): Permission[] {
+  const user = useAuthStore((s) => s.user);
+  const currentWorkspaceId = useWorkspaceStore((s) => s.currentId);
+  return useMemo(
+    () => (user ? computeEffectivePermissions(user.roles, currentWorkspaceId) : []),
+    [user, currentWorkspaceId],
+  );
+}

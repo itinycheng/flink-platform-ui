@@ -102,6 +102,8 @@ const en = {
     loginFailed: "Login failed, please retry",
     usernameRequired: "Please enter username",
     passwordRequired: "Please enter password",
+    ssoLogin: "SSO Login",
+    ssoRedirectHint: "This account uses single sign-on. Continue to your identity provider to log in.",
   },
 
   dashboard: {
@@ -297,13 +299,6 @@ const en = {
     roles: "Roles",
     permissions: "Permissions",
     logout: "Logout",
-    dashboardView: "Dashboard View",
-    workflowView: "Workflow View",
-    workflowEdit: "Workflow Edit",
-    adminView: "Admin View",
-    adminEdit: "Admin Edit",
-    monitorView: "Monitor View",
-    monitorEdit: "Monitor Edit",
   },
 
   sider: {

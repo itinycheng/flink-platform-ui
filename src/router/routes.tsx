@@ -1,47 +1,54 @@
-import type { RouteConfig } from "../utils/permission";
+import type { Permission } from "@/constants/enums";
+
+export interface RouteConfig {
+  path: string;
+  permission: Permission;
+}
 
 /**
- * Application route definitions with permission requirements.
- * Each route can optionally specify a permission string that the user must have.
- * Routes without a permission field are accessible to all authenticated users.
+ * Frontend path → required Permission, mirroring each page's backend
+ * `@RequirePermission` view guard. Admin sub-pages are listed before the
+ * `/admin` fallback; getRoutePermission matches the longest path prefix so a
+ * sub-page (e.g. `/admin/users`) always wins over the parent fallback.
  */
 export const routeConfigs: RouteConfig[] = [
-  {
-    path: "/dashboard",
-    permission: "dashboard:view",
-  },
-  {
-    path: "/studio",
-    permission: "workflow:view",
-  },
-  {
-    path: "/jobs",
-    permission: "workflow:view",
-  },
-  {
-    path: "/query",
-    permission: "workflow:view",
-  },
-  {
-    path: "/admin",
-    permission: "admin:view",
-  },
-  {
-    path: "/runs",
-    permission: "workflow:view",
-  },
-  {
-    path: "/monitor",
-    permission: "monitor:view",
-  },
+  { path: "/dashboard", permission: "WORKSPACE_VIEW" },
+  { path: "/audit-logs", permission: "WORKSPACE_VIEW" },
+
+  { path: "/studio", permission: "TASK_VIEW" },
+  { path: "/jobs", permission: "TASK_VIEW" },
+  { path: "/query", permission: "TASK_VIEW" },
+  { path: "/runs", permission: "TASK_VIEW" },
+  { path: "/monitor", permission: "TASK_VIEW" },
+
+  { path: "/admin/users", permission: "WORKSPACE_MANAGE" },
+  { path: "/admin/sys-configs", permission: "WORKSPACE_MANAGE" },
+
+  { path: "/admin/workspaces", permission: "WORKSPACE_VIEW" },
+  { path: "/admin/workers", permission: "WORKSPACE_VIEW" },
+
+  { path: "/admin/resources", permission: "TASK_VIEW" },
+  { path: "/admin/datasources", permission: "TASK_VIEW" },
+  { path: "/admin/catalogs", permission: "TASK_VIEW" },
+  { path: "/admin/tags", permission: "TASK_VIEW" },
+  { path: "/admin/alert-rules", permission: "TASK_VIEW" },
+  { path: "/admin/params", permission: "TASK_VIEW" },
+
+  { path: "/admin", permission: "WORKSPACE_VIEW" },
 ];
 
 /**
- * Map of route paths to their permission requirements.
- * Used by AuthGuard to quickly look up the required permission for a given path.
+ * Look up the required Permission for a given pathname, using longest-prefix
+ * matching so nested routes (e.g. `/admin/users`) take precedence over their
+ * parent fallback (`/admin`).
  */
-export function getRoutePermission(pathname: string): string | undefined {
-  // Match against first-level path segment, e.g. /workflow/xxx matches /workflow
-  const config = routeConfigs.find((route) => pathname === route.path || pathname.startsWith(route.path + "/"));
-  return config?.permission;
+export function getRoutePermission(pathname: string): Permission | undefined {
+  let best: RouteConfig | undefined;
+  for (const route of routeConfigs) {
+    const matches = pathname === route.path || pathname.startsWith(route.path + "/");
+    if (matches && (!best || route.path.length > best.path.length)) {
+      best = route;
+    }
+  }
+  return best?.permission;
 }

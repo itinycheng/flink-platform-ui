@@ -1,20 +1,48 @@
 import { http } from "@/utils/request";
-import type { User } from "@/types/auth";
+import type { AuthUser } from "@/types/auth";
+import type { UserRoles } from "@/types/entities";
+import type { UserStatus } from "@/constants/enums";
 
 export interface LoginRequest {
   username: string;
   password: string;
+  /** Only meaningful for SSO flows (CAS/OIDC); omitted for LOCAL. */
+  workspaceId?: number;
 }
 
 export interface LoginResponse {
   token: string;
-  user: User;
+  /** Server-resolved starting workspace (from the user's roles); null if none. */
+  workspaceId: number | null;
 }
 
+/** POST /login. No user is returned — callers must follow up with getUserInfo(). */
 export function login(data: LoginRequest): Promise<LoginResponse> {
-  return http.post<LoginResponse>("/auth/login", data);
+  return http.post<LoginResponse>("/login", data);
 }
 
-export function logout(): Promise<void> {
-  return http.post<void>("/auth/logout");
+export function logout(token: string): Promise<{ redirectUrl?: string }> {
+  return http.post<{ redirectUrl?: string }>("/logout", { token });
+}
+
+export function getLoginConfig(): Promise<{ authType: string; ssoLoginUrl?: string }> {
+  return http.get<{ authType: string; ssoLoginUrl?: string }>("/login/config");
+}
+
+/** Backend shape for GET /user/info; `name` is mapped to `username` for AuthUser. */
+interface UserInfoResponse {
+  name: string;
+  roles: UserRoles;
+  status?: UserStatus;
+  avatar?: string;
+}
+
+/** GET /user/info (sends X-Workspace-Id via the request interceptor). */
+export function getUserInfo(): Promise<AuthUser> {
+  return http.get<UserInfoResponse>("/user/info").then((u) => ({
+    username: u.name,
+    roles: u.roles,
+    status: u.status,
+    avatar: u.avatar,
+  }));
 }

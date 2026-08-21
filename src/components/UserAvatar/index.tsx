@@ -1,37 +1,31 @@
 import { Avatar, ConfigProvider, Dropdown, Flex, Tag, Space, Typography, type MenuProps } from "antd";
 import { UserOutlined, LogoutOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
-import { useAuthStore } from "@/stores/authStore";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore, useAuthPermissions } from "@/stores/authStore";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 import { compactMenuTheme } from "@/theme";
-
-const PERMISSION_KEYS: Record<string, string> = {
-  "dashboard:view": "user.dashboardView",
-  "workflow:view": "user.workflowView",
-  "workflow:edit": "user.workflowEdit",
-  "admin:view": "user.adminView",
-  "admin:edit": "user.adminEdit",
-  "monitor:view": "user.monitorView",
-  "monitor:edit": "user.monitorEdit",
-};
-
-const ROLE_COLORS: Record<string, string> = {
-  admin: "red",
-  developer: "blue",
-  viewer: "green",
-};
+import { enumColor } from "@/utils/statusColor";
 
 export default function UserAvatar() {
-  const { user, logout } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const currentWorkspaceId = useWorkspaceStore((s) => s.currentId);
+  const workspaces = useWorkspaceStore((s) => s.workspaces);
+  const effectivePermissions = useAuthPermissions();
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   if (!user) return null;
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     void navigate("/login");
   };
+
+  const globalRole = user.roles.global;
+  const workspaceRole = currentWorkspaceId != null ? user.roles.workspaces?.[currentWorkspaceId] : undefined;
+  const currentWorkspaceName = workspaces.find((w) => w.id === currentWorkspaceId)?.name;
 
   const items: MenuProps["items"] = [
     {
@@ -39,8 +33,7 @@ export default function UserAvatar() {
       type: "group",
       label: (
         <Typography.Text strong>
-          <UserOutlined />
-          {user.username}
+          <UserOutlined /> {user.username}
         </Typography.Text>
       ),
     },
@@ -50,11 +43,14 @@ export default function UserAvatar() {
       label: (
         <Space size={4} wrap>
           <Typography.Text type="secondary">{t("user.roles")}:</Typography.Text>
-          {user.roles.map((role) => (
-            <Tag key={role} color={ROLE_COLORS[role] ?? "default"}>
-              {role}
+          {globalRole && <Tag color={enumColor(globalRole)}>{t(`enums.Role.${globalRole}`)}</Tag>}
+          {workspaceRole && (
+            <Tag color={enumColor(workspaceRole)}>
+              {currentWorkspaceName ? `${currentWorkspaceName}: ` : ""}
+              {t(`enums.Role.${workspaceRole}`)}
             </Tag>
-          ))}
+          )}
+          {!globalRole && !workspaceRole && <Tag>-</Tag>}
         </Space>
       ),
     },
@@ -64,19 +60,14 @@ export default function UserAvatar() {
       disabled: true,
       label: (
         <Typography.Text type="secondary">
-          <SafetyCertificateOutlined />
-          {t("user.permissions")}
+          <SafetyCertificateOutlined /> {t("user.permissions")}
         </Typography.Text>
       ),
     },
-    ...user.permissions.map((perm) => ({
+    ...effectivePermissions.map((perm) => ({
       key: perm,
       disabled: true,
-      label: (
-        <Tag color={perm.includes(":edit") ? "orange" : "blue"}>
-          {PERMISSION_KEYS[perm] ? t(PERMISSION_KEYS[perm]) : perm}
-        </Tag>
-      ),
+      label: <Tag color={enumColor(perm)}>{t(`enums.Permission.${perm}`)}</Tag>,
     })),
     { type: "divider" as const },
     {
@@ -84,7 +75,7 @@ export default function UserAvatar() {
       icon: <LogoutOutlined />,
       label: t("user.logout"),
       danger: true,
-      onClick: handleLogout,
+      onClick: () => void handleLogout(),
     },
   ];
 

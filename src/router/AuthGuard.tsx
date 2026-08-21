@@ -1,11 +1,12 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "@/stores/authStore";
-import { hasPermission } from "../utils/permission";
+import { useAuthStore, useAuthPermissions } from "@/stores/authStore";
+import { hasPermission } from "@/utils/permission";
+import type { Permission } from "@/constants/enums";
 import { getRoutePermission } from "./routes";
 
 export interface AuthGuardProps {
   children: React.ReactNode;
-  requiredPermission?: string;
+  requiredPermission?: Permission;
 }
 
 /**
@@ -22,7 +23,9 @@ export interface AuthGuardProps {
  */
 export default function AuthGuard({ children, requiredPermission }: AuthGuardProps) {
   const location = useLocation();
-  const { token, user } = useAuthStore();
+  const token = useAuthStore((s) => s.token);
+  const user = useAuthStore((s) => s.user);
+  const effectivePermissions = useAuthPermissions();
 
   // Check authentication
   if (!token) {
@@ -32,15 +35,13 @@ export default function AuthGuard({ children, requiredPermission }: AuthGuardPro
   // Determine the required permission: explicit prop or route-based lookup
   const permission = requiredPermission ?? getRoutePermission(location.pathname);
 
-  // Check permission if one is required
-  if (permission && user) {
-    if (!hasPermission(user.permissions, permission)) {
-      return <Navigate to="/403" replace />;
-    }
+  // If permission is required but user data hasn't loaded yet (e.g. a page
+  // refresh, before MainLayout's rehydrate resolves), still allow access —
+  // effective permissions are unknowable without `user`, so gating here would
+  // false-positive to /403.
+  if (permission && user && !hasPermission(effectivePermissions, permission)) {
+    return <Navigate to="/403" replace />;
   }
-
-  // If permission is required but user data is missing, still allow access
-  // (the user is authenticated but user data may not be loaded yet)
 
   return <>{children}</>;
 }

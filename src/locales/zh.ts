@@ -102,6 +102,8 @@ const zh = {
     loginFailed: "登录失败，请重试",
     usernameRequired: "请输入用户名",
     passwordRequired: "请输入密码",
+    ssoLogin: "SSO 登录",
+    ssoRedirectHint: "该账号使用单点登录，请前往身份提供方完成登录。",
   },
 
   dashboard: {
@@ -296,13 +298,6 @@ const zh = {
     roles: "角色",
     permissions: "权限列表",
     logout: "退出登录",
-    dashboardView: "Dashboard 查看",
-    workflowView: "Workflow 查看",
-    workflowEdit: "Workflow 编辑",
-    adminView: "Admin 查看",
-    adminEdit: "Admin 编辑",
-    monitorView: "Monitor 查看",
-    monitorEdit: "Monitor 编辑",
   },
 
   sider: {

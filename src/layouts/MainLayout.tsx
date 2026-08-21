@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Typography } from "antd";
 import { ProLayout, type ProLayoutProps } from "@ant-design/pro-components";
@@ -26,8 +27,39 @@ import LangSwitcher from "@/components/LangSwitcher";
 import WorkspaceSwitcher from "@/components/WorkspaceSwitcher";
 import { APP } from "@/config";
 import { PAGE_PADDING } from "@/constants/layout";
+import { useAuthStore, useAuthPermissions } from "@/stores/authStore";
+import { hasPermission } from "@/utils/permission";
+import { getRoutePermission } from "@/router/routes";
 
 type TFunc = (key: string) => string;
+
+type LayoutRoute = NonNullable<ProLayoutProps["route"]>;
+type LayoutRouteItem = NonNullable<LayoutRoute["routes"]>[number];
+
+/**
+ * Recursively drop menu items the current user lacks the route's Permission
+ * for. Parent groups (e.g. "Admin") are kept as long as at least one child
+ * survives — group visibility follows its children, not its own bare route.
+ */
+function filterMenuByPermission(
+  items: LayoutRouteItem[] | undefined,
+  effective: ReturnType<typeof useAuthPermissions>,
+): LayoutRouteItem[] | undefined {
+  if (!items) return items;
+  const filtered = items
+    .map((item): LayoutRouteItem | null => {
+      if (item.routes && item.routes.length > 0) {
+        const children = filterMenuByPermission(item.routes, effective);
+        if (!children || children.length === 0) return null;
+        return { ...item, routes: children };
+      }
+      const permission = item.path ? getRoutePermission(item.path) : undefined;
+      if (permission && !hasPermission(effective, permission)) return null;
+      return item;
+    })
+    .filter((item): item is LayoutRouteItem => item !== null);
+  return filtered;
+}
 
 function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
   return {
@@ -132,7 +164,27 @@ export default function MainLayout() {
   const isFullBleed = isStudioPage || location.pathname.startsWith("/query");
   const isDashboard = location.pathname === "/dashboard" || location.pathname === "/";
   const title = t("app.title", { appName: APP.name });
+
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
+  const loadUserInfo = useAuthStore((s) => s.loadUserInfo);
+  const effectivePermissions = useAuthPermissions();
+
+  // A page refresh restores `token` from storage synchronously, but `user`
+  // isn't persisted with enough trust to skip re-fetching — rehydrate it here
+  // so the header/menu have fresh roles+permissions for the active workspace.
+  useEffect(() => {
+    if (isAuthenticated && user === null) {
+      loadUserInfo().catch(() => {
+        // 401s are already handled by the request interceptor (redirect to /login).
+      });
+    }
+  }, [isAuthenticated, user, loadUserInfo]);
+
   const layoutRoutes = buildLayoutRoutes(t);
+  const filteredRoutes: ProLayoutProps["route"] = layoutRoutes
+    ? { ...layoutRoutes, routes: filterMenuByPermission(layoutRoutes.routes, effectivePermissions) }
+    : layoutRoutes;
 
   return (
     <div id="pro-layout-wrapper" style={{ height: "100vh" }}>
@@ -145,7 +197,7 @@ export default function MainLayout() {
         fixedHeader
         token={layoutToken}
         location={{ pathname: location.pathname }}
-        route={layoutRoutes}
+        route={filteredRoutes}
         menuItemRender={(item, dom) => (
           <a onClick={() => item.path && item.name !== "_jobs" && navigate(item.path)}>{dom}</a>
         )}
