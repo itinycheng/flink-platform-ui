@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import AuthGuard from "./AuthGuard";
 import MainLayout from "../layouts/MainLayout";
 import Forbidden from "../pages/Forbidden";
@@ -38,12 +38,6 @@ import RunsPage from "../pages/Runs";
  * The AuthGuard checks authentication and permissions.
  * The MainLayout provides the three-section layout (Header/Body/Footer).
  */
-/** Redirect legacy /runs/jobs to /runs while preserving the query (e.g. ?status=failed). */
-function RunsRedirect() {
-  const { search } = useLocation();
-  return <Navigate to={`/runs${search}`} replace />;
-}
-
 export default function AppRouter() {
   return (
     <BrowserRouter>
@@ -63,15 +57,11 @@ export default function AppRouter() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/studio" element={<StudioPage />} />
-          {/* Legacy paths → Studio (Jobs + Definitions were merged into the tree view) */}
-          <Route path="/jobs" element={<Navigate to="/studio" replace />} />
-          <Route path="/definitions" element={<Navigate to="/studio" replace />} />
           <Route path="/query" element={<QueryConsole />} />
           <Route path="/admin" element={<AdminPage />}>
             <Route index element={<Navigate to="/admin/resources" replace />} />
             <Route path="resources" element={<ResourceList />} />
             <Route path="users" element={<UserList />} />
-            <Route path="configs" element={<Navigate to="/admin/sys-configs" replace />} />
             <Route path="params" element={<CustomParamList />} />
             <Route path="datasources" element={<DataSourceList />} />
             <Route path="catalogs" element={<CatalogList />} />
@@ -83,9 +73,6 @@ export default function AppRouter() {
           </Route>
           <Route path="/audit-logs" element={<AuditLogList />} />
           <Route path="/runs" element={<RunsPage />} />
-          {/* Legacy split paths → unified Runs list (preserve query for drill-downs) */}
-          <Route path="/runs/flows" element={<Navigate to="/runs" replace />} />
-          <Route path="/runs/jobs" element={<RunsRedirect />} />
           <Route path="/monitor" element={<MonitorPage />} />
         </Route>
 
