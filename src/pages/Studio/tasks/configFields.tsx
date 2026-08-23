@@ -63,13 +63,13 @@ function FlinkConfigFields({ variant }: { variant: "sql" | "jar" }) {
   const { t } = useTranslation();
   return (
     <>
-      <Form.Item name={["config", "configs"]} label={t("taskForm.flinkConf")}>
+      <Form.Item name={["config", "configs"]} label={t("taskForm.flinkConf")} className="job-form-full">
         <KeyValueEditor />
       </Form.Item>
-      <Form.Item name={["config", "catalogs"]} label={t("taskForm.catalogs")}>
+      <Form.Item name={["config", "catalogs"]} label={t("taskForm.catalogs")} className="job-form-full">
         <CatalogSelect />
       </Form.Item>
-      <Form.Item name={["config", "extJars"]} label={t("taskForm.extJars")}>
+      <Form.Item name={["config", "extJars"]} label={t("taskForm.extJars")} className="job-form-full">
         <ResourceSelect />
       </Form.Item>
       {variant === "jar" && (
@@ -111,7 +111,7 @@ export function DependentConfigFields() {
       <Form.Item name={["config", "relation"]} label={t("taskForm.relation")} rules={[{ required: true }]}>
         <Select options={enumOptions(DEPENDENT_RELATIONS, "DependentRelation", t)} />
       </Form.Item>
-      <Form.Item name={["config", "dependentItems"]} label={t("taskForm.dependentItems")}>
+      <Form.Item name={["config", "dependentItems"]} label={t("taskForm.dependentItems")} className="job-form-full">
         <DependentItemsEditor />
       </Form.Item>
     </>
@@ -203,7 +203,7 @@ export function FlowConfigFields() {
         <Select options={enumOptions(PARAM_TRANSFER_MODES, "ParamTransferMode", t)} />
       </Form.Item>
       {mode === "CUSTOM" && (
-        <Form.Item name={["config", "paramNames"]} label={t("taskForm.paramNames")}>
+        <Form.Item name={["config", "paramNames"]} label={t("taskForm.paramNames")} className="job-form-full">
           <Select mode="tags" />
         </Form.Item>
       )}

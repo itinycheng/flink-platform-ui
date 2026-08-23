@@ -59,11 +59,12 @@ function CommonFields({ form, isFlink }: CommonFieldsProps) {
       <Form.Item
         name="routeUrl"
         label={t("taskForm.worker")}
+        className="job-form-full"
         rules={[{ required: true, message: t("taskForm.workerRequired") }]}
       >
         <WorkerSelect />
       </Form.Item>
-      <Form.Item name="description" label={t("common.description")}>
+      <Form.Item name="description" label={t("common.description")} className="job-form-full">
         <Input.TextArea rows={2} />
       </Form.Item>
     </>
@@ -149,16 +150,21 @@ export default function JobForm({ nodeId }: { nodeId: string }) {
       </Flex>
       <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
         <Spin spinning={loading}>
-          <Form form={form} layout="vertical">
+          <Form
+            form={form}
+            layout="vertical"
+            className="job-form-grid"
+            style={{ maxWidth: 1080, margin: "0 auto" }}
+          >
             <CommonFields form={form} isFlink={isFlink} />
             {def && <def.ConfigFields />}
             <RetryFields />
             {def?.needsSubject && (
-              <Form.Item name="subject" label={t("taskForm.subject")} rules={[{ required: true }]}>
+              <Form.Item name="subject" label={t("taskForm.subject")} className="job-form-full" rules={[{ required: true }]}>
                 <CodeField language={def.subjectLanguage ?? "sql"} />
               </Form.Item>
             )}
-            <Form.Item name="params" label={t("taskForm.params")}>
+            <Form.Item name="params" label={t("taskForm.params")} className="job-form-full">
               <KeyValueEditor />
             </Form.Item>
           </Form>
