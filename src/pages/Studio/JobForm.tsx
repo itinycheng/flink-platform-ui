@@ -150,12 +150,7 @@ export default function JobForm({ nodeId }: { nodeId: string }) {
       </Flex>
       <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
         <Spin spinning={loading}>
-          <Form
-            form={form}
-            layout="vertical"
-            className="job-form-grid"
-            style={{ maxWidth: 1080, margin: "0 auto" }}
-          >
+          <Form form={form} layout="vertical" className="job-form-grid">
             <CommonFields form={form} isFlink={isFlink} />
             {def && <def.ConfigFields />}
             <RetryFields />

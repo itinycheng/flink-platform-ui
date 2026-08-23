@@ -135,6 +135,13 @@
 .job-form-grid > .job-form-full {
   grid-column: 1 / -1;
 }
+/* Fill wide viewports with a third column (keeps inputs a readable width
+   instead of a narrow centered strip); collapse to one column on narrow. */
+@media (min-width: 1400px) {
+  .job-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
 @media (max-width: 860px) {
   .job-form-grid {
     grid-template-columns: 1fr;
