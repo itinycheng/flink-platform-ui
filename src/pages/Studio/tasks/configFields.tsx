@@ -1,7 +1,9 @@
 // Per-JobType `config.*` field groups, rendered inside the real JobInfo Form
 // (see JobForm.tsx). Each component reads/writes Ant Form context directly
 // (no props) — the Form.Item `name` paths are what wire them to `config.*`.
-import { Form, Input, InputNumber, Select } from "antd";
+// Fields are wrapped in Ant `Col`s so they flow into JobForm's responsive
+// `Row` grid (no custom CSS); wide editors use FULL_COL to span the row.
+import { Col, Form, Input, InputNumber, Select } from "antd";
 import { useTranslation } from "react-i18next";
 import {
   DEPENDENT_RELATIONS,
@@ -21,7 +23,7 @@ import {
   isValidDuration,
 } from "@/components/form";
 import type { DependentItem } from "@/types/task";
-import styles from "../taskForm.module.css";
+import { FIELD_COL, FULL_COL } from "./formLayout";
 
 export function JavaConfigFields() {
   return null;
@@ -31,32 +33,36 @@ export function SqlConfigFields() {
   const { t } = useTranslation();
   const jobType = Form.useWatch("type");
   return (
-    <Form.Item
-      name={["config", "dsId"]}
-      label={t("taskForm.datasource")}
-      rules={[{ required: true, message: t("taskForm.datasourceRequired") }]}
-    >
-      <DatasourceSelect jobType={jobType} />
-    </Form.Item>
+    <Col {...FIELD_COL}>
+      <Form.Item
+        name={["config", "dsId"]}
+        label={t("taskForm.datasource")}
+        rules={[{ required: true, message: t("taskForm.datasourceRequired") }]}
+      >
+        <DatasourceSelect jobType={jobType} />
+      </Form.Item>
+    </Col>
   );
 }
 
 export function ShellConfigFields() {
   const { t } = useTranslation();
   return (
-    <Form.Item
-      name={["config", "timeout"]}
-      label={t("taskForm.timeout")}
-      rules={[
-        { required: true, message: t("taskForm.timeoutRequired") },
-        {
-          validator: (_, v) =>
-            !v || isValidDuration(v) ? Promise.resolve() : Promise.reject(new Error(t("taskForm.durationInvalid"))),
-        },
-      ]}
-    >
-      <DurationInput />
-    </Form.Item>
+    <Col {...FIELD_COL}>
+      <Form.Item
+        name={["config", "timeout"]}
+        label={t("taskForm.timeout")}
+        rules={[
+          { required: true, message: t("taskForm.timeoutRequired") },
+          {
+            validator: (_, v) =>
+              !v || isValidDuration(v) ? Promise.resolve() : Promise.reject(new Error(t("taskForm.durationInvalid"))),
+          },
+        ]}
+      >
+        <DurationInput />
+      </Form.Item>
+    </Col>
   );
 }
 
@@ -64,26 +70,38 @@ function FlinkConfigFields({ variant }: { variant: "sql" | "jar" }) {
   const { t } = useTranslation();
   return (
     <>
-      <Form.Item name={["config", "configs"]} label={t("taskForm.flinkConf")} className={styles.full}>
-        <KeyValueEditor />
-      </Form.Item>
-      <Form.Item name={["config", "catalogs"]} label={t("taskForm.catalogs")} className={styles.full}>
-        <CatalogSelect />
-      </Form.Item>
-      <Form.Item name={["config", "extJars"]} label={t("taskForm.extJars")} className={styles.full}>
-        <ResourceSelect />
-      </Form.Item>
+      <Col {...FULL_COL}>
+        <Form.Item name={["config", "configs"]} label={t("taskForm.flinkConf")}>
+          <KeyValueEditor />
+        </Form.Item>
+      </Col>
+      <Col {...FULL_COL}>
+        <Form.Item name={["config", "catalogs"]} label={t("taskForm.catalogs")}>
+          <CatalogSelect />
+        </Form.Item>
+      </Col>
+      <Col {...FULL_COL}>
+        <Form.Item name={["config", "extJars"]} label={t("taskForm.extJars")}>
+          <ResourceSelect />
+        </Form.Item>
+      </Col>
       {variant === "jar" && (
         <>
-          <Form.Item name={["config", "mainClass"]} label={t("taskForm.mainClass")} rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name={["config", "mainArgs"]} label={t("taskForm.mainArgs")}>
-            <Input />
-          </Form.Item>
-          <Form.Item name={["config", "optionArgs"]} label={t("taskForm.optionArgs")}>
-            <Input />
-          </Form.Item>
+          <Col {...FIELD_COL}>
+            <Form.Item name={["config", "mainClass"]} label={t("taskForm.mainClass")} rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col {...FIELD_COL}>
+            <Form.Item name={["config", "mainArgs"]} label={t("taskForm.mainArgs")}>
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col {...FIELD_COL}>
+            <Form.Item name={["config", "optionArgs"]} label={t("taskForm.optionArgs")}>
+              <Input />
+            </Form.Item>
+          </Col>
         </>
       )}
     </>
@@ -99,9 +117,11 @@ export function FlinkJarConfigFields() {
 export function ConditionConfigFields() {
   const { t } = useTranslation();
   return (
-    <Form.Item name={["config", "condition"]} label={t("taskForm.condition")} rules={[{ required: true }]}>
-      <Select options={enumOptions(EXECUTION_CONDITIONS, "ExecutionCondition", t)} />
-    </Form.Item>
+    <Col {...FIELD_COL}>
+      <Form.Item name={["config", "condition"]} label={t("taskForm.condition")} rules={[{ required: true }]}>
+        <Select options={enumOptions(EXECUTION_CONDITIONS, "ExecutionCondition", t)} />
+      </Form.Item>
+    </Col>
   );
 }
 
@@ -109,12 +129,16 @@ export function DependentConfigFields() {
   const { t } = useTranslation();
   return (
     <>
-      <Form.Item name={["config", "relation"]} label={t("taskForm.relation")} rules={[{ required: true }]}>
-        <Select options={enumOptions(DEPENDENT_RELATIONS, "DependentRelation", t)} />
-      </Form.Item>
-      <Form.Item name={["config", "dependentItems"]} label={t("taskForm.dependentItems")} className={styles.full}>
-        <DependentItemsEditor />
-      </Form.Item>
+      <Col {...FIELD_COL}>
+        <Form.Item name={["config", "relation"]} label={t("taskForm.relation")} rules={[{ required: true }]}>
+          <Select options={enumOptions(DEPENDENT_RELATIONS, "DependentRelation", t)} />
+        </Form.Item>
+      </Col>
+      <Col {...FULL_COL}>
+        <Form.Item name={["config", "dependentItems"]} label={t("taskForm.dependentItems")}>
+          <DependentItemsEditor />
+        </Form.Item>
+      </Col>
     </>
   );
 }
@@ -189,24 +213,30 @@ export function FlowConfigFields() {
   const mode = Form.useWatch(["config", "paramTransferMode"]);
   return (
     <>
-      <Form.Item
-        name={["config", "flowId"]}
-        label={t("taskForm.subFlowId")}
-        rules={[{ required: true }, { type: "number", min: 1, message: t("taskForm.flowIdPositive") }]}
-      >
-        <InputNumber min={1} />
-      </Form.Item>
-      <Form.Item
-        name={["config", "paramTransferMode"]}
-        label={t("taskForm.paramTransferMode")}
-        rules={[{ required: true }]}
-      >
-        <Select options={enumOptions(PARAM_TRANSFER_MODES, "ParamTransferMode", t)} />
-      </Form.Item>
-      {mode === "CUSTOM" && (
-        <Form.Item name={["config", "paramNames"]} label={t("taskForm.paramNames")} className={styles.full}>
-          <Select mode="tags" />
+      <Col {...FIELD_COL}>
+        <Form.Item
+          name={["config", "flowId"]}
+          label={t("taskForm.subFlowId")}
+          rules={[{ required: true }, { type: "number", min: 1, message: t("taskForm.flowIdPositive") }]}
+        >
+          <InputNumber min={1} style={{ width: "100%" }} />
         </Form.Item>
+      </Col>
+      <Col {...FIELD_COL}>
+        <Form.Item
+          name={["config", "paramTransferMode"]}
+          label={t("taskForm.paramTransferMode")}
+          rules={[{ required: true }]}
+        >
+          <Select options={enumOptions(PARAM_TRANSFER_MODES, "ParamTransferMode", t)} />
+        </Form.Item>
+      </Col>
+      {mode === "CUSTOM" && (
+        <Col {...FULL_COL}>
+          <Form.Item name={["config", "paramNames"]} label={t("taskForm.paramNames")}>
+            <Select mode="tags" />
+          </Form.Item>
+        </Col>
       )}
     </>
   );

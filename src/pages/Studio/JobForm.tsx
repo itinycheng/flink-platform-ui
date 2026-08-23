@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Flex, Form, Input, InputNumber, Select, Spin, message } from "antd";
+import { Button, Col, Flex, Form, Input, InputNumber, Row, Select, Spin, message } from "antd";
 import type { FormInstance } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,7 @@ import CodeEditor from "@/components/CodeEditor";
 import { DEPLOY_MODES, EXECUTION_MODES, JOB_TYPE_CLASSIFICATION, enumOptions, type JobType } from "@/constants/enums";
 import type { JobInfo } from "@/types/entities";
 import { typeChangeFields } from "@/pages/Studio/JobForm.typeChange";
-import styles from "./taskForm.module.css";
+import { FIELD_COL, FULL_COL } from "./tasks/formLayout";
 
 /**
  * Thin adapter: `CodeEditor` requires `value`/`onChange`/`minHeight` (not
@@ -42,32 +42,45 @@ function CommonFields({ form, isFlink }: CommonFieldsProps) {
   const { t } = useTranslation();
   return (
     <>
-      <Form.Item name="name" label={t("common.name")} rules={[{ required: true }]}>
-        <Input />
-      </Form.Item>
-      <Form.Item name="type" label={t("common.type")} rules={[{ required: true }]}>
-        <Select options={taskTypeOptions(t)} onChange={(v: JobType) => resetForType(form, v)} />
-      </Form.Item>
-      <Form.Item name="execMode" label={t("taskForm.execMode")} rules={[{ required: true }]}>
-        <Select options={enumOptions(isFlink ? EXECUTION_MODES : (["BATCH"] as const), "ExecutionMode", t)} />
-      </Form.Item>
-      <Form.Item name="deployMode" label={t("taskForm.deployMode")}>
-        <Select allowClear options={enumOptions(DEPLOY_MODES, "DeployMode", t)} />
-      </Form.Item>
-      <Form.Item name="version" label={t("taskForm.version")}>
-        <Input />
-      </Form.Item>
-      <Form.Item
-        name="routeUrl"
-        label={t("taskForm.worker")}
-        className={styles.full}
-        rules={[{ required: true, message: t("taskForm.workerRequired") }]}
-      >
-        <WorkerSelect />
-      </Form.Item>
-      <Form.Item name="description" label={t("common.description")} className={styles.full}>
-        <Input.TextArea rows={2} />
-      </Form.Item>
+      <Col {...FIELD_COL}>
+        <Form.Item name="name" label={t("common.name")} rules={[{ required: true }]}>
+          <Input />
+        </Form.Item>
+      </Col>
+      <Col {...FIELD_COL}>
+        <Form.Item name="type" label={t("common.type")} rules={[{ required: true }]}>
+          <Select options={taskTypeOptions(t)} onChange={(v: JobType) => resetForType(form, v)} />
+        </Form.Item>
+      </Col>
+      <Col {...FIELD_COL}>
+        <Form.Item name="execMode" label={t("taskForm.execMode")} rules={[{ required: true }]}>
+          <Select options={enumOptions(isFlink ? EXECUTION_MODES : (["BATCH"] as const), "ExecutionMode", t)} />
+        </Form.Item>
+      </Col>
+      <Col {...FIELD_COL}>
+        <Form.Item name="deployMode" label={t("taskForm.deployMode")}>
+          <Select allowClear options={enumOptions(DEPLOY_MODES, "DeployMode", t)} />
+        </Form.Item>
+      </Col>
+      <Col {...FIELD_COL}>
+        <Form.Item name="version" label={t("taskForm.version")}>
+          <Input />
+        </Form.Item>
+      </Col>
+      <Col {...FULL_COL}>
+        <Form.Item
+          name="routeUrl"
+          label={t("taskForm.worker")}
+          rules={[{ required: true, message: t("taskForm.workerRequired") }]}
+        >
+          <WorkerSelect />
+        </Form.Item>
+      </Col>
+      <Col {...FULL_COL}>
+        <Form.Item name="description" label={t("common.description")}>
+          <Input.TextArea rows={2} />
+        </Form.Item>
+      </Col>
     </>
   );
 }
@@ -76,13 +89,49 @@ function RetryFields() {
   const { t } = useTranslation();
   return (
     <>
-      <Form.Item name={["config", "retryTimes"]} label={t("taskForm.retryTimes")} initialValue={0}>
-        <InputNumber min={0} />
-      </Form.Item>
-      <Form.Item name={["config", "retryInterval"]} label={t("taskForm.retryInterval")} initialValue="5s">
-        <Input />
-      </Form.Item>
+      <Col {...FIELD_COL}>
+        <Form.Item name={["config", "retryTimes"]} label={t("taskForm.retryTimes")} initialValue={0}>
+          <InputNumber min={0} style={{ width: "100%" }} />
+        </Form.Item>
+      </Col>
+      <Col {...FIELD_COL}>
+        <Form.Item name={["config", "retryInterval"]} label={t("taskForm.retryInterval")} initialValue="5s">
+          <Input />
+        </Form.Item>
+      </Col>
     </>
+  );
+}
+
+/** The responsive Row/Col field grid; extracted so JobForm's JSX stays shallow. */
+function TaskFormBody({
+  form,
+  isFlink,
+  def,
+}: {
+  form: FormInstance;
+  isFlink: boolean;
+  def: ReturnType<typeof getTaskTypeDef> | undefined;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Row gutter={16}>
+      <CommonFields form={form} isFlink={isFlink} />
+      {def && <def.ConfigFields />}
+      <RetryFields />
+      {def?.needsSubject && (
+        <Col {...FULL_COL}>
+          <Form.Item name="subject" label={t("taskForm.subject")} rules={[{ required: true }]}>
+            <CodeField language={def.subjectLanguage ?? "sql"} />
+          </Form.Item>
+        </Col>
+      )}
+      <Col {...FULL_COL}>
+        <Form.Item name="params" label={t("taskForm.params")}>
+          <KeyValueEditor />
+        </Form.Item>
+      </Col>
+    </Row>
   );
 }
 
@@ -151,18 +200,8 @@ export default function JobForm({ nodeId }: { nodeId: string }) {
       </Flex>
       <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
         <Spin spinning={loading}>
-          <Form form={form} layout="vertical" className={styles.grid}>
-            <CommonFields form={form} isFlink={isFlink} />
-            {def && <def.ConfigFields />}
-            <RetryFields />
-            {def?.needsSubject && (
-              <Form.Item name="subject" label={t("taskForm.subject")} className={styles.full} rules={[{ required: true }]}>
-                <CodeField language={def.subjectLanguage ?? "sql"} />
-              </Form.Item>
-            )}
-            <Form.Item name="params" label={t("taskForm.params")} className={styles.full}>
-              <KeyValueEditor />
-            </Form.Item>
+          <Form form={form} layout="vertical">
+            <TaskFormBody form={form} isFlink={isFlink} def={def} />
           </Form>
         </Spin>
       </div>
