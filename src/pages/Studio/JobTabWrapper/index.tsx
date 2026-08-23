@@ -57,8 +57,12 @@ function PanelBarItem({ label, isActive, onClick }: PanelBarItemProps) {
 export default function JobTabWrapper({ node }: { node: JobTreeNode }) {
   const { t } = useTranslation();
   const [activePanel, setActivePanel] = useState<PanelKey | null>(null);
-  // Schedule/params live on the workflow (JobFlow); the drawer only applies to workflow nodes.
+  // The main pane differs by kind: a workflow edits its DAG, a single task edits
+  // its node config. But EVERY definition is a job_flow (single-node or multi-node),
+  // so both carry flow-level Schedule/Params/Alerts — the drawer applies to all
+  // definition nodes, not just workflows.
   const isWorkflow = node.kind === "workflow";
+  const hasFlowConfig = node.kind !== "group";
 
   const toggle = (key: PanelKey) => {
     setActivePanel((prev) => (prev === key ? null : key));
@@ -75,7 +79,7 @@ export default function JobTabWrapper({ node }: { node: JobTreeNode }) {
         }}
       >
         {isWorkflow ? <DAGEditor embedded /> : <JobForm nodeId={node.id} />}
-        {isWorkflow && (
+        {hasFlowConfig && (
           <Drawer
             title={activePanel ? t(`sidePanel.${activePanel}`) : ""}
             placement="right"
@@ -101,8 +105,9 @@ export default function JobTabWrapper({ node }: { node: JobTreeNode }) {
         )}
       </div>
 
-      {/* Right text bar — schedule/params only apply to workflow definitions */}
-      {isWorkflow && (
+      {/* Right text bar — Schedule/Params/Alerts apply to every definition (a task
+          is a single-node flow; a workflow is a multi-node flow). */}
+      {hasFlowConfig && (
         <Flex
           vertical
           align="center"
