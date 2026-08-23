@@ -21,6 +21,7 @@ import {
   isValidDuration,
 } from "@/components/form";
 import type { DependentItem } from "@/types/task";
+import styles from "../taskForm.module.css";
 
 export function JavaConfigFields() {
   return null;
@@ -63,13 +64,13 @@ function FlinkConfigFields({ variant }: { variant: "sql" | "jar" }) {
   const { t } = useTranslation();
   return (
     <>
-      <Form.Item name={["config", "configs"]} label={t("taskForm.flinkConf")} className="job-form-full">
+      <Form.Item name={["config", "configs"]} label={t("taskForm.flinkConf")} className={styles.full}>
         <KeyValueEditor />
       </Form.Item>
-      <Form.Item name={["config", "catalogs"]} label={t("taskForm.catalogs")} className="job-form-full">
+      <Form.Item name={["config", "catalogs"]} label={t("taskForm.catalogs")} className={styles.full}>
         <CatalogSelect />
       </Form.Item>
-      <Form.Item name={["config", "extJars"]} label={t("taskForm.extJars")} className="job-form-full">
+      <Form.Item name={["config", "extJars"]} label={t("taskForm.extJars")} className={styles.full}>
         <ResourceSelect />
       </Form.Item>
       {variant === "jar" && (
@@ -111,7 +112,7 @@ export function DependentConfigFields() {
       <Form.Item name={["config", "relation"]} label={t("taskForm.relation")} rules={[{ required: true }]}>
         <Select options={enumOptions(DEPENDENT_RELATIONS, "DependentRelation", t)} />
       </Form.Item>
-      <Form.Item name={["config", "dependentItems"]} label={t("taskForm.dependentItems")} className="job-form-full">
+      <Form.Item name={["config", "dependentItems"]} label={t("taskForm.dependentItems")} className={styles.full}>
         <DependentItemsEditor />
       </Form.Item>
     </>
@@ -203,7 +204,7 @@ export function FlowConfigFields() {
         <Select options={enumOptions(PARAM_TRANSFER_MODES, "ParamTransferMode", t)} />
       </Form.Item>
       {mode === "CUSTOM" && (
-        <Form.Item name={["config", "paramNames"]} label={t("taskForm.paramNames")} className="job-form-full">
+        <Form.Item name={["config", "paramNames"]} label={t("taskForm.paramNames")} className={styles.full}>
           <Select mode="tags" />
         </Form.Item>
       )}

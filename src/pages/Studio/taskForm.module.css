@@ -1,0 +1,28 @@
+/* Scoped layout for the task-definition form (JobForm) and its per-type config
+   field groups (configFields.tsx). Short scalar fields pair into columns; items
+   marked `.full` (worker, description, code editor, key-value params, flink
+   conf/catalogs/extJars, dependent items, param tags) span the whole row.
+   3 columns on wide viewports, 2 by default, 1 on narrow. The grid sits on the
+   <form> element, so every direct Form.Item child becomes a cell. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  align-content: start;
+}
+.grid > :global(.ant-form-item) {
+  margin-bottom: 16px;
+}
+.grid > .full {
+  grid-column: 1 / -1;
+}
+@media (min-width: 1400px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

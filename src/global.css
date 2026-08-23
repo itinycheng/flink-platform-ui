@@ -117,33 +117,3 @@
 .sider-resizer:active {
   background: #168eff;
 }
-
-/* JobForm layout: short scalar fields (name/type/mode/version/retry/config
-   scalars) pair up in two columns; fields marked .job-form-full (worker
-   multi-select, description, code editor, key-value params) span the whole
-   row. Collapses to one column on narrow viewports. The grid sits on the
-   <form> element, so every direct Form.Item child becomes a cell. */
-.job-form-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 24px;
-  align-content: start;
-}
-.job-form-grid > .ant-form-item {
-  margin-bottom: 16px;
-}
-.job-form-grid > .job-form-full {
-  grid-column: 1 / -1;
-}
-/* Fill wide viewports with a third column (keeps inputs a readable width
-   instead of a narrow centered strip); collapse to one column on narrow. */
-@media (min-width: 1400px) {
-  .job-form-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-@media (max-width: 860px) {
-  .job-form-grid {
-    grid-template-columns: 1fr;
-  }
-}
