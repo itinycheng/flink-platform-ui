@@ -25,7 +25,14 @@ export default defineConfig(({ mode }) => {
     server: proxyTarget
       ? {
           proxy: {
-            [apiBase]: { target: proxyTarget, changeOrigin: true },
+            // The current backend exposes controllers at `/jobInfo`,
+            // `/jobFlow`, ... (without an `/api` prefix). `/api` is only a
+            // collision-free development prefix used by Vite and MSW.
+            [apiBase]: {
+              target: proxyTarget,
+              changeOrigin: true,
+              rewrite: (requestPath) => requestPath.slice(apiBase.length) || "/",
+            },
           },
         }
       : undefined,
