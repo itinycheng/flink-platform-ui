@@ -20,6 +20,25 @@ async function request(path, init = {}) {
   return body.data;
 }
 
+function assertObject(value, label) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${label}: expected an object response`);
+  }
+  return value;
+}
+
+function assertArray(value, label) {
+  if (!Array.isArray(value)) throw new Error(`${label}: expected an array response`);
+  return value;
+}
+
+function assertPage(value, label) {
+  const page = assertObject(value, label);
+  if (!Array.isArray(page.records) || typeof page.total !== "number") {
+    throw new Error(`${label}: expected a MyBatis page with records and total`);
+  }
+}
+
 async function authenticate() {
   const config = await request("/login/config");
   if (token) return config;
@@ -40,23 +59,24 @@ async function authenticate() {
 
 async function main() {
   const config = await authenticate();
-  const workspaces = await request("/workspace/list");
+  const workspaces = assertArray(await request("/workspace/list"), "workspace/list");
   workspaceId ||= workspaces[0]?.id == null ? undefined : String(workspaces[0].id);
-  await request("/user/info");
+  const user = assertObject(await request("/user/info"), "user/info");
+  if (typeof user.name !== "string") throw new Error("user/info: missing user name");
 
   const checks = [
-    "/dashboard/jobFlowRunStatusCount",
-    "/jobFlow/page?page=1&size=1",
-    "/jobInfo/page?page=1&size=1",
-    "/jobFlowRun/page?page=1&size=1",
-    "/resource/page?page=1&size=1",
-    "/datasource/page?page=1&size=1",
-    "/worker/page?page=1&size=1",
-    "/alert/page?page=1&size=1",
-    "/audit-logs?page=1&size=1",
+    ["/dashboard/jobFlowRunStatusCount", assertArray],
+    ["/jobFlow/page?page=1&size=1", assertPage],
+    ["/jobInfo/page?page=1&size=1", assertPage],
+    ["/jobFlowRun/page?page=1&size=1", assertPage],
+    ["/resource/page?page=1&size=1", assertPage],
+    ["/datasource/page?page=1&size=1", assertPage],
+    ["/worker/page?page=1&size=1", assertPage],
+    ["/alert/page?page=1&size=1", assertPage],
+    ["/audit-logs?page=1&size=1", assertPage],
   ];
   if (workspaceId) {
-    for (const path of checks) await request(path);
+    for (const [path, validate] of checks) validate(await request(path), path);
   }
   console.log(`Runnelo backend smoke passed (${config.authType}).`);
 }
