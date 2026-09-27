@@ -188,9 +188,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     set((state) => ({
       treeData: updateNodeById(state.treeData, nodeId, (node) => ({ ...node, ...patch })),
       selectedNode: state.selectedNode?.id === nodeId ? { ...state.selectedNode, ...patch } : state.selectedNode,
-      openTabs: state.openTabs.map((tab) =>
-        tab.key === nodeId ? { ...tab, node: { ...tab.node, ...patch } } : tab,
-      ),
+      openTabs: state.openTabs.map((tab) => (tab.key === nodeId ? { ...tab, node: { ...tab.node, ...patch } } : tab)),
     }));
   },
 

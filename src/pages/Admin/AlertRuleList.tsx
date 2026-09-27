@@ -55,14 +55,7 @@ interface AlertRuleFormModalProps {
   onCancel: () => void;
 }
 
-function AlertRuleFormModal({
-  open,
-  isEdit,
-  form,
-  confirmLoading,
-  onOk,
-  onCancel,
-}: AlertRuleFormModalProps) {
+function AlertRuleFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }: AlertRuleFormModalProps) {
   const { t } = useTranslation();
   const type = Form.useWatch("type", form) as string | undefined;
   return (
@@ -76,15 +69,31 @@ function AlertRuleFormModal({
       data-testid="alert-rule-modal"
     >
       <Form form={form} layout="vertical" data-testid="alert-rule-form">
-        <Form.Item name="name" label={t("alertRule.nameLabel")} rules={[{ required: true, message: t("alertRule.namePlaceholder") }]}>
+        <Form.Item
+          name="name"
+          label={t("alertRule.nameLabel")}
+          rules={[{ required: true, message: t("alertRule.namePlaceholder") }]}
+        >
           <Input placeholder={t("alertRule.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
-        <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("alertRule.typePlaceholder") }]}>
-          <Select placeholder={t("alertRule.typePlaceholder")} options={enumOptions(ALERT_TYPES, "AlertType", t)} data-testid="select-type" />
+        <Form.Item
+          name="type"
+          label={t("common.type")}
+          rules={[{ required: true, message: t("alertRule.typePlaceholder") }]}
+        >
+          <Select
+            placeholder={t("alertRule.typePlaceholder")}
+            options={enumOptions(ALERT_TYPES, "AlertType", t)}
+            data-testid="select-type"
+          />
         </Form.Item>
         {type === "FEI_SHU" && (
           <>
-            <Form.Item name={["config", "webhook"]} label={t("alertRule.webhookLabel")} rules={[{ required: true, message: t("alertRule.webhookPlaceholder") }]}>
+            <Form.Item
+              name={["config", "webhook"]}
+              label={t("alertRule.webhookLabel")}
+              rules={[{ required: true, message: t("alertRule.webhookPlaceholder") }]}
+            >
               <Input placeholder={t("alertRule.webhookPlaceholder")} data-testid="input-webhook" />
             </Form.Item>
             <Form.Item name={["config", "content"]} label={t("alertRule.contentLabel")}>
@@ -93,7 +102,11 @@ function AlertRuleFormModal({
           </>
         )}
         <Form.Item name="description" label={t("common.description")}>
-          <Input.TextArea placeholder={t("alertRule.descriptionPlaceholder")} rows={3} data-testid="input-description" />
+          <Input.TextArea
+            placeholder={t("alertRule.descriptionPlaceholder")}
+            rows={3}
+            data-testid="input-description"
+          />
         </Form.Item>
       </Form>
     </Modal>

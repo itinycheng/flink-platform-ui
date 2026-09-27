@@ -8,9 +8,7 @@ vi.mock("@/api/picker");
 
 beforeEach(() => {
   useWorkspaceStore.setState({ currentId: 1 });
-  vi.mocked(picker.listDatasources).mockResolvedValue([
-    { id: 1, name: "mysql-a", type: "MYSQL", params: { url: "" } },
-  ]);
+  vi.mocked(picker.listDatasources).mockResolvedValue([{ id: 1, name: "mysql-a", type: "MYSQL", params: { url: "" } }]);
 });
 
 describe("DatasourceSelect", () => {

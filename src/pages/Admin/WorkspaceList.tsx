@@ -74,14 +74,30 @@ function WorkspaceFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel
       data-testid="workspace-modal"
     >
       <Form form={form} layout="vertical" initialValues={{ status: "ENABLE" }} data-testid="workspace-form">
-        <Form.Item name="name" label={t("common.name")} rules={[{ required: true, message: t("workspace.namePlaceholder") }]}>
+        <Form.Item
+          name="name"
+          label={t("common.name")}
+          rules={[{ required: true, message: t("workspace.namePlaceholder") }]}
+        >
           <Input placeholder={t("workspace.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
         <Form.Item name="description" label={t("common.description")}>
-          <Input.TextArea placeholder={t("workspace.descriptionPlaceholder")} rows={3} data-testid="input-description" />
+          <Input.TextArea
+            placeholder={t("workspace.descriptionPlaceholder")}
+            rows={3}
+            data-testid="input-description"
+          />
         </Form.Item>
-        <Form.Item name="status" label={t("common.status")} rules={[{ required: true, message: t("workspace.statusPlaceholder") }]}>
-          <Select placeholder={t("workspace.statusPlaceholder")} options={getWorkspaceStatusOptions(t)} data-testid="select-status" />
+        <Form.Item
+          name="status"
+          label={t("common.status")}
+          rules={[{ required: true, message: t("workspace.statusPlaceholder") }]}
+        >
+          <Select
+            placeholder={t("workspace.statusPlaceholder")}
+            options={getWorkspaceStatusOptions(t)}
+            data-testid="select-status"
+          />
         </Form.Item>
       </Form>
     </Modal>

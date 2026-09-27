@@ -10,7 +10,15 @@ import CodeEditor from "@/components/CodeEditor";
 import type { JobType } from "@/constants/enums";
 
 /** Adapter so CodeEditor works as a Form.Item child (Form injects value/onChange). */
-function CodeField({ value, onChange, language }: { value?: string; onChange?: (v: string) => void; language: "sql" | "shell" }) {
+function CodeField({
+  value,
+  onChange,
+  language,
+}: {
+  value?: string;
+  onChange?: (v: string) => void;
+  language: "sql" | "shell";
+}) {
   return <CodeEditor value={value ?? ""} onChange={onChange ?? (() => {})} language={language} minHeight={160} />;
 }
 
@@ -42,11 +50,7 @@ export function DAGToolbar({ embedded, onSave, taskListOpen, onToggleTaskList }:
         <Button type="text" icon={<SaveOutlined style={{ color: "var(--ant-color-primary)" }} />} onClick={onSave} />
       </Tooltip>
       <Tooltip title={t("dag.taskList")}>
-        <Button
-          type={taskListOpen ? "primary" : "text"}
-          icon={<UnorderedListOutlined />}
-          onClick={onToggleTaskList}
-        />
+        <Button type={taskListOpen ? "primary" : "text"} icon={<UnorderedListOutlined />} onClick={onToggleTaskList} />
       </Tooltip>
     </Flex>
   );
@@ -117,7 +121,14 @@ function NodeConfigBody({ node }: { node: Node }) {
   );
 }
 
-export function BottomPanel({ node, panelHeight, onResizeMouseDown, onClose, onSaveNode, messageApi }: BottomPanelProps) {
+export function BottomPanel({
+  node,
+  panelHeight,
+  onResizeMouseDown,
+  onClose,
+  onSaveNode,
+  messageApi,
+}: BottomPanelProps) {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const taskType = node.data.taskType as JobType | undefined;

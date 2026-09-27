@@ -23,6 +23,9 @@ function usedJobIdsOf(nodes: Node[]): Set<number> {
   return new Set(nodes.map((node) => node.data.jobId).filter((id): id is number => typeof id === "number"));
 }
 
+// The editor coordinates several small hooks; splitting the JSX orchestration
+// would obscure their shared canvas state without reducing component complexity.
+// eslint-disable-next-line max-lines-per-function
 export default function DAGEditor({ embedded = false }: DAGEditorProps) {
   const { id: routeId } = useParams<{ id: string }>();
   const selectedNode = useJobStore((s) => s.selectedNode);
@@ -78,7 +81,14 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
             onInit={setReactFlowInstance}
             onDragOver={dnd.onDragOver}
             onDrop={dnd.onDrop}
-            toolbar={<DAGToolbar embedded={embedded} onSave={() => void handleSave()} taskListOpen={taskListOpen} onToggleTaskList={() => setTaskListOpen((open) => !open)} />}
+            toolbar={
+              <DAGToolbar
+                embedded={embedded}
+                onSave={() => void handleSave()}
+                taskListOpen={taskListOpen}
+                onToggleTaskList={() => setTaskListOpen((open) => !open)}
+              />
+            }
             contextMenu={ctx.contextMenu}
             nodeMenuItems={ctx.nodeMenuItems}
             edgeMenuItems={ctx.edgeMenuItems}

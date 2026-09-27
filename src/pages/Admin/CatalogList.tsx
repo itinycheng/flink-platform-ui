@@ -73,12 +73,7 @@ function CreateSqlField({
   placeholder?: string;
 }) {
   return (
-    <CodeEditor
-      value={value ?? ""}
-      onChange={(next) => onChange?.(next)}
-      language="sql"
-      placeholder={placeholder}
-    />
+    <CodeEditor value={value ?? ""} onChange={(next) => onChange?.(next)} language="sql" placeholder={placeholder} />
   );
 }
 
@@ -96,13 +91,29 @@ function CatalogFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }
       data-testid="catalog-modal"
     >
       <Form form={form} layout="vertical" data-testid="catalog-form">
-        <Form.Item name="name" label={t("common.name")} rules={[{ required: true, message: t("catalog.namePlaceholder") }]}>
+        <Form.Item
+          name="name"
+          label={t("common.name")}
+          rules={[{ required: true, message: t("catalog.namePlaceholder") }]}
+        >
           <Input placeholder={t("catalog.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
-        <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("catalog.typePlaceholder") }]}>
-          <Select placeholder={t("catalog.typePlaceholder")} options={enumOptions(CATALOG_TYPES, "CatalogType", t)} data-testid="select-type" />
+        <Form.Item
+          name="type"
+          label={t("common.type")}
+          rules={[{ required: true, message: t("catalog.typePlaceholder") }]}
+        >
+          <Select
+            placeholder={t("catalog.typePlaceholder")}
+            options={enumOptions(CATALOG_TYPES, "CatalogType", t)}
+            data-testid="select-type"
+          />
         </Form.Item>
-        <Form.Item name="createSql" label={t("catalog.ddlLabel")} rules={[{ required: true, message: t("catalog.ddlPlaceholder") }]}>
+        <Form.Item
+          name="createSql"
+          label={t("catalog.ddlLabel")}
+          rules={[{ required: true, message: t("catalog.ddlPlaceholder") }]}
+        >
           <CreateSqlField placeholder={t("catalog.ddlPlaceholder")} />
         </Form.Item>
         <Form.Item name="description" label={t("common.description")}>
@@ -201,7 +212,13 @@ export default function CatalogList() {
   const columns = useMemo<ProColumns<Catalog>[]>(
     () => [
       { title: t("common.name"), dataIndex: "name", key: "name", ellipsis: true },
-      { title: t("common.type"), dataIndex: "type", key: "type", width: 100, render: (_, r) => <CatalogTypeTag type={r.type} /> },
+      {
+        title: t("common.type"),
+        dataIndex: "type",
+        key: "type",
+        width: 100,
+        render: (_, r) => <CatalogTypeTag type={r.type} />,
+      },
       { title: t("common.description"), dataIndex: "description", key: "description", ellipsis: true },
       { title: t("common.updatedAt"), dataIndex: "updatedAt", key: "updatedAt", width: 200 },
       {

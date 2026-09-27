@@ -26,7 +26,11 @@ export default function CronPreview({ expression }: CronPreviewProps) {
   const workspaceId = useWorkspaceStore((state) => state.currentId);
   const cron = useDebouncedValue(expression.trim(), 350);
   const looksLikeQuartz = cron.split(/\s+/).length >= 6;
-  const { data: runs = [], isFetching, isError } = useQuery(
+  const {
+    data: runs = [],
+    isFetching,
+    isError,
+  } = useQuery(
     {
       queryKey: queryKeys.definitions.cronPreview(workspaceId, cron),
       queryFn: () => previewCron(cron),

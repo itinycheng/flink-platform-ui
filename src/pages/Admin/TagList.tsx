@@ -79,10 +79,22 @@ function TagFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }: Ta
           <Input placeholder={t("tag.codePlaceholder")} data-testid="input-code" />
         </Form.Item>
         <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("tag.typePlaceholder") }]}>
-          <Select placeholder={t("tag.typePlaceholder")} options={enumOptions(TAG_TYPES, "TagType", t)} data-testid="select-type" />
+          <Select
+            placeholder={t("tag.typePlaceholder")}
+            options={enumOptions(TAG_TYPES, "TagType", t)}
+            data-testid="select-type"
+          />
         </Form.Item>
-        <Form.Item name="status" label={t("common.status")} rules={[{ required: true, message: t("tag.statusPlaceholder") }]}>
-          <Select placeholder={t("tag.statusPlaceholder")} options={enumOptions(STATUSES, "Status", t)} data-testid="select-status" />
+        <Form.Item
+          name="status"
+          label={t("common.status")}
+          rules={[{ required: true, message: t("tag.statusPlaceholder") }]}
+        >
+          <Select
+            placeholder={t("tag.statusPlaceholder")}
+            options={enumOptions(STATUSES, "Status", t)}
+            data-testid="select-status"
+          />
         </Form.Item>
       </Form>
     </Modal>
@@ -196,9 +208,7 @@ export default function TagList() {
         title: t("common.operation"),
         key: "action",
         width: 150,
-        render: (_, record) => (
-          <TagActionsCell record={record} onEdit={crud.handleEdit} onDelete={crud.handleDelete} />
-        ),
+        render: (_, record) => <TagActionsCell record={record} onEdit={crud.handleEdit} onDelete={crud.handleDelete} />,
       },
     ],
     [t, crud.handleEdit, crud.handleDelete],

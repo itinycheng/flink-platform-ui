@@ -39,18 +39,17 @@ function seedLeaf(gi: number, groupId: string): JobTreeNode {
   const jobType = faker.helpers.arrayElement<JobType>(["MYSQL_SQL", "SHELL", "FLINK_SQL", "FLINK_JAR"]);
   return {
     id: isWorkflow ? `wf-${faker.string.nanoid(6)}` : `task-${faker.string.nanoid(6)}`,
-    name:
-      isWorkflow
-        ? faker.helpers.arrayElement(["日报汇总", "数据同步流程", "ETL Pipeline", "报表生成流程"]) +
-          ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`
-        : faker.helpers.arrayElement([
-            "MySQL 数据同步",
-            "Kafka 消费任务",
-            "Spark ETL 日报",
-            "Shell 清理脚本",
-            "Hive 分区整理",
-            "Flink CDC 实时同步",
-          ]) + ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`,
+    name: isWorkflow
+      ? faker.helpers.arrayElement(["日报汇总", "数据同步流程", "ETL Pipeline", "报表生成流程"]) +
+        ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`
+      : faker.helpers.arrayElement([
+          "MySQL 数据同步",
+          "Kafka 消费任务",
+          "Spark ETL 日报",
+          "Shell 清理脚本",
+          "Hive 分区整理",
+          "Flink CDC 实时同步",
+        ]) + ` ${gi}-${faker.number.int({ min: 1, max: 99 })}`,
     kind: isWorkflow ? "workflow" : "task",
     jobType: isWorkflow ? undefined : jobType,
     refId: ++leafRefSeq,
@@ -136,7 +135,9 @@ function matchesStatus(leaf: JobTreeNode, statuses: string[]): boolean {
 }
 
 function matchesLeaf(leaf: JobTreeNode, filter: SearchFilter): boolean {
-  return matchesKeyword(leaf, filter.keyword) && matchesType(leaf, filter.types) && matchesStatus(leaf, filter.statuses);
+  return (
+    matchesKeyword(leaf, filter.keyword) && matchesType(leaf, filter.types) && matchesStatus(leaf, filter.statuses)
+  );
 }
 
 export function searchTree(p: { keyword?: string; types?: string[]; statuses?: string[] }): JobTreeNode[] {

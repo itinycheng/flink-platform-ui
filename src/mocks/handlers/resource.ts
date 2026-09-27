@@ -83,7 +83,13 @@ export const resourceHandlers: RequestHandler[] = [
     await delay(200);
     const body = (await request.json()) as Partial<Resource>;
     const id = nextId();
-    resourceStore.push({ id, name: body.name ?? "", type: body.type ?? "FILE", pid: body.pid, description: body.description });
+    resourceStore.push({
+      id,
+      name: body.name ?? "",
+      type: body.type ?? "FILE",
+      pid: body.pid,
+      description: body.description,
+    });
     return ok(id, { status: 201 });
   }),
 

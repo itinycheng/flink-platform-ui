@@ -24,7 +24,13 @@ export default function ResultPanel({ result }: ResultPanelProps) {
           key: "result",
           label: t("query.resultCount", { count: result.rows.length }),
           children: result.success ? (
-            <Table size="small" columns={columns} dataSource={dataSource} scroll={{ x: true }} pagination={{ pageSize: 10 }} />
+            <Table
+              size="small"
+              columns={columns}
+              dataSource={dataSource}
+              scroll={{ x: true }}
+              pagination={{ pageSize: 10 }}
+            />
           ) : (
             <Empty description={t("query.queryFailedSeeLog")} />
           ),

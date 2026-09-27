@@ -125,8 +125,7 @@ function useLoginBootstrap() {
 export default function Login() {
   const [form] = Form.useForm<LoginFormValues>();
   const { t } = useTranslation();
-  const { loading, setLoading, configLoading, authType, ssoLoginUrl, login, navigate, returnTo } =
-    useLoginBootstrap();
+  const { loading, setLoading, configLoading, authType, ssoLoginUrl, login, navigate, returnTo } = useLoginBootstrap();
 
   const rememberReturnTo = () => {
     sessionStorage.setItem(STORAGE_KEYS.authReturnTo, returnTo);

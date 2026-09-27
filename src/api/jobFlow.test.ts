@@ -79,10 +79,7 @@ describe("jobFlow API + mock", () => {
   });
 
   it("uses the backend Quartz parser for schedule previews", async () => {
-    await expect(previewCron("0 0 0 * * ?")).resolves.toEqual([
-      "2026-09-28 00:00:00",
-      "2026-09-29 00:00:00",
-    ]);
+    await expect(previewCron("0 0 0 * * ?")).resolves.toEqual(["2026-09-28 00:00:00", "2026-09-29 00:00:00"]);
     await expect(previewCron("0 0 * * *")).rejects.toThrow("Invalid cron expression");
   });
 });

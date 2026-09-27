@@ -31,7 +31,9 @@ describe("backend entity types compile with representative values", () => {
       retryTimes: 0,
       retryInterval: "5s",
       relation: "AND",
-      dependentItems: [{ flowId: 1, jobId: 2, statuses: ["SUCCESS"], strategy: "LAST_EXECUTION_AS_EXPECTED", duration: "" }],
+      dependentItems: [
+        { flowId: 1, jobId: 2, statuses: ["SUCCESS"], strategy: "LAST_EXECUTION_AS_EXPECTED", duration: "" },
+      ],
     };
     expect(sql.dsId).toBe(42);
     expect(dep.dependentItems[0].statuses).toContain("SUCCESS");

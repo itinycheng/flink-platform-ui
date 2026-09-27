@@ -66,11 +66,4 @@ export interface FlowJob extends BaseJob {
   paramNames?: string[];
 }
 
-export type JobConfig =
-  | FlinkJob
-  | JavaJob
-  | SqlJob
-  | ShellJob
-  | ConditionJob
-  | DependentJob
-  | FlowJob;
+export type JobConfig = FlinkJob | JavaJob | SqlJob | ShellJob | ConditionJob | DependentJob | FlowJob;

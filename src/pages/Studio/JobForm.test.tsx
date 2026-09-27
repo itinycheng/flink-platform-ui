@@ -139,9 +139,9 @@ describe("typeChangeFields", () => {
   it("uses a valid deployment default for local and Flink task types", () => {
     expect(typeChangeFields("SHELL").find((f) => f.name === "deployMode")?.value).toBe("RUN_LOCAL");
     expect(typeChangeFields("FLINK_SQL").find((f) => f.name === "deployMode")?.value).toBe("FLINK_YARN_PER");
-    expect(typeChangeFields("FLINK_JAR", "BATCH", "FLINK_YARN_SESSION").find((f) => f.name === "deployMode")?.value).toBe(
-      "FLINK_YARN_SESSION",
-    );
+    expect(
+      typeChangeFields("FLINK_JAR", "BATCH", "FLINK_YARN_SESSION").find((f) => f.name === "deployMode")?.value,
+    ).toBe("FLINK_YARN_SESSION");
   });
 
   it("always clears subject on a type change, even between two subject-bearing types", () => {

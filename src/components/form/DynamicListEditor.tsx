@@ -11,13 +11,7 @@ interface Props<T> {
   addLabel?: string;
 }
 
-export default function DynamicListEditor<T>({
-  value,
-  onChange,
-  newItem,
-  renderItem,
-  addLabel,
-}: Props<T>) {
+export default function DynamicListEditor<T>({ value, onChange, newItem, renderItem, addLabel }: Props<T>) {
   const { t } = useTranslation();
   const items = value ?? [];
   const emit = (next: T[]) => onChange?.(next);
@@ -27,11 +21,7 @@ export default function DynamicListEditor<T>({
       {items.map((item, i) => (
         // eslint-disable-next-line react/no-array-index-key
         <Space key={i} align="baseline" style={{ width: "100%" }}>
-          {renderItem(
-            item,
-            (next) => emit(items.map((it, j) => (j === i ? next : it))),
-            i,
-          )}
+          {renderItem(item, (next) => emit(items.map((it, j) => (j === i ? next : it))), i)}
           <Button
             type="text"
             aria-label={t("common.delete")}
@@ -40,11 +30,7 @@ export default function DynamicListEditor<T>({
           />
         </Space>
       ))}
-      <Button
-        type="dashed"
-        icon={<PlusOutlined />}
-        onClick={() => emit([...items, newItem()])}
-      >
+      <Button type="dashed" icon={<PlusOutlined />} onClick={() => emit([...items, newItem()])}>
         {addLabel ?? t("common.add")}
       </Button>
     </Flex>

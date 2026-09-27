@@ -41,6 +41,9 @@ function AlertRow({ field, alertOptions, t, onRemove }: AlertRowProps) {
 }
 
 /** Alert bindings for a workflow (JobFlow.alerts): each row = one alert + the statuses that trigger it. */
+// The form is intentionally kept as one unit so dynamic alert rows share the
+// same Ant Form instance and save lifecycle.
+// eslint-disable-next-line max-lines-per-function
 export default function AlertsPanel({ nodeId }: { nodeId: string }) {
   const { t } = useTranslation();
   const [form] = Form.useForm();
@@ -103,13 +106,26 @@ export default function AlertsPanel({ nodeId }: { nodeId: string }) {
                   onRemove={() => remove(field.name)}
                 />
               ))}
-              <Button type="dashed" size="small" onClick={() => add({ alertId: undefined, statuses: [] })} icon={<PlusOutlined />} block>
+              <Button
+                type="dashed"
+                size="small"
+                onClick={() => add({ alertId: undefined, statuses: [] })}
+                icon={<PlusOutlined />}
+                block
+              >
                 {t("sidePanel.addAlert")}
               </Button>
             </>
           )}
         </Form.List>
-        <Button type="primary" size="small" icon={<SaveOutlined />} loading={saving} onClick={() => void onSave()} style={{ marginTop: 12 }}>
+        <Button
+          type="primary"
+          size="small"
+          icon={<SaveOutlined />}
+          loading={saving}
+          onClick={() => void onSave()}
+          style={{ marginTop: 12 }}
+        >
           {t("common.save")}
         </Button>
       </Form>

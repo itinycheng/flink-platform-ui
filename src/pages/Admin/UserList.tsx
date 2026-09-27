@@ -1,5 +1,16 @@
 import { useMemo, useState } from "react";
-import { Button, Form, Input, Modal, Select, Space, Tag, message, type FormInstance, type FormListFieldData } from "antd";
+import {
+  Button,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Tag,
+  message,
+  type FormInstance,
+  type FormListFieldData,
+} from "antd";
 import { CheckCircleOutlined, EditOutlined, MinusCircleOutlined, PlusOutlined, StopOutlined } from "@ant-design/icons";
 import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
@@ -89,7 +100,11 @@ function WorkspaceRoleRow({ field, wsOptions, t, onRemove }: WorkspaceRoleRowPro
         rules={[{ required: true, message: t("user2.rolesPlaceholder") }]}
         style={{ marginBottom: 0 }}
       >
-        <Select placeholder={t("user2.rolesPlaceholder")} options={enumOptions(ROLES, "Role", t)} style={{ minWidth: 140 }} />
+        <Select
+          placeholder={t("user2.rolesPlaceholder")}
+          options={enumOptions(ROLES, "Role", t)}
+          style={{ minWidth: 140 }}
+        />
       </Form.Item>
       <MinusCircleOutlined onClick={onRemove} />
     </Space>
@@ -119,7 +134,11 @@ function UserFormModal({ open, isEdit, form, confirmLoading, wsOptions, onOk, on
       data-testid="user-modal"
     >
       <Form form={form} layout="vertical" data-testid="user-form">
-        <Form.Item name="username" label={t("user2.usernameLabel")} rules={[{ required: true, message: t("user2.usernamePlaceholder") }]}>
+        <Form.Item
+          name="username"
+          label={t("user2.usernameLabel")}
+          rules={[{ required: true, message: t("user2.usernamePlaceholder") }]}
+        >
           <Input placeholder={t("user2.usernamePlaceholder")} data-testid="input-username" />
         </Form.Item>
         <Form.Item
@@ -141,15 +160,29 @@ function UserFormModal({ open, isEdit, form, confirmLoading, wsOptions, onOk, on
             <Input.Password placeholder={t("user2.passwordPlaceholder")} data-testid="input-password" />
           </Form.Item>
         )}
-        <Form.Item name="globalRole" label={t("user2.rolesLabel")} rules={[{ required: true, message: t("user2.rolesPlaceholder") }]}>
-          <Select placeholder={t("user2.rolesPlaceholder")} options={enumOptions(ROLES, "Role", t)} data-testid="select-roles" />
+        <Form.Item
+          name="globalRole"
+          label={t("user2.rolesLabel")}
+          rules={[{ required: true, message: t("user2.rolesPlaceholder") }]}
+        >
+          <Select
+            placeholder={t("user2.rolesPlaceholder")}
+            options={enumOptions(ROLES, "Role", t)}
+            data-testid="select-roles"
+          />
         </Form.Item>
         <Form.Item label={t("user2.workspaceRolesLabel")} style={{ marginBottom: 0 }}>
           <Form.List name="workspaceRoles">
             {(fields, { add, remove }) => (
               <>
                 {fields.map((field) => (
-                  <WorkspaceRoleRow key={field.key} field={field} wsOptions={wsOptions} t={t} onRemove={() => remove(field.name)} />
+                  <WorkspaceRoleRow
+                    key={field.key}
+                    field={field}
+                    wsOptions={wsOptions}
+                    t={t}
+                    onRemove={() => remove(field.name)}
+                  />
                 ))}
                 <Button type="dashed" size="small" onClick={() => add()} icon={<PlusOutlined />} block>
                   {t("user2.addWorkspaceRole")}
@@ -319,9 +352,7 @@ function useUserColumns(
         title: t("common.operation"),
         key: "action",
         width: 180,
-        render: (_, record) => (
-          <UserActionsCell record={record} onEdit={onEdit} onToggleStatus={onToggleStatus} />
-        ),
+        render: (_, record) => <UserActionsCell record={record} onEdit={onEdit} onToggleStatus={onToggleStatus} />,
       },
     ],
     [t, onEdit, onToggleStatus],

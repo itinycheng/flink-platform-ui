@@ -3,9 +3,9 @@ import { workerOptions, datasourceOptions, catalogOptions, resourceOptions } fro
 
 describe("picker option mappers", () => {
   it("workerOptions labels name (ip) · role and uses id as value", () => {
-    expect(
-      workerOptions([{ id: 3, name: "w1", ip: "10.0.0.1", port: "80", role: "ACTIVE" }]),
-    ).toEqual([{ value: 3, label: "w1 (10.0.0.1) · ACTIVE" }]);
+    expect(workerOptions([{ id: 3, name: "w1", ip: "10.0.0.1", port: "80", role: "ACTIVE" }])).toEqual([
+      { value: 3, label: "w1 (10.0.0.1) · ACTIVE" },
+    ]);
   });
   it("datasourceOptions labels name · type", () => {
     expect(datasourceOptions([{ id: 1, name: "ds", type: "MYSQL", params: { url: "" } }])).toEqual([

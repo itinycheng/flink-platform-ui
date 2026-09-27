@@ -15,10 +15,8 @@ export const queryKeys = {
       ["workspace", workspaceId, "definitions", "children", groupId] as const,
     search: (workspaceId: number | null, keyword: string, types: string[], statuses: string[]) =>
       ["workspace", workspaceId, "definitions", "search", keyword, types, statuses] as const,
-    job: (workspaceId: number | null, id: string) =>
-      ["workspace", workspaceId, "definitions", "job", id] as const,
-    flow: (workspaceId: number | null, id: string) =>
-      ["workspace", workspaceId, "definitions", "flow", id] as const,
+    job: (workspaceId: number | null, id: string) => ["workspace", workspaceId, "definitions", "job", id] as const,
+    flow: (workspaceId: number | null, id: string) => ["workspace", workspaceId, "definitions", "flow", id] as const,
     flowJobs: (workspaceId: number | null, flowId: string) =>
       ["workspace", workspaceId, "definitions", "flow", flowId, "jobs"] as const,
     cronPreview: (workspaceId: number | null, expression: string) =>

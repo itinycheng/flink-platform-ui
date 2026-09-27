@@ -64,8 +64,7 @@ function useRunsPage(initialStatus?: string, initialType?: string) {
     queryKey: queryKeys.runs.list(workspaceId, params),
     queryFn: () => getFlowRuns(params),
     enabled: workspaceId != null,
-    refetchInterval: (state) =>
-      state.state.data?.data.some((run) => execIsRunning(run.status)) ? 5_000 : 30_000,
+    refetchInterval: (state) => (state.state.data?.data.some((run) => execIsRunning(run.status)) ? 5_000 : 30_000),
   });
   return { params, setParams, query };
 }

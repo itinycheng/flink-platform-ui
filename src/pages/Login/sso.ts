@@ -20,4 +20,3 @@ export function addReauthentication(url: string, authType: string, failed: boole
   if (authType === "CAS") parsed.searchParams.set("renew", "true");
   return parsed.toString();
 }
-

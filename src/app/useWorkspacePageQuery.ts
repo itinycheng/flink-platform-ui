@@ -35,14 +35,11 @@ export function useWorkspacePageQuery<T>(resource: string, loader: PageLoader<T>
 /** Invalidate every cached page/filter variant for one workspace resource. */
 export function useInvalidateWorkspaceList(resource: string) {
   const workspaceId = useWorkspaceStore((state) => state.currentId);
-  return useCallback(
-    async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "admin", resource] }),
-        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "options", resource] }),
-        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, resource] }),
-      ]);
-    },
-    [workspaceId, resource],
-  );
+  return useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "admin", resource] }),
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "options", resource] }),
+      queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, resource] }),
+    ]);
+  }, [workspaceId, resource]);
 }

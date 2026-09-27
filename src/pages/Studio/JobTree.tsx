@@ -272,8 +272,7 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
     [createWorkflow, messageApi, t, workflowParentId],
   );
   const handleAddTask = useCallback(
-    (parentId: string) =>
-      addNode({ id: generateId("task"), name: t("workflow.newTask"), kind: "task", pid: parentId }),
+    (parentId: string) => addNode({ id: generateId("task"), name: t("workflow.newTask"), kind: "task", pid: parentId }),
     [addNode, t],
   );
   const handleAddSubgroup = useCallback(
@@ -315,7 +314,10 @@ function useMenuActions({
   setRenameNode,
 }: {
   t: TFunction;
-  actions: Pick<ReturnType<typeof useJobTreeActions>, "handleAddWorkflow" | "handleAddTask" | "handleAddSubgroup" | "handleDelete">;
+  actions: Pick<
+    ReturnType<typeof useJobTreeActions>,
+    "handleAddWorkflow" | "handleAddTask" | "handleAddSubgroup" | "handleDelete"
+  >;
   handleLifecycle: (key: string, node: JobTreeNode) => Promise<void> | void;
   setRenameNode: (node: JobTreeNode) => void;
 }) {

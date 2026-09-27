@@ -67,17 +67,37 @@ function ParamFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }: 
       data-testid="custom-param-modal"
     >
       <Form form={form} layout="vertical" data-testid="custom-param-form">
-        <Form.Item name="paramName" label={t("param.nameLabel")} rules={[{ required: true, message: t("param.namePlaceholder") }]}>
+        <Form.Item
+          name="paramName"
+          label={t("param.nameLabel")}
+          rules={[{ required: true, message: t("param.namePlaceholder") }]}
+        >
           <Input placeholder={t("param.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
-        <Form.Item name="paramValue" label={t("param.valueLabel")} rules={[{ required: true, message: t("param.valuePlaceholder") }]}>
+        <Form.Item
+          name="paramValue"
+          label={t("param.valueLabel")}
+          rules={[{ required: true, message: t("param.valuePlaceholder") }]}
+        >
           <Input.TextArea placeholder={t("param.valuePlaceholder")} rows={2} data-testid="input-value" />
         </Form.Item>
-        <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("param.typePlaceholder") }]}>
-          <Select placeholder={t("param.typePlaceholder")} options={enumOptions(JOB_PARAM_TYPES, "JobParamType", t)} data-testid="select-type" />
+        <Form.Item
+          name="type"
+          label={t("common.type")}
+          rules={[{ required: true, message: t("param.typePlaceholder") }]}
+        >
+          <Select
+            placeholder={t("param.typePlaceholder")}
+            options={enumOptions(JOB_PARAM_TYPES, "JobParamType", t)}
+            data-testid="select-type"
+          />
         </Form.Item>
         {type === "JOB_FLOW" && (
-          <Form.Item name="flowId" label={t("param.flowIdLabel")} rules={[{ required: true, message: t("param.flowIdPlaceholder") }]}>
+          <Form.Item
+            name="flowId"
+            label={t("param.flowIdLabel")}
+            rules={[{ required: true, message: t("param.flowIdPlaceholder") }]}
+          >
             <Input placeholder={t("param.flowIdPlaceholder")} data-testid="input-flow-id" />
           </Form.Item>
         )}
@@ -183,7 +203,13 @@ export default function CustomParamList() {
     () => [
       { title: t("param.nameLabel"), dataIndex: "paramName", key: "paramName", ellipsis: true },
       { title: t("param.valueLabel"), dataIndex: "paramValue", key: "paramValue", ellipsis: true },
-      { title: t("common.type"), dataIndex: "type", key: "type", width: 100, render: (_, r) => <ParamTypeTag type={r.type} /> },
+      {
+        title: t("common.type"),
+        dataIndex: "type",
+        key: "type",
+        width: 100,
+        render: (_, r) => <ParamTypeTag type={r.type} />,
+      },
       { title: t("common.description"), dataIndex: "description", key: "description", ellipsis: true },
       {
         title: t("common.operation"),

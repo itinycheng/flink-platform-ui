@@ -18,7 +18,13 @@ function WorkerStatusTag({ role }: { role: Worker["role"] }) {
 }
 
 /** Key/value editor for a worker's environment specs (EnvironmentSpec[]). */
-function EnvironmentsEditor({ value, onChange }: { value?: EnvironmentSpec[]; onChange?: (v: EnvironmentSpec[]) => void }) {
+function EnvironmentsEditor({
+  value,
+  onChange,
+}: {
+  value?: EnvironmentSpec[];
+  onChange?: (v: EnvironmentSpec[]) => void;
+}) {
   const { t } = useTranslation();
   return (
     <DynamicListEditor<EnvironmentSpec>
@@ -95,19 +101,31 @@ function WorkerFormModal({ open, isEdit, form, confirmLoading, onOk, onCancel }:
       data-testid="worker-modal"
     >
       <Form form={form} layout="vertical" data-testid="worker-form">
-        <Form.Item name="name" label={t("common.name")} rules={[{ required: true, message: t("worker.namePlaceholder") }]}>
+        <Form.Item
+          name="name"
+          label={t("common.name")}
+          rules={[{ required: true, message: t("worker.namePlaceholder") }]}
+        >
           <Input placeholder={t("worker.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
         <Form.Item name="ip" label={t("worker.ip")} rules={[{ required: true, message: t("worker.ipPlaceholder") }]}>
           <Input placeholder={t("worker.ipPlaceholder")} data-testid="input-ip" />
         </Form.Item>
-        <Form.Item name="port" label={t("worker.port")} rules={[{ required: true, message: t("worker.portPlaceholder") }]}>
+        <Form.Item
+          name="port"
+          label={t("worker.port")}
+          rules={[{ required: true, message: t("worker.portPlaceholder") }]}
+        >
           <Input placeholder={t("worker.portPlaceholder")} data-testid="input-port" />
         </Form.Item>
         <Form.Item name="grpcPort" label={t("worker.grpcPort")}>
           <InputNumber min={1} max={65535} style={{ width: "100%" }} data-testid="input-grpc-port" />
         </Form.Item>
-        <Form.Item name="role" label={t("common.status")} rules={[{ required: true, message: t("worker.statusPlaceholder") }]}>
+        <Form.Item
+          name="role"
+          label={t("common.status")}
+          rules={[{ required: true, message: t("worker.statusPlaceholder") }]}
+        >
           <Select
             placeholder={t("worker.statusPlaceholder")}
             options={enumOptions(WORKER_STATUSES, "WorkerStatus", t)}

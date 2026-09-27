@@ -19,11 +19,7 @@ function csvField(value: unknown): string {
  * Serialize tabular data to a CSV string and trigger a browser download.
  * `columns` sets the header row and column order; each row is read by column key.
  */
-export function downloadCsv(
-  filename: string,
-  columns: string[],
-  rows: Array<Record<string, unknown>>,
-): void {
+export function downloadCsv(filename: string, columns: string[], rows: Array<Record<string, unknown>>): void {
   const header = columns.map(csvField).join(",");
   const body = rows.map((row) => columns.map((col) => csvField(row[col])).join(",")).join("\n");
   // Prepend a UTF-8 BOM so Excel opens non-ASCII content (e.g. Chinese) without mojibake.

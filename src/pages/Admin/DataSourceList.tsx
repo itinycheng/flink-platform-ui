@@ -81,13 +81,29 @@ function DataSourceFormModal({ open, isEdit, form, confirmLoading, onOk, onCance
       data-testid="datasource-modal"
     >
       <Form form={form} layout="vertical" data-testid="datasource-form">
-        <Form.Item name="name" label={t("common.name")} rules={[{ required: true, message: t("datasource.namePlaceholder") }]}>
+        <Form.Item
+          name="name"
+          label={t("common.name")}
+          rules={[{ required: true, message: t("datasource.namePlaceholder") }]}
+        >
           <Input placeholder={t("datasource.namePlaceholder")} data-testid="input-name" />
         </Form.Item>
-        <Form.Item name="type" label={t("common.type")} rules={[{ required: true, message: t("datasource.typePlaceholder") }]}>
-          <Select placeholder={t("datasource.typePlaceholder")} options={enumOptions(DB_TYPES, "DbType", t)} data-testid="select-type" />
+        <Form.Item
+          name="type"
+          label={t("common.type")}
+          rules={[{ required: true, message: t("datasource.typePlaceholder") }]}
+        >
+          <Select
+            placeholder={t("datasource.typePlaceholder")}
+            options={enumOptions(DB_TYPES, "DbType", t)}
+            data-testid="select-type"
+          />
         </Form.Item>
-        <Form.Item name={["params", "url"]} label={t("datasource.url")} rules={[{ required: true, message: t("datasource.urlPlaceholder") }]}>
+        <Form.Item
+          name={["params", "url"]}
+          label={t("datasource.url")}
+          rules={[{ required: true, message: t("datasource.urlPlaceholder") }]}
+        >
           <Input placeholder={t("datasource.urlPlaceholder")} data-testid="input-url" />
         </Form.Item>
         <Form.Item name={["params", "username"]} label={t("datasource.username")}>
@@ -100,7 +116,11 @@ function DataSourceFormModal({ open, isEdit, form, confirmLoading, onOk, onCance
           <KeyValueEditor />
         </Form.Item>
         <Form.Item name="description" label={t("common.description")}>
-          <Input.TextArea placeholder={t("datasource.descriptionPlaceholder")} rows={3} data-testid="input-description" />
+          <Input.TextArea
+            placeholder={t("datasource.descriptionPlaceholder")}
+            rows={3}
+            data-testid="input-description"
+          />
         </Form.Item>
       </Form>
     </Modal>
@@ -210,7 +230,13 @@ export default function DataSourceList() {
   const columns = useMemo<ProColumns<DataSource>[]>(
     () => [
       { title: t("common.name"), dataIndex: "name", key: "name", ellipsis: true },
-      { title: t("common.type"), dataIndex: "type", key: "type", width: 120, render: (_, r) => <DataSourceTypeTag type={r.type} /> },
+      {
+        title: t("common.type"),
+        dataIndex: "type",
+        key: "type",
+        width: 120,
+        render: (_, r) => <DataSourceTypeTag type={r.type} />,
+      },
       { title: t("common.description"), dataIndex: "description", key: "description", ellipsis: true },
       { title: t("common.updatedAt"), dataIndex: "updatedAt", key: "updatedAt", width: 180 },
       {
