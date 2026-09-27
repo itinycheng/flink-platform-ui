@@ -36,8 +36,12 @@ export function useWorkspacePageQuery<T>(resource: string, loader: PageLoader<T>
 export function useInvalidateWorkspaceList(resource: string) {
   const workspaceId = useWorkspaceStore((state) => state.currentId);
   return useCallback(
-    () => queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "admin", resource] }),
+    async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "admin", resource] }),
+        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "options", resource] }),
+      ]);
+    },
     [workspaceId, resource],
   );
 }
-

@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Form, Input, InputNumber, Modal, Select, Tag, message, type FormInstance } from "antd";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
+import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { Worker } from "@/types/admin";
 import type { EnvironmentSpec } from "@/types/entities";
@@ -10,6 +10,7 @@ import RowActions from "@/components/RowActions";
 import { DynamicListEditor } from "@/components/form";
 import { WORKER_STATUSES, enumOptions } from "@/constants/enums";
 import { statusColor } from "@/utils/statusColor";
+import { useInvalidateWorkspaceList, useWorkspacePageQuery } from "@/app/useWorkspacePageQuery";
 
 function WorkerStatusTag({ role }: { role: Worker["role"] }) {
   const { t } = useTranslation();
@@ -130,7 +131,7 @@ function isFormValidationError(error: unknown): boolean {
 
 function useWorkerCrud() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>(null);
+  const invalidate = useInvalidateWorkspaceList("workers");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -170,7 +171,7 @@ function useWorkerCrud() {
       setModalOpen(false);
       form.resetFields();
       setEditingWorker(null);
-      void actionRef.current?.reload();
+      await invalidate();
     } catch (error) {
       if (isFormValidationError(error)) return;
     } finally {
@@ -188,14 +189,13 @@ function useWorkerCrud() {
     try {
       await deleteWorker(id);
       message.success(t("common.deleteSuccess"));
-      void actionRef.current?.reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
   };
 
   return {
-    actionRef,
     modalOpen,
     editingWorker,
     confirmLoading,
@@ -211,6 +211,7 @@ function useWorkerCrud() {
 export default function WorkerList() {
   const { t } = useTranslation();
   const crud = useWorkerCrud();
+  const page = useWorkspacePageQuery("workers", getWorkers);
 
   const columns = useMemo<ProColumns<Worker>[]>(
     () => [
@@ -242,9 +243,10 @@ export default function WorkerList() {
     <div data-testid="worker-list">
       <ProTable<Worker>
         headerTitle={t("worker.title")}
-        actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
+        dataSource={page.data}
+        loading={page.loading}
         search={false}
         toolBarRender={() => [
           <Button
@@ -257,11 +259,7 @@ export default function WorkerList() {
             {t("worker.add")}
           </Button>,
         ]}
-        request={async (params) => {
-          const result = await getWorkers({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
-          return { data: result.data, total: result.total, success: true };
-        }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
+        pagination={{ ...page.pagination, total: page.total }}
       />
       <WorkerFormModal
         open={crud.modalOpen}

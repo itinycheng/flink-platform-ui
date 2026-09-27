@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } from "antd";
 import { ApiOutlined, DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
+import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { DataSource, DataSourceType } from "@/types/admin";
 import {
@@ -16,6 +16,7 @@ import { KeyValueEditor } from "@/components/form";
 import { DB_TYPES, enumOptions } from "@/constants/enums";
 import { enumColor } from "@/utils/statusColor";
 import i18n from "@/i18n";
+import { useInvalidateWorkspaceList, useWorkspacePageQuery } from "@/app/useWorkspacePageQuery";
 
 function DataSourceTypeTag({ type }: { type: DataSourceType }) {
   return <Tag color={enumColor(type)}>{type}</Tag>;
@@ -126,7 +127,7 @@ async function handleTest(id: string) {
 // Mirrors useParamCrud in CustomParamList, with an extra handleTest for connection testing.
 function useDataSourceCrud() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>(null);
+  const invalidate = useInvalidateWorkspaceList("datasources");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingDataSource, setEditingDataSource] = useState<DataSource | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -163,7 +164,7 @@ function useDataSourceCrud() {
       setModalOpen(false);
       form.resetFields();
       setEditingDataSource(null);
-      void actionRef.current?.reload();
+      await invalidate();
     } catch (error) {
       if (isFormValidationError(error)) return;
     } finally {
@@ -181,14 +182,13 @@ function useDataSourceCrud() {
     try {
       await deleteDataSource(id);
       message.success(t("common.deleteSuccess"));
-      void actionRef.current?.reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
   };
 
   return {
-    actionRef,
     modalOpen,
     editingDataSource,
     confirmLoading,
@@ -205,6 +205,7 @@ function useDataSourceCrud() {
 export default function DataSourceList() {
   const { t } = useTranslation();
   const crud = useDataSourceCrud();
+  const page = useWorkspacePageQuery("datasources", getDataSources);
 
   const columns = useMemo<ProColumns<DataSource>[]>(
     () => [
@@ -233,9 +234,10 @@ export default function DataSourceList() {
     <div data-testid="datasource-list">
       <ProTable<DataSource>
         headerTitle={t("datasource.title")}
-        actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
+        dataSource={page.data}
+        loading={page.loading}
         search={false}
         toolBarRender={() => [
           <Button
@@ -248,11 +250,7 @@ export default function DataSourceList() {
             {t("datasource.add")}
           </Button>,
         ]}
-        request={async (params) => {
-          const result = await getDataSources({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
-          return { data: result.data, total: result.total, success: true };
-        }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
+        pagination={{ ...page.pagination, total: page.total }}
       />
       <DataSourceFormModal
         open={crud.modalOpen}
