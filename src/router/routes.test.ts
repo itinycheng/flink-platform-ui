@@ -18,6 +18,7 @@ describe("getRoutePermission", () => {
     expect(getRoutePermission("/studio")).toBe("TASK_VIEW");
     expect(getRoutePermission("/studio/list")).toBe("TASK_VIEW");
     expect(getRoutePermission("/jobs")).toBe("TASK_VIEW");
+    expect(getRoutePermission("/workflow")).toBe("TASK_VIEW");
     expect(getRoutePermission("/query")).toBe("TASK_VIEW");
     expect(getRoutePermission("/runs")).toBe("TASK_VIEW");
     expect(getRoutePermission("/monitor")).toBe("TASK_VIEW");

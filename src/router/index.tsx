@@ -33,7 +33,7 @@ const RunsPage = lazy(() => import("../pages/Runs"));
  * - /403: Public route (forbidden page)
  * - /: Protected routes wrapped in MainLayout and AuthGuard
  *   - /dashboard: Dashboard module
- *   - /workflow: Workflow module
+ *   - /studio: Workflow module
  *   - /admin: Admin module
  *   - /monitor: Monitor module
  * - *: 404 catch-all
@@ -62,6 +62,8 @@ export default function AppRouter() {
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/studio" element={<StudioPage />} />
+            <Route path="/jobs" element={<Navigate to="/studio" replace />} />
+            <Route path="/workflow" element={<Navigate to="/studio" replace />} />
             <Route path="/query" element={<QueryConsole />} />
             <Route path="/admin" element={<AdminPage />}>
               <Route index element={<Navigate to="/admin/resources" replace />} />

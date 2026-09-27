@@ -17,6 +17,7 @@ export const routeConfigs: RouteConfig[] = [
 
   { path: "/studio", permission: "TASK_VIEW" },
   { path: "/jobs", permission: "TASK_VIEW" },
+  { path: "/workflow", permission: "TASK_VIEW" },
   { path: "/query", permission: "TASK_VIEW" },
   { path: "/runs", permission: "TASK_VIEW" },
   { path: "/monitor", permission: "TASK_VIEW" },

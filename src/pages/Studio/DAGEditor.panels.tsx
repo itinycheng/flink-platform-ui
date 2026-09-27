@@ -35,7 +35,7 @@ export function DAGToolbar({ embedded, onSave, taskListOpen, onToggleTaskList }:
     >
       {!embedded && (
         <Tooltip title={t("common.back")}>
-          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate("/workflow")} />
+          <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate("/studio")} />
         </Tooltip>
       )}
       <Tooltip title={t("dag.saveFlow")}>
