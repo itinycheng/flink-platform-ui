@@ -42,3 +42,15 @@ After the React UI is stable, introduce a versioned API/OpenAPI contract and
 replace the compatibility implementation without changing page components.
 At that point migrate unsafe GET mutations, add the `/api` prefix, expose
 time-series/schema/log-tail endpoints, and remove the virtual definition tree.
+
+## Read-only smoke test
+
+With the backend running, verify the contract without mutating application data:
+
+```bash
+RUNNELO_USERNAME=admin RUNNELO_PASSWORD=... npm run test:backend
+```
+
+Set `RUNNELO_BACKEND_URL` when the backend is not available at
+`http://localhost:9104`. For SSO deployments, provide `RUNNELO_TOKEN` and
+optionally `RUNNELO_WORKSPACE_ID` instead of a username and password.
