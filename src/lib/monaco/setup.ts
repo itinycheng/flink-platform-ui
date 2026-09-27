@@ -10,11 +10,11 @@
  *
  * Imported once for its side effects from `main.tsx` before the app renders.
  */
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
-import "monaco-editor/esm/vs/basic-languages/sql/sql.contribution.js";
-import "monaco-editor/esm/vs/basic-languages/shell/shell.contribution.js";
+import * as monaco from "monaco-editor/editor/editor.api";
+import "monaco-editor/languages/definitions/sql/register";
+import "monaco-editor/languages/definitions/shell/register";
 import { loader } from "@monaco-editor/react";
-import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
+import EditorWorker from "monaco-editor/editor/editor.worker?worker";
 
 self.MonacoEnvironment = {
   getWorker() {
