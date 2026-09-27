@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } from "antd";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
+import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { Catalog } from "@/types/admin";
 import { createCatalog, deleteCatalog, getCatalogs, updateCatalog } from "@/api/admin";
@@ -9,6 +9,7 @@ import RowActions from "@/components/RowActions";
 import CodeEditor from "@/components/CodeEditor";
 import { CATALOG_TYPES, enumOptions } from "@/constants/enums";
 import { enumColor } from "@/utils/statusColor";
+import { useInvalidateWorkspaceList, useWorkspacePageQuery } from "@/app/useWorkspacePageQuery";
 
 interface CatalogTypeTagProps {
   type: Catalog["type"];
@@ -118,7 +119,7 @@ function isFormValidationError(error: unknown): boolean {
 
 function useCatalogCrud() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>(null);
+  const invalidate = useInvalidateWorkspaceList("catalogs");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingCatalog, setEditingCatalog] = useState<Catalog | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -155,7 +156,7 @@ function useCatalogCrud() {
       setModalOpen(false);
       form.resetFields();
       setEditingCatalog(null);
-      void actionRef.current?.reload();
+      await invalidate();
     } catch (error) {
       if (isFormValidationError(error)) return;
     } finally {
@@ -173,14 +174,13 @@ function useCatalogCrud() {
     try {
       await deleteCatalog(id);
       message.success(t("common.deleteSuccess"));
-      void actionRef.current?.reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
   };
 
   return {
-    actionRef,
     modalOpen,
     editingCatalog,
     confirmLoading,
@@ -196,6 +196,7 @@ function useCatalogCrud() {
 export default function CatalogList() {
   const { t } = useTranslation();
   const crud = useCatalogCrud();
+  const page = useWorkspacePageQuery("catalogs", getCatalogs);
 
   const columns = useMemo<ProColumns<Catalog>[]>(
     () => [
@@ -219,9 +220,10 @@ export default function CatalogList() {
     <div data-testid="catalog-list">
       <ProTable<Catalog>
         headerTitle="Catalog"
-        actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
+        dataSource={page.data}
+        loading={page.loading}
         search={false}
         toolBarRender={() => [
           <Button
@@ -234,11 +236,7 @@ export default function CatalogList() {
             {t("catalog.add")}
           </Button>,
         ]}
-        request={async (params) => {
-          const result = await getCatalogs({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
-          return { data: result.data, total: result.total, success: true };
-        }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
+        pagination={{ ...page.pagination, total: page.total }}
       />
       <CatalogFormModal
         open={crud.modalOpen}

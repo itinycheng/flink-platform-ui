@@ -1,13 +1,14 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } from "antd";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
+import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { Tag as TagModel } from "@/types/admin";
 import { createTag, deleteTag, getTags, updateTag } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import { TAG_TYPES, STATUSES, enumOptions } from "@/constants/enums";
 import { statusColor } from "@/utils/statusColor";
+import { useInvalidateWorkspaceList, useWorkspacePageQuery } from "@/app/useWorkspacePageQuery";
 
 function TagTypeTag({ type }: { type: TagModel["type"] }) {
   const { t } = useTranslation();
@@ -94,7 +95,7 @@ function isFormValidationError(error: unknown): boolean {
 
 function useTagCrud() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>(null);
+  const invalidate = useInvalidateWorkspaceList("tags");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<TagModel | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -131,7 +132,7 @@ function useTagCrud() {
       setModalOpen(false);
       form.resetFields();
       setEditingTag(null);
-      void actionRef.current?.reload();
+      await invalidate();
     } catch (error) {
       if (isFormValidationError(error)) return;
     } finally {
@@ -149,14 +150,13 @@ function useTagCrud() {
     try {
       await deleteTag(id);
       message.success(t("common.deleteSuccess"));
-      void actionRef.current?.reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
   };
 
   return {
-    actionRef,
     modalOpen,
     editingTag,
     confirmLoading,
@@ -172,6 +172,7 @@ function useTagCrud() {
 export default function TagList() {
   const { t } = useTranslation();
   const crud = useTagCrud();
+  const page = useWorkspacePageQuery("tags", getTags);
 
   const columns = useMemo<ProColumns<TagModel>[]>(
     () => [
@@ -207,9 +208,10 @@ export default function TagList() {
     <div data-testid="tag-list">
       <ProTable<TagModel>
         headerTitle={t("tag.title")}
-        actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
+        dataSource={page.data}
+        loading={page.loading}
         search={false}
         toolBarRender={() => [
           <Button
@@ -222,11 +224,7 @@ export default function TagList() {
             {t("tag.add")}
           </Button>,
         ]}
-        request={async (params) => {
-          const result = await getTags({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
-          return { data: result.data, total: result.total, success: true };
-        }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
+        pagination={{ ...page.pagination, total: page.total }}
       />
       <TagFormModal
         open={crud.modalOpen}
