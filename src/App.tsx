@@ -62,7 +62,7 @@ function App() {
   useEffect(() => {
     const onAuthExpired = () => {
       useAuthStore.setState({ token: null, user: null, isAuthenticated: false });
-      useWorkspaceStore.setState({ currentId: null, workspaces: [] });
+      useWorkspaceStore.setState({ currentId: null, workspaces: [], loaded: false });
       queryClient.clear();
     };
     window.addEventListener(AUTH_EXPIRED_EVENT, onAuthExpired);

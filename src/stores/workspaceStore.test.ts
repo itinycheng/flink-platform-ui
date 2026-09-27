@@ -6,7 +6,7 @@ import { useWorkspaceStore } from "./workspaceStore";
 describe("workspaceStore", () => {
   beforeEach(() => {
     localStorage.clear();
-    useWorkspaceStore.setState({ currentId: 1, workspaces: [], loading: false });
+    useWorkspaceStore.setState({ currentId: 1, workspaces: [], loading: false, loaded: false });
     useJobStore.setState({
       treeData: [{ id: "job:1", name: "job", kind: "task", pid: "legacy:definitions" }],
       selectedNode: { id: "job:1", name: "job", kind: "task", pid: "legacy:definitions" },

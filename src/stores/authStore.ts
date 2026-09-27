@@ -41,7 +41,7 @@ function clearSession(): void {
   // Clear the workspace too — otherwise the next login on a shared browser
   // inherits the previous user's stale workspaceId (and X-Workspace-Id header).
   localStorage.removeItem(STORAGE_KEYS.workspaceId);
-  useWorkspaceStore.setState({ currentId: null, workspaces: [] });
+  useWorkspaceStore.setState({ currentId: null, workspaces: [], loaded: false });
   queryClient.clear();
 }
 

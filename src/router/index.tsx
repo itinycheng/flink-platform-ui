@@ -7,6 +7,7 @@ import Loading from "@/components/Loading";
 const Forbidden = lazy(() => import("../pages/Forbidden"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const Login = lazy(() => import("../pages/Login"));
+const NoWorkspace = lazy(() => import("../pages/NoWorkspace"));
 const Dashboard = lazy(() => import("../pages/Dashboard"));
 const StudioPage = lazy(() => import("../pages/Studio"));
 const AdminPage = lazy(() => import("../pages/Admin"));
@@ -46,6 +47,7 @@ export default function AppRouter() {
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/no-workspace" element={<NoWorkspace />} />
           <Route path="/403" element={<Forbidden />} />
 
           {/* Protected routes with layout */}

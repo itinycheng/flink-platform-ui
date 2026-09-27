@@ -10,6 +10,7 @@ interface WorkspaceState {
   workspaces: Workspace[];
   currentId: number | null;
   loading: boolean;
+  loaded: boolean;
   loadWorkspaces: () => Promise<void>;
   setCurrent: (id: number) => void;
 }
@@ -25,6 +26,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   workspaces: [],
   currentId: readStoredId(),
   loading: false,
+  loaded: false,
 
   loadWorkspaces: async () => {
     set({ loading: true });
@@ -40,7 +42,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         currentId = list[0]?.id ?? null;
         if (currentId != null) localStorage.setItem(STORAGE_KEYS.workspaceId, String(currentId));
       }
-      set({ workspaces: list, currentId });
+      set({ workspaces: list, currentId, loaded: true });
     } finally {
       set({ loading: false });
     }

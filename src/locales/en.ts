@@ -601,6 +601,8 @@ const en = {
   },
 
   workspace: {
+    noWorkspaceTitle: "No workspace assigned",
+    noWorkspaceDescription: "Your account is not assigned to a workspace. Contact an administrator for access.",
     title: "Workspaces",
     defaultName: "Default Workspace",
     addButton: "New Workspace",

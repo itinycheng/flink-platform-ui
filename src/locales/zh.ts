@@ -599,6 +599,8 @@ const zh = {
   },
 
   workspace: {
+    noWorkspaceTitle: "尚未分配工作区",
+    noWorkspaceDescription: "当前账号尚未分配工作区，请联系管理员开通访问权限。",
     title: "工作空间",
     defaultName: "默认工作空间",
     addButton: "新增工作空间",
