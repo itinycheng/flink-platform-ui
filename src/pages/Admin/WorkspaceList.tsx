@@ -1,13 +1,17 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } from "antd";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
+import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { Workspace, WorkspaceStatus } from "@/types/workspace";
 import { createWorkspace, deleteWorkspace, getWorkspaces, updateWorkspace } from "@/api/workspace";
 import RowActions from "@/components/RowActions";
 import { STATUSES, enumOptions } from "@/constants/enums";
 import { statusColor } from "@/utils/statusColor";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/app/queryClient";
+import { queryKeys } from "@/api/queryKeys";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 function getWorkspaceStatusOptions(t: (k: string) => string) {
   return enumOptions(STATUSES, "Status", t);
@@ -21,7 +25,7 @@ function WorkspaceStatusTag({ status }: { status: WorkspaceStatus }) {
 interface WorkspaceActionsCellProps {
   record: Workspace;
   onEdit: (record: Workspace) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number) => Promise<void>;
 }
 
 function WorkspaceActionsCell({ record, onEdit, onDelete }: WorkspaceActionsCellProps) {
@@ -41,7 +45,7 @@ function WorkspaceActionsCell({ record, onEdit, onDelete }: WorkspaceActionsCell
           icon: <DeleteOutlined />,
           danger: true,
           confirm: t("workspace.deleteConfirmDesc", { name: record.name }),
-          onClick: () => onDelete(record.id),
+          onClick: () => void onDelete(record.id),
         },
       ]}
     />
@@ -90,11 +94,19 @@ function isFormValidationError(error: unknown): boolean {
 
 function useWorkspaceCrud() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>(null);
+  const currentWorkspaceId = useWorkspaceStore((state) => state.currentId);
+  const loadWorkspaces = useWorkspaceStore((state) => state.loadWorkspaces);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingWorkspace, setEditingWorkspace] = useState<Workspace | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const [form] = Form.useForm();
+  const invalidateWorkspaces = async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["workspace", currentWorkspaceId, "admin", "workspaces"],
+    });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.workspaces });
+    await loadWorkspaces();
+  };
 
   const handleAdd = () => {
     setEditingWorkspace(null);
@@ -126,7 +138,7 @@ function useWorkspaceCrud() {
       setModalOpen(false);
       form.resetFields();
       setEditingWorkspace(null);
-      void actionRef.current?.reload();
+      await invalidateWorkspaces();
     } catch (error) {
       if (isFormValidationError(error)) return;
     } finally {
@@ -144,14 +156,13 @@ function useWorkspaceCrud() {
     try {
       await deleteWorkspace(id);
       message.success(t("common.deleteSuccess"));
-      void actionRef.current?.reload();
+      await invalidateWorkspaces();
     } catch {
       // handled by the global interceptor toast
     }
   };
 
   return {
-    actionRef,
     modalOpen,
     editingWorkspace,
     confirmLoading,
@@ -164,18 +175,19 @@ function useWorkspaceCrud() {
   };
 }
 
-export default function WorkspaceList() {
-  const { t } = useTranslation();
-  const crud = useWorkspaceCrud();
-
-  const columns = useMemo<ProColumns<Workspace>[]>(
+function useWorkspaceColumns(
+  t: (key: string) => string,
+  onEdit: (record: Workspace) => void,
+  onDelete: (id: number) => Promise<void>,
+) {
+  return useMemo<ProColumns<Workspace>[]>(
     () => [
       {
         title: t("common.name"),
         dataIndex: "name",
         key: "name",
         ellipsis: true,
-        render: (_, r) => (r.isDefault ? t("workspace.defaultName") : r.name),
+        render: (_, row) => (row.isDefault ? t("workspace.defaultName") : row.name),
       },
       { title: t("common.description"), dataIndex: "description", key: "description", ellipsis: true },
       {
@@ -183,34 +195,50 @@ export default function WorkspaceList() {
         dataIndex: "status",
         key: "status",
         width: 100,
-        render: (_, r) => <WorkspaceStatusTag status={r.status} />,
+        render: (_, row) => <WorkspaceStatusTag status={row.status} />,
       },
       {
         title: t("common.createdAt"),
         dataIndex: "createdAt",
         key: "createdAt",
         width: 180,
-        render: (_, r) => new Date(r.createdAt).toLocaleString(),
+        render: (_, row) => new Date(row.createdAt).toLocaleString(),
       },
       {
         title: t("common.operation"),
         key: "action",
         width: 150,
-        render: (_, record) => (
-          <WorkspaceActionsCell record={record} onEdit={crud.handleEdit} onDelete={crud.handleDelete} />
-        ),
+        render: (_, record) => <WorkspaceActionsCell record={record} onEdit={onEdit} onDelete={onDelete} />,
       },
     ],
-    [t, crud.handleEdit, crud.handleDelete],
+    [t, onEdit, onDelete],
   );
+}
+
+export default function WorkspaceList() {
+  const { t } = useTranslation();
+  const crud = useWorkspaceCrud();
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10 });
+  const workspacesQuery = useQuery(
+    {
+      queryKey: queryKeys.adminList(workspaceId, "workspaces", pagination),
+      queryFn: () => getWorkspaces(pagination),
+      enabled: workspaceId != null,
+    },
+    queryClient,
+  );
+
+  const columns = useWorkspaceColumns(t, crud.handleEdit, crud.handleDelete);
 
   return (
     <div data-testid="workspace-list">
       <ProTable<Workspace>
         headerTitle={t("workspace.title")}
-        actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
+        dataSource={workspacesQuery.data?.data ?? []}
+        loading={workspacesQuery.isFetching}
         search={false}
         toolBarRender={() => [
           <Button
@@ -223,11 +251,13 @@ export default function WorkspaceList() {
             {t("workspace.addButton")}
           </Button>,
         ]}
-        request={async (params) => {
-          const result = await getWorkspaces({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
-          return { data: result.data, total: result.total, success: true };
+        pagination={{
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: workspacesQuery.data?.total ?? 0,
+          showSizeChanger: true,
+          onChange: (page, pageSize) => setPagination({ page, pageSize }),
         }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
       />
       <WorkspaceFormModal
         open={crud.modalOpen}
