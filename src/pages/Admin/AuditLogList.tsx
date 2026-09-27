@@ -4,7 +4,11 @@ import { CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
 import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { AuditLog, AuditResult } from "@/types/admin";
-import { getAuditLogs } from "@/api/admin";
+import { getAuditLogs, type AuditLogQuery } from "@/api/admin";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/app/queryClient";
+import { queryKeys } from "@/api/queryKeys";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 const ACTIONS = ["CREATE", "UPDATE", "DELETE", "LOGIN", "LOGOUT", "RUN", "ONLINE", "OFFLINE"];
 const MODULES = ["user", "resource", "workflow", "task", "datasource", "config", "tag"];
@@ -155,10 +159,25 @@ function useAuditColumns(t: ReturnType<typeof useTranslation>["t"], setDetail: (
   );
 }
 
+function useAuditPage() {
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const [params, setParams] = useState<AuditLogQuery>({ page: 1, pageSize: 10 });
+  const query = useQuery(
+    {
+      queryKey: queryKeys.adminList(workspaceId, "audit-logs", params),
+      queryFn: () => getAuditLogs(params),
+      enabled: workspaceId != null,
+    },
+    queryClient,
+  );
+  return { params, setParams, query };
+}
+
 export default function AuditLogList() {
   const { t } = useTranslation();
   const [detail, setDetail] = useState<AuditLog | null>(null);
   const columns = useAuditColumns(t, setDetail);
+  const { params, setParams, query } = useAuditPage();
 
   return (
     <div data-testid="audit-log-list">
@@ -166,21 +185,20 @@ export default function AuditLogList() {
         headerTitle={t("audit.title")}
         rowKey="id"
         columns={columns}
+        dataSource={query.data?.data ?? []}
+        loading={query.isFetching}
         options={false}
-        request={async (params) => {
-          const result = await getAuditLogs({
-            page: params.current ?? 1,
-            pageSize: params.pageSize ?? 10,
-            operator: params.operator,
-            action: params.action,
-            module: params.module,
-            result: params.result,
-            startTime: params.startTime,
-            endTime: params.endTime,
-          });
-          return { data: result.data, total: result.total, success: true };
+        onSubmit={(values) => {
+          setParams((current) => ({ ...current, ...values, page: 1 }));
         }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
+        onReset={() => setParams({ page: 1, pageSize: params.pageSize })}
+        pagination={{
+          current: params.page,
+          pageSize: params.pageSize,
+          total: query.data?.total ?? 0,
+          showSizeChanger: true,
+          onChange: (page, pageSize) => setParams((current) => ({ ...current, page, pageSize })),
+        }}
       />
       <AuditDetailDrawer record={detail} onClose={() => setDetail(null)} />
     </div>
