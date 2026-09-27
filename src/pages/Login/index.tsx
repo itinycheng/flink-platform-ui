@@ -31,7 +31,7 @@ function LocalLoginForm({
       onFinish={onFinish}
       autoComplete="off"
       size="large"
-      initialValues={{ username: "admin", password: "123456" }}
+      initialValues={{ username: "admin", password: "111111" }}
     >
       <Form.Item name="username" rules={[{ required: true, message: t("login.usernameRequired") }]}>
         <Input prefix={<UserOutlined />} placeholder={t("login.username")} data-testid="username-input" />

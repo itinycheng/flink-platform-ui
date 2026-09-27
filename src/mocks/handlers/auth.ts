@@ -25,10 +25,10 @@ export const authHandlers = [
       return ok({ token: faker.string.uuid(), workspaceId: 1 });
     }
 
-    if (body.username !== "admin" && body.username !== "user") {
+    if (body.username !== "admin") {
       return HttpResponse.json({ message: "用户名或密码错误" }, { status: 401 });
     }
-    if (body.password !== "123456") {
+    if (body.password !== "111111") {
       return HttpResponse.json({ message: "用户名或密码错误" }, { status: 401 });
     }
 
