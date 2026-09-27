@@ -4,6 +4,8 @@ export const queryKeys = {
   workspaces: ["session", "workspaces"] as const,
   options: (workspaceId: number | null, resource: string, deps: readonly unknown[]) =>
     ["workspace", workspaceId, "options", resource, ...deps] as const,
+  adminList: (workspaceId: number | null, resource: string, params: object) =>
+    ["workspace", workspaceId, "admin", resource, params] as const,
   dashboard: (workspaceId: number | null) => ["workspace", workspaceId, "dashboard"] as const,
   runs: {
     list: (workspaceId: number | null, params: FlowRunListParams) =>

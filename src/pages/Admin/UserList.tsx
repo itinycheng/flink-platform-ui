@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Form, Input, Modal, Select, Space, Tag, message, type FormInstance, type FormListFieldData } from "antd";
 import { CheckCircleOutlined, EditOutlined, MinusCircleOutlined, PlusOutlined, StopOutlined } from "@ant-design/icons";
-import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
+import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import type { ManagedUser } from "@/types/admin";
@@ -10,6 +10,10 @@ import { createUser, getUsers, updateUser } from "@/api/admin";
 import { getAllWorkspaces } from "@/api/workspace";
 import RowActions from "@/components/RowActions";
 import { ROLES, enumOptions } from "@/constants/enums";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/app/queryClient";
+import { queryKeys } from "@/api/queryKeys";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 /** Option for the workspace picker in the per-workspace role editor. */
 interface WsOption {
@@ -32,7 +36,7 @@ function UserStatusTag({ status }: { status: ManagedUser["status"] }) {
 interface UserActionsCellProps {
   record: ManagedUser;
   onEdit: (record: ManagedUser) => void;
-  onToggleStatus: (record: ManagedUser) => void;
+  onToggleStatus: (record: ManagedUser) => Promise<void>;
 }
 
 function UserActionsCell({ record, onEdit, onToggleStatus }: UserActionsCellProps) {
@@ -55,7 +59,7 @@ function UserActionsCell({ record, onEdit, onToggleStatus }: UserActionsCellProp
           confirm: isActive
             ? t("user2.disableConfirmDesc", { name: record.username })
             : t("user2.enableConfirmDesc", { name: record.username }),
-          onClick: () => onToggleStatus(record),
+          onClick: () => void onToggleStatus(record),
         },
       ]}
     />
@@ -186,25 +190,26 @@ function buildRoles(globalRole: Role | undefined, workspaceRoles: WorkspaceRoleE
 /** Loads the workspace options for the per-workspace role Select (numeric ids). */
 function useWorkspaceOptions(): WsOption[] {
   const { t } = useTranslation();
-  const [wsOptions, setWsOptions] = useState<WsOption[]>([]);
-
-  useEffect(() => {
-    void getAllWorkspaces().then((ws) =>
-      setWsOptions(ws.map((w) => ({ label: w.isDefault ? t("workspace.defaultName") : w.name, value: w.id }))),
-    );
-  }, [t]);
-
-  return wsOptions;
+  const { data = [] } = useQuery(
+    { queryKey: queryKeys.workspaces, queryFn: getAllWorkspaces, staleTime: 60_000 },
+    queryClient,
+  );
+  return data.map((workspace) => ({
+    label: workspace.isDefault ? t("workspace.defaultName") : workspace.name,
+    value: workspace.id,
+  }));
 }
 
 function useUserCrud() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>(null);
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
   const wsOptions = useWorkspaceOptions();
   const [form] = Form.useForm();
+  const invalidateUsers = () =>
+    queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "admin", "users"] });
 
   const handleAdd = () => {
     setEditingUser(null);
@@ -240,7 +245,7 @@ function useUserCrud() {
       }
       setModalOpen(false);
       form.resetFields();
-      void actionRef.current?.reload();
+      await invalidateUsers();
     } catch (error) {
       if (isFormValidationError(error)) return;
     } finally {
@@ -259,14 +264,13 @@ function useUserCrud() {
     try {
       await updateUser(record.id, { status: newStatus });
       message.success(newStatus === "LOCKED" ? t("user2.disableSuccess") : t("user2.enableSuccess"));
-      void actionRef.current?.reload();
+      await invalidateUsers();
     } catch {
       // handled by the global interceptor toast
     }
   };
 
   return {
-    actionRef,
     modalOpen,
     editingUser,
     confirmLoading,
@@ -280,11 +284,12 @@ function useUserCrud() {
   };
 }
 
-export default function UserList() {
-  const { t } = useTranslation();
-  const crud = useUserCrud();
-
-  const columns = useMemo<ProColumns<ManagedUser>[]>(
+function useUserColumns(
+  t: TFunction,
+  onEdit: (record: ManagedUser) => void,
+  onToggleStatus: (record: ManagedUser) => Promise<void>,
+) {
+  return useMemo<ProColumns<ManagedUser>[]>(
     () => [
       { title: t("user2.usernameLabel"), dataIndex: "username", key: "username", ellipsis: true },
       { title: t("user2.emailLabel"), dataIndex: "email", key: "email", ellipsis: true },
@@ -293,35 +298,60 @@ export default function UserList() {
         dataIndex: "roles",
         key: "roles",
         width: 200,
-        render: (_, r) => <UserRoleTag roles={r.roles} />,
+        render: (_, row) => <UserRoleTag roles={row.roles} />,
       },
       {
         title: t("common.status"),
         dataIndex: "status",
         key: "status",
         width: 100,
-        render: (_, r) => <UserStatusTag status={r.status} />,
+        render: (_, row) => <UserStatusTag status={row.status} />,
       },
-      { title: t("common.createdAt"), dataIndex: "createdAt", key: "createdAt", width: 200, valueType: "dateTime", sorter: true },
+      {
+        title: t("common.createdAt"),
+        dataIndex: "createdAt",
+        key: "createdAt",
+        width: 200,
+        valueType: "dateTime",
+        sorter: true,
+      },
       {
         title: t("common.operation"),
         key: "action",
         width: 180,
         render: (_, record) => (
-          <UserActionsCell record={record} onEdit={crud.handleEdit} onToggleStatus={crud.handleToggleStatus} />
+          <UserActionsCell record={record} onEdit={onEdit} onToggleStatus={onToggleStatus} />
         ),
       },
     ],
-    [t, crud.handleEdit, crud.handleToggleStatus],
+    [t, onEdit, onToggleStatus],
   );
+}
+
+export default function UserList() {
+  const { t } = useTranslation();
+  const crud = useUserCrud();
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10 });
+  const usersQuery = useQuery(
+    {
+      queryKey: queryKeys.adminList(workspaceId, "users", pagination),
+      queryFn: () => getUsers(pagination),
+      enabled: workspaceId != null,
+    },
+    queryClient,
+  );
+
+  const columns = useUserColumns(t, crud.handleEdit, crud.handleToggleStatus);
 
   return (
     <div data-testid="user-list">
       <ProTable<ManagedUser>
         headerTitle={t("user2.title")}
-        actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
+        dataSource={usersQuery.data?.data ?? []}
+        loading={usersQuery.isFetching}
         search={false}
         toolBarRender={() => [
           <Button
@@ -334,11 +364,13 @@ export default function UserList() {
             {t("user2.addButton")}
           </Button>,
         ]}
-        request={async (params) => {
-          const result = await getUsers({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
-          return { data: result.data, total: result.total, success: true };
+        pagination={{
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: usersQuery.data?.total ?? 0,
+          showSizeChanger: true,
+          onChange: (page, pageSize) => setPagination({ page, pageSize }),
         }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
       />
       <UserFormModal
         open={crud.modalOpen}

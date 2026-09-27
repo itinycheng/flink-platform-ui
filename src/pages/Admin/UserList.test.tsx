@@ -5,6 +5,7 @@ import enUS from "antd/locale/en_US";
 import UserList from "./UserList";
 import * as adminApi from "@/api/admin";
 import * as wsApi from "@/api/workspace";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 // UserList is normally rendered inside App.tsx's <ConfigProvider locale={...}>. Without an
 // ancestor ConfigProvider, antd's Modal falls back to its built-in default locale (zh_CN), so
@@ -31,6 +32,7 @@ const USER = {
 };
 
 beforeEach(() => {
+  useWorkspaceStore.setState({ currentId: 1 });
   vi.mocked(adminApi.getUsers).mockResolvedValue({ data: [USER], total: 1 } as never);
   vi.mocked(adminApi.updateUser).mockResolvedValue(1 as never);
   vi.mocked(wsApi.getAllWorkspaces).mockResolvedValue([
