@@ -23,7 +23,7 @@ async function request(path, init = {}) {
 async function authenticate() {
   const config = await request("/login/config");
   if (token) return config;
-  if (config.authType !== "LOCAL") {
+  if (String(config.authType).toUpperCase() !== "LOCAL") {
     throw new Error(`Backend uses ${config.authType}; provide RUNNELO_TOKEN for the authenticated checks.`);
   }
   if (!username || !password) {
