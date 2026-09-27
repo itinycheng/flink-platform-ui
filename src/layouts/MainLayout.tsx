@@ -19,6 +19,7 @@ import {
   ConsoleSqlOutlined,
   AppstoreOutlined,
   AuditOutlined,
+  SlidersOutlined,
 } from "@ant-design/icons";
 import UserAvatar from "@/components/UserAvatar";
 import LangSwitcher from "@/components/LangSwitcher";
@@ -83,6 +84,7 @@ function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
           { path: "/admin/catalogs", name: t("menu.catalogs"), icon: <TableOutlined /> },
           { path: "/admin/workers", name: t("menu.workers"), icon: <ClusterOutlined /> },
           { path: "/admin/tags", name: t("menu.tags"), icon: <TagsOutlined /> },
+          { path: "/admin/sys-configs", name: t("menu.systemConfig"), icon: <SlidersOutlined /> },
           { path: "/admin/users", name: t("menu.users"), icon: <TeamOutlined /> },
           { path: "/admin/alert-rules", name: t("menu.alertRules"), icon: <BellOutlined /> },
           { path: "/admin/workspaces", name: t("menu.workspaces"), icon: <AppstoreOutlined /> },

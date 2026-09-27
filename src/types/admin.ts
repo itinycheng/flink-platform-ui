@@ -83,10 +83,18 @@ export interface Tag {
   updatedAt: string;
 }
 
-// ---- System Config (Hadoop/Flink/Hive) ----
+// ---- Runtime Config ----
 
-export type SysConfigType = "HADOOP_CONFIG" | "FLINK_CONFIG" | "HIVE_CONFIG" | "SPARK_CONFIG";
+export type SysConfigType = "FLINK";
 export type SysConfigStatus = Status;
+
+export interface FlinkRuntimeConfig {
+  type: "FLINK";
+  commandPath: string;
+  jarFile: string;
+  className: string;
+  libDirs?: string;
+}
 
 export interface SysConfig {
   id: string;
@@ -94,8 +102,7 @@ export interface SysConfig {
   type: SysConfigType;
   version: string;
   status: SysConfigStatus;
-  /** Raw config content (properties / xml / yaml). */
-  content: string;
+  config: FlinkRuntimeConfig;
   description?: string;
   createdAt: string;
   updatedAt: string;

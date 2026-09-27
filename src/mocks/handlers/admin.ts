@@ -120,9 +120,8 @@ function generateTags(count: number): Tag[] {
 }
 
 function generateSysConfigs(count: number): SysConfig[] {
-  const types: SysConfigType[] = ["HADOOP_CONFIG", "FLINK_CONFIG", "HIVE_CONFIG", "SPARK_CONFIG"];
   return Array.from({ length: count }, () => {
-    const type = faker.helpers.arrayElement(types);
+    const type: SysConfigType = "FLINK";
     const now = faker.date.recent({ days: 60 }).toISOString();
     return {
       id: `cfg-${faker.string.nanoid(6)}`,
@@ -130,7 +129,13 @@ function generateSysConfigs(count: number): SysConfig[] {
       type,
       version: `${faker.number.int({ min: 1, max: 3 })}.${faker.number.int({ min: 0, max: 9 })}`,
       status: faker.helpers.arrayElement(["ENABLE", "DISABLE"] as const),
-      content: `# ${type}\nkey.a=${faker.word.noun()}\nkey.b=${faker.number.int({ min: 1, max: 100 })}`,
+      config: {
+        type: "FLINK",
+        commandPath: "/opt/flink/bin/flink",
+        jarFile: "hdfs:///flink/flink-sql-client.jar",
+        className: "com.example.FlinkSqlClient",
+        libDirs: "/opt/flink/lib",
+      },
       description: faker.lorem.sentence({ min: 3, max: 8 }),
       createdAt: now,
       updatedAt: now,

@@ -12,6 +12,7 @@ import type {
 } from "@/types/admin";
 import type { Resource } from "@/types/entities";
 import type { PaginatedResponse, PaginationParams, IPage } from "@/types/common";
+import type { Status } from "@/constants/enums";
 import { ipageToPaginated, toPageParams } from "@/types/common";
 import { formatLegacyDateTime } from "@/api/legacy/date";
 import { adaptLegacyTimestamps, type LegacyTimestampFields } from "@/api/legacy/contracts";
@@ -205,8 +206,17 @@ export function deleteTag(id: string): Promise<boolean> {
 
 // ---- System Configs ---- (backend: /config/*)
 
-export function getSysConfigs(params?: PaginationParams): Promise<PaginatedResponse<SysConfig>> {
-  return http.get<IPage<SysConfig>>("/config/page", { params: toPageParams(params) }).then(ipageToPaginated);
+export interface SysConfigQuery extends PaginationParams {
+  name?: string;
+  status?: Status;
+}
+
+export function getSysConfigs(params?: SysConfigQuery): Promise<PaginatedResponse<SysConfig>> {
+  return http
+    .get<IPage<SysConfig & LegacyTimestampFields>>("/config/page", {
+      params: { ...toPageParams(params), name: params?.name, status: params?.status },
+    })
+    .then((page) => ipageToPaginated({ ...page, records: page.records.map(adaptLegacyTimestamps) }));
 }
 
 export function createSysConfig(data: Omit<SysConfig, "id" | "createdAt" | "updatedAt">): Promise<number> {

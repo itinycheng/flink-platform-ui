@@ -54,6 +54,7 @@ async function main() {
 
   const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   let flowId;
+  let configId;
   try {
     flowId = await post("/jobFlow/create", {
       name: `ui-smoke-flow-${suffix}`,
@@ -87,8 +88,28 @@ async function main() {
     const saved = await request(`/jobFlow/get/${flowId}`);
     if (saved.flow?.vertices?.[0]?.jobId !== job.id) throw new Error("Saved workflow DAG did not retain the task.");
 
-    console.log(`Flink Platform mutation smoke passed (flow ${flowId}, task ${job.id}).`);
+    configId = await post("/config/create", {
+      name: `ui-smoke-flink-${suffix}`,
+      description: "Created by the frontend mutation smoke test",
+      type: "FLINK",
+      version: `smoke-${suffix}`,
+      status: "DISABLE",
+      config: {
+        type: "FLINK",
+        commandPath: "/opt/flink/bin/flink",
+        jarFile: "hdfs:///flink/flink-sql-client.jar",
+        className: "com.example.FlinkSqlClient",
+        libDirs: "/opt/flink/lib",
+      },
+    });
+    const savedConfig = await request(`/config/get/${configId}`);
+    if (savedConfig.type !== "FLINK" || savedConfig.config?.type !== "FLINK") {
+      throw new Error("Saved Flink config did not retain its polymorphic type.");
+    }
+
+    console.log(`Flink Platform mutation smoke passed (flow ${flowId}, task ${job.id}, config ${configId}).`);
   } finally {
+    if (configId) await request(`/config/purge/${configId}`);
     if (flowId) {
       await post("/jobFlow/update", { id: flowId, type: "JOB_FLOW", status: "DELETE", config: { parallelism: 1 } });
       await request(`/jobFlow/purge/${flowId}`);
