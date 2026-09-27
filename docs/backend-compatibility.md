@@ -26,6 +26,9 @@ backend at `flink-platform-ui/frontend` as a Git submodule.
 | ------------------- | ----------------------------------------------------------- |
 | Definition explorer | Virtual root built from `/jobFlow/page` and `/jobInfo/page` |
 | Definition folders  | Hidden; the backend has no group resource                   |
+| Workflow creation   | `/jobFlow/create` with legacy scheduling defaults           |
+| Task creation       | `/jobInfo/create`; each task selects its owning `flowId`     |
+| DAG composition     | Existing flow tasks from `/jobInfo/list` become vertices    |
 | Flow run list       | `/jobFlowRun/page`, with legacy query parameter adaptation  |
 | Flow run detail     | `/jobFlowRun/get/{id}` plus `/jobRun/page?flowRunId=...`    |
 | Job log             | `backInfo` from `/jobRun/get/{id}`                          |
@@ -35,7 +38,7 @@ backend at `flink-platform-ui/frontend` as a Git submodule.
 | SQL execution       | `/reactive/execJob`                                         |
 | Schema browser      | Empty until metadata endpoints exist                        |
 | Monitor page        | Redirected to existing alert-rule management                |
-| System config       | Hidden until its form matches legacy polymorphic `Config`    |
+| System config       | `/config/*` with the backend's polymorphic `FLINK` payload   |
 
 ## Authentication modes
 
@@ -67,3 +70,13 @@ Set `FLINK_PLATFORM_BACKEND_URL` when the backend is not available at
 `http://localhost:9104`. For SSO deployments, provide `FLINK_PLATFORM_TOKEN`
 and optionally `FLINK_PLATFORM_WORKSPACE_ID` instead of a username and
 password.
+
+## Mutation smoke test
+
+To verify create/update compatibility, run the mutation test against a local
+or disposable backend. It creates a workflow, task, DAG and Flink runtime
+config, verifies them, then purges only the records it created:
+
+```bash
+FLINK_PLATFORM_USERNAME=admin FLINK_PLATFORM_PASSWORD=... npm run test:backend:mutation
+```

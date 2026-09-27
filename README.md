@@ -47,6 +47,8 @@ npm run preview
 | `npm run format`     | Prettier format               |
 | `npm run test`       | Run tests                     |
 | `npm run test:watch` | Run tests in watch mode       |
+| `npm run test:backend` | Check a running backend without writes |
+| `npm run test:backend:mutation` | Create, verify, and clean up backend test data |
 
 ## Project Structure
 
