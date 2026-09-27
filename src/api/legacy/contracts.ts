@@ -13,6 +13,21 @@ export interface LegacyStatusCountDto {
   count: number | string;
 }
 
+export interface LegacyTimestampFields {
+  createTime?: string;
+  updateTime?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export function adaptLegacyTimestamps<T extends LegacyTimestampFields>(row: T) {
+  return {
+    ...row,
+    createdAt: row.createdAt ?? row.createTime ?? "",
+    updatedAt: row.updatedAt ?? row.updateTime ?? row.createTime ?? "",
+  };
+}
+
 export interface LegacyJobFlowDagDto {
   vertices?: Array<{ id: number; jobId: number; jobRunId?: number; jobRunStatus?: string }>;
   edges?: Array<{ fromVId: number; toVId: number; expectStatus?: string }>;

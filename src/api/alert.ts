@@ -2,9 +2,12 @@ import { http } from "@/utils/request";
 import type { AlertRule } from "@/types/alert";
 import type { PaginatedResponse, PaginationParams, IPage } from "@/types/common";
 import { ipageToPaginated, toPageParams } from "@/types/common";
+import { adaptLegacyTimestamps, type LegacyTimestampFields } from "@/api/legacy/contracts";
 
 export function getAlertRules(params?: PaginationParams): Promise<PaginatedResponse<AlertRule>> {
-  return http.get<IPage<AlertRule>>("/alert/page", { params: toPageParams(params) }).then(ipageToPaginated);
+  return http
+    .get<IPage<AlertRule & LegacyTimestampFields>>("/alert/page", { params: toPageParams(params) })
+    .then((page) => ipageToPaginated({ ...page, records: page.records.map(adaptLegacyTimestamps) }));
 }
 
 /** Full list (unpaginated) for binding selectors. */

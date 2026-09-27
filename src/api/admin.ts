@@ -14,6 +14,7 @@ import type { Resource } from "@/types/entities";
 import type { PaginatedResponse, PaginationParams, IPage } from "@/types/common";
 import { ipageToPaginated, toPageParams } from "@/types/common";
 import { formatLegacyDateTime } from "@/api/legacy/date";
+import { adaptLegacyTimestamps, type LegacyTimestampFields } from "@/api/legacy/contracts";
 
 // ---- Resource Management ---- (backend: /resource/*)
 
@@ -73,7 +74,9 @@ export function deleteResource(id: number): Promise<boolean> {
 // ---- User Management ---- (backend: /user/*)
 
 export function getUsers(params?: PaginationParams): Promise<PaginatedResponse<ManagedUser>> {
-  return http.get<IPage<ManagedUser>>("/user/page", { params: toPageParams(params) }).then(ipageToPaginated);
+  return http
+    .get<IPage<ManagedUser & LegacyTimestampFields>>("/user/page", { params: toPageParams(params) })
+    .then((page) => ipageToPaginated({ ...page, records: page.records.map(adaptLegacyTimestamps) }));
 }
 
 export function createUser(data: Omit<ManagedUser, "id" | "createdAt">): Promise<number> {
@@ -109,7 +112,9 @@ export function deleteParam(id: string): Promise<boolean> {
 // ---- Data Sources ----
 
 export function getDataSources(params?: PaginationParams): Promise<PaginatedResponse<DataSource>> {
-  return http.get<IPage<DataSource>>("/datasource/page", { params: toPageParams(params) }).then(ipageToPaginated);
+  return http
+    .get<IPage<DataSource & LegacyTimestampFields>>("/datasource/page", { params: toPageParams(params) })
+    .then((page) => ipageToPaginated({ ...page, records: page.records.map(adaptLegacyTimestamps) }));
 }
 
 export function createDataSource(data: Omit<DataSource, "id" | "createdAt" | "updatedAt">): Promise<number> {
@@ -135,7 +140,9 @@ export function testDataSourceConnection(id: string): Promise<boolean> {
 // ---- Catalogs ---- (backend: /catalog/*)
 
 export function getCatalogs(params?: PaginationParams): Promise<PaginatedResponse<Catalog>> {
-  return http.get<IPage<Catalog>>("/catalog/page", { params: toPageParams(params) }).then(ipageToPaginated);
+  return http
+    .get<IPage<Catalog & LegacyTimestampFields>>("/catalog/page", { params: toPageParams(params) })
+    .then((page) => ipageToPaginated({ ...page, records: page.records.map(adaptLegacyTimestamps) }));
 }
 
 export function createCatalog(data: Omit<Catalog, "id" | "createdAt" | "updatedAt">): Promise<number> {
@@ -156,7 +163,9 @@ export function deleteCatalog(id: string): Promise<boolean> {
 // ---- Workers ---- (backend: /worker/*)
 
 export function getWorkers(params?: PaginationParams): Promise<PaginatedResponse<Worker>> {
-  return http.get<IPage<Worker>>("/worker/page", { params: toPageParams(params) }).then(ipageToPaginated);
+  return http
+    .get<IPage<Worker & LegacyTimestampFields>>("/worker/page", { params: toPageParams(params) })
+    .then((page) => ipageToPaginated({ ...page, records: page.records.map(adaptLegacyTimestamps) }));
 }
 
 export function createWorker(data: Omit<Worker, "id" | "createdAt" | "updatedAt">): Promise<number> {
@@ -177,7 +186,9 @@ export function deleteWorker(id: string): Promise<boolean> {
 // ---- Tags ---- (backend: /tag/*)
 
 export function getTags(params?: PaginationParams): Promise<PaginatedResponse<Tag>> {
-  return http.get<IPage<Tag>>("/tag/page", { params: toPageParams(params) }).then(ipageToPaginated);
+  return http
+    .get<IPage<Tag & LegacyTimestampFields>>("/tag/page", { params: toPageParams(params) })
+    .then((page) => ipageToPaginated({ ...page, records: page.records.map(adaptLegacyTimestamps) }));
 }
 
 export function createTag(data: Omit<Tag, "id" | "createdAt" | "updatedAt">): Promise<number> {

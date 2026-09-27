@@ -2,14 +2,19 @@ import { http } from "@/utils/request";
 import type { Workspace } from "@/types/workspace";
 import type { PaginatedResponse, PaginationParams, IPage } from "@/types/common";
 import { ipageToPaginated, toPageParams } from "@/types/common";
+import { adaptLegacyTimestamps, type LegacyTimestampFields } from "@/api/legacy/contracts";
 
 /** Full list (unpaginated) for the header switcher. */
 export function getAllWorkspaces(): Promise<Workspace[]> {
-  return http.get<Workspace[]>("/workspace/list");
+  return http
+    .get<Array<Workspace & LegacyTimestampFields>>("/workspace/list")
+    .then((rows) => rows.map(adaptLegacyTimestamps));
 }
 
 export function getWorkspaces(params?: PaginationParams): Promise<PaginatedResponse<Workspace>> {
-  return http.get<IPage<Workspace>>("/workspace/page", { params: toPageParams(params) }).then(ipageToPaginated);
+  return http
+    .get<IPage<Workspace & LegacyTimestampFields>>("/workspace/page", { params: toPageParams(params) })
+    .then((page) => ipageToPaginated({ ...page, records: page.records.map(adaptLegacyTimestamps) }));
 }
 
 export function createWorkspace(data: Omit<Workspace, "id" | "createdAt">): Promise<number> {

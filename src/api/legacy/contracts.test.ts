@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   adaptFlowRun,
   adaptFlowRunDetail,
+  adaptLegacyTimestamps,
   adaptRunLog,
   adaptUserRoles,
   durationSeconds,
@@ -59,5 +60,11 @@ describe("legacy backend adapters", () => {
   it("adapts the Vue-era role array returned by user/info", () => {
     expect(adaptUserRoles(["admin", "common"])).toEqual({ global: "ADMIN", workspaces: {} });
     expect(adaptUserRoles(undefined)).toEqual({});
+  });
+
+  it("normalizes legacy timestamp field names", () => {
+    expect(adaptLegacyTimestamps({ id: 1, createTime: "created", updateTime: "updated" })).toEqual(
+      expect.objectContaining({ createdAt: "created", updatedAt: "updated" }),
+    );
   });
 });
