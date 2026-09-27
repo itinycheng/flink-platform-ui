@@ -1,8 +1,8 @@
-const baseUrl = (process.env.RUNNELO_BACKEND_URL || "http://localhost:9104").replace(/\/$/, "");
-const username = process.env.RUNNELO_USERNAME;
-const password = process.env.RUNNELO_PASSWORD;
-let token = process.env.RUNNELO_TOKEN;
-let workspaceId = process.env.RUNNELO_WORKSPACE_ID;
+const baseUrl = (process.env.FLINK_PLATFORM_BACKEND_URL || "http://localhost:9104").replace(/\/$/, "");
+const username = process.env.FLINK_PLATFORM_USERNAME;
+const password = process.env.FLINK_PLATFORM_PASSWORD;
+let token = process.env.FLINK_PLATFORM_TOKEN;
+let workspaceId = process.env.FLINK_PLATFORM_WORKSPACE_ID;
 
 async function request(path, init = {}) {
   const headers = { "Content-Type": "application/json", ...init.headers };
@@ -43,10 +43,10 @@ async function authenticate() {
   const config = await request("/login/config");
   if (token) return config;
   if (String(config.authType).toUpperCase() !== "LOCAL") {
-    throw new Error(`Backend uses ${config.authType}; provide RUNNELO_TOKEN for the authenticated checks.`);
+    throw new Error(`Backend uses ${config.authType}; provide FLINK_PLATFORM_TOKEN for the authenticated checks.`);
   }
   if (!username || !password) {
-    throw new Error("Set RUNNELO_USERNAME and RUNNELO_PASSWORD, or provide RUNNELO_TOKEN.");
+    throw new Error("Set FLINK_PLATFORM_USERNAME and FLINK_PLATFORM_PASSWORD, or provide FLINK_PLATFORM_TOKEN.");
   }
   const login = await request("/login", {
     method: "POST",
@@ -78,10 +78,10 @@ async function main() {
   if (workspaceId) {
     for (const [path, validate] of checks) validate(await request(path), path);
   }
-  console.log(`Runnelo backend smoke passed (${config.authType}).`);
+  console.log(`Flink Platform backend smoke passed (${config.authType}).`);
 }
 
 main().catch((error) => {
-  console.error(`Runnelo backend smoke failed: ${error instanceof Error ? error.message : String(error)}`);
+  console.error(`Flink Platform backend smoke failed: ${error instanceof Error ? error.message : String(error)}`);
   process.exitCode = 1;
 });

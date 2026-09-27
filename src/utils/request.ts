@@ -4,7 +4,7 @@ import i18n from "@/i18n";
 import { API } from "@/config";
 import { STORAGE_KEYS } from "@/constants/storage";
 
-export const AUTH_EXPIRED_EVENT = "runnelo:auth-expired";
+export const AUTH_EXPIRED_EVENT = "flink-platform:auth-expired";
 const LEGACY_AUTH_ERROR_CODES = new Set([50008, 50012, 50014]);
 
 function expireSession(): void {

@@ -13,7 +13,7 @@ export const STORAGE_KEYS = {
   /** Active UI language (en | zh). */
   lang: "lang",
   /** Recent query-console statements. */
-  queryHistory: "runnelo.query.history",
+  queryHistory: "dtail.query.history",
   /** Schema version of the persisted auth (token+user). Bump to invalidate stale sessions. */
-  authVersion: "runnelo.auth.version",
+  authVersion: "dtail.auth.version",
 } as const;

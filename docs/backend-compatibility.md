@@ -1,8 +1,9 @@
 # Legacy backend compatibility
 
-Runnelo UI currently targets the existing `flink-platform-backend` API. The
+This UI currently targets the existing `flink-platform-backend` API. The
 backend contract stays unchanged while the React UI is rolled out alongside
-the legacy Vue UI.
+the legacy Vue UI from `flink-platform-frontend`, which is included in the
+backend at `flink-platform-ui/frontend` as a Git submodule.
 
 ## Boundary rules
 
@@ -48,9 +49,10 @@ time-series/schema/log-tail endpoints, and remove the virtual definition tree.
 With the backend running, verify the contract without mutating application data:
 
 ```bash
-RUNNELO_USERNAME=admin RUNNELO_PASSWORD=... npm run test:backend
+FLINK_PLATFORM_USERNAME=admin FLINK_PLATFORM_PASSWORD=... npm run test:backend
 ```
 
-Set `RUNNELO_BACKEND_URL` when the backend is not available at
-`http://localhost:9104`. For SSO deployments, provide `RUNNELO_TOKEN` and
-optionally `RUNNELO_WORKSPACE_ID` instead of a username and password.
+Set `FLINK_PLATFORM_BACKEND_URL` when the backend is not available at
+`http://localhost:9104`. For SSO deployments, provide `FLINK_PLATFORM_TOKEN`
+and optionally `FLINK_PLATFORM_WORKSPACE_ID` instead of a username and
+password.
