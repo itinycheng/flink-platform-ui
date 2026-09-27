@@ -5,10 +5,13 @@ import type { UserStatus } from "@/constants/enums";
 import { adaptUserRoles } from "@/api/legacy/contracts";
 
 export interface LoginRequest {
-  username: string;
-  password: string;
+  username?: string;
+  password?: string;
   /** Only meaningful for SSO flows (CAS/OIDC); omitted for LOCAL. */
   workspaceId?: number;
+  ticket?: string;
+  code?: string;
+  state?: string;
 }
 
 export interface LoginResponse {

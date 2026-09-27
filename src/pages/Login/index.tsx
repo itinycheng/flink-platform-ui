@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, Flex, Form, Input, Button, Typography, message, Spin } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/authStore";
 import { getLoginConfig } from "@/api/auth";
 import { APP } from "@/config";
+import { STORAGE_KEYS } from "@/constants/storage";
+import { addReauthentication, readSsoCallback, safeReturnTo } from "./sso";
 
 interface LoginFormValues {
   username: string;
@@ -50,35 +52,61 @@ function LocalLoginForm({
 }
 
 /** SSO (CAS/OIDC) redirect panel. */
-function SsoLoginPanel({ ssoLoginUrl }: { ssoLoginUrl: string }) {
+function SsoLoginPanel({ ssoLoginUrl, onRedirect }: { ssoLoginUrl: string; onRedirect: () => void }) {
   const { t } = useTranslation();
   return (
     <Flex vertical gap={16} align="center" style={{ padding: "24px 0" }}>
       <Typography.Text type="secondary">{t("login.ssoRedirectHint")}</Typography.Text>
-      <Button type="primary" size="large" block href={ssoLoginUrl || undefined} data-testid="sso-login-button">
+      <Button
+        type="primary"
+        size="large"
+        block
+        href={ssoLoginUrl || undefined}
+        onClick={onRedirect}
+        data-testid="sso-login-button"
+      >
         {t("login.ssoLogin")}
       </Button>
     </Flex>
   );
 }
 
-export default function Login() {
-  const [form] = Form.useForm<LoginFormValues>();
-  const [loading, setLoading] = useState(false);
-  const [configLoading, setConfigLoading] = useState(true);
+function useLoginBootstrap() {
+  const [callback] = useState(() => readSsoCallback(window.location.search));
+  const [loading, setLoading] = useState(callback != null);
+  const [configLoading, setConfigLoading] = useState(callback == null);
   const [authType, setAuthType] = useState("LOCAL");
   const [ssoLoginUrl, setSsoLoginUrl] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const [routeSearchParams] = useSearchParams();
   const login = useAuthStore((state) => state.login);
-  const { t } = useTranslation();
+  const loginSso = useAuthStore((state) => state.loginSso);
+  const callbackStarted = useRef(false);
+  const ssoFailed = routeSearchParams.get("ssoFailed") === "1";
+  const from = (location.state as { from?: { pathname?: string; search?: string } } | null)?.from;
+  const returnTo = safeReturnTo(`${from?.pathname ?? ""}${from?.search ?? ""}`);
 
   useEffect(() => {
+    if (callback && !callbackStarted.current) {
+      callbackStarted.current = true;
+      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+      void loginSso(callback)
+        .then(() => {
+          const returnTo = safeReturnTo(sessionStorage.getItem(STORAGE_KEYS.authReturnTo));
+          sessionStorage.removeItem(STORAGE_KEYS.authReturnTo);
+          void navigate(returnTo, { replace: true });
+        })
+        .catch(() => void navigate("/login?ssoFailed=1", { replace: true }))
+        .finally(() => setLoading(false));
+      return;
+    }
     let mounted = true;
     getLoginConfig()
       .then((config) => {
         if (!mounted) return;
         setAuthType(config.authType);
-        setSsoLoginUrl(config.ssoLoginUrl ?? "");
+        setSsoLoginUrl(addReauthentication(config.ssoLoginUrl ?? "", config.authType, ssoFailed));
       })
       .catch(() => {
         // Endpoint unreachable — fall back to the LOCAL password form.
@@ -89,14 +117,27 @@ export default function Login() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [callback, loginSso, navigate, ssoFailed]);
+
+  return { loading, setLoading, configLoading, authType, ssoLoginUrl, login, navigate, returnTo };
+}
+
+export default function Login() {
+  const [form] = Form.useForm<LoginFormValues>();
+  const { t } = useTranslation();
+  const { loading, setLoading, configLoading, authType, ssoLoginUrl, login, navigate, returnTo } =
+    useLoginBootstrap();
+
+  const rememberReturnTo = () => {
+    sessionStorage.setItem(STORAGE_KEYS.authReturnTo, returnTo);
+  };
 
   const handleSubmit = async (values: LoginFormValues) => {
     setLoading(true);
     try {
       await login(values.username, values.password);
       message.success(t("login.loginSuccess"));
-      await navigate("/dashboard", { replace: true });
+      await navigate(returnTo, { replace: true });
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : t("login.loginFailed");
       message.error(errorMessage);
@@ -119,7 +160,7 @@ export default function Login() {
         ) : authType === "LOCAL" ? (
           <LocalLoginForm form={form} onFinish={handleSubmit} loading={loading} />
         ) : (
-          <SsoLoginPanel ssoLoginUrl={ssoLoginUrl} />
+          <SsoLoginPanel ssoLoginUrl={ssoLoginUrl} onRedirect={rememberReturnTo} />
         )}
       </Card>
     </Flex>

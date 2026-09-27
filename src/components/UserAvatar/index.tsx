@@ -19,8 +19,9 @@ export default function UserAvatar() {
   if (!user) return null;
 
   const handleLogout = async () => {
-    await logout();
-    void navigate("/login");
+    const redirectUrl = await logout();
+    if (redirectUrl) window.location.assign(redirectUrl);
+    else void navigate("/login");
   };
 
   const globalRole = user.roles.global;

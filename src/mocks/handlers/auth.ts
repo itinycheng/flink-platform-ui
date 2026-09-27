@@ -18,7 +18,12 @@ export const authHandlers = [
   // POST /api/login
   http.post("/api/login", async ({ request }) => {
     await delay(300);
-    const body = (await request.json()) as { username?: string; password?: string };
+    const body = (await request.json()) as { username?: string; password?: string; ticket?: string; code?: string };
+
+    if (body.ticket || body.code) {
+      lastLoggedInUsername = "sso-user";
+      return ok({ token: faker.string.uuid(), workspaceId: 1 });
+    }
 
     if (body.username !== "admin" && body.username !== "user") {
       return HttpResponse.json({ message: "用户名或密码错误" }, { status: 401 });

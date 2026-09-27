@@ -19,6 +19,15 @@ describe("auth handlers", () => {
     await expect(login({ username: "nobody", password: "123456" })).rejects.toBeTruthy();
   });
 
+  it("accepts OIDC and CAS callback credentials", async () => {
+    await expect(login({ code: "code-1", state: "state-1" })).resolves.toEqual(
+      expect.objectContaining({ token: expect.any(String), workspaceId: 1 }),
+    );
+    await expect(login({ ticket: "ST-1" })).resolves.toEqual(
+      expect.objectContaining({ token: expect.any(String), workspaceId: 1 }),
+    );
+  });
+
   it("normalizes the backend's lowercase local auth type", async () => {
     const config = await getLoginConfig();
     expect(config.authType).toBe("LOCAL");

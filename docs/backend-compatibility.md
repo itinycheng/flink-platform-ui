@@ -37,6 +37,17 @@ backend at `flink-platform-ui/frontend` as a Git submodule.
 | Monitor page        | Redirected to existing alert-rule management                |
 | System config       | Hidden until its form matches legacy polymorphic `Config`    |
 
+## Authentication modes
+
+- LOCAL submits username/password to `/login`.
+- CAS callbacks read `ticket` from the browser query string.
+- OIDC callbacks read `code` and `state` from the browser query string.
+- Both SSO modes exchange the callback through the existing `/login` endpoint,
+  then use the same local session/workspace initialization as LOCAL login.
+- The requested in-app route is kept in session storage across the external
+  redirect. Only relative application paths are accepted.
+- Logout follows the backend-provided identity-provider redirect when present.
+
 ## Deferred backend migration
 
 After the React UI is stable, introduce a versioned API/OpenAPI contract and

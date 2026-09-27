@@ -12,8 +12,9 @@ export default function NoWorkspace() {
   if (!token) return <Navigate to="/login" replace />;
 
   const handleLogout = async () => {
-    await logout();
-    void navigate("/login", { replace: true });
+    const redirectUrl = await logout();
+    if (redirectUrl) window.location.assign(redirectUrl);
+    else void navigate("/login", { replace: true });
   };
 
   return (
@@ -25,4 +26,3 @@ export default function NoWorkspace() {
     />
   );
 }
-

@@ -19,8 +19,9 @@ export interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<void>;
+  loginSso: (credentials: { ticket?: string; code?: string; state?: string }) => Promise<void>;
   /** Fetch GET /user/info and store the result. Called after login and to rehydrate on refresh. */
   loadUserInfo: () => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => Promise<string | undefined>;
   checkToken: () => boolean;
 }

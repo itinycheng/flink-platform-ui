@@ -68,6 +68,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     await get().loadUserInfo();
   },
 
+  loginSso: async (credentials) => {
+    const { token, workspaceId } = await apiLogin(credentials);
+    localStorage.setItem(STORAGE_KEYS.token, token);
+    if (workspaceId != null) {
+      localStorage.setItem(STORAGE_KEYS.workspaceId, String(workspaceId));
+      useWorkspaceStore.setState({ currentId: workspaceId });
+    }
+    set({ token, isAuthenticated: true });
+    await get().loadUserInfo();
+  },
+
   loadUserInfo: async () => {
     const user = await getUserInfo();
     localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
@@ -76,12 +87,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     const token = get().token;
+    let redirectUrl: string | undefined;
     try {
-      if (token) await apiLogout(token);
+      if (token) redirectUrl = (await apiLogout(token)).redirectUrl || undefined;
     } finally {
       clearSession();
       set({ token: null, user: null, isAuthenticated: false });
     }
+    return redirectUrl;
   },
 
   checkToken: () => {

@@ -46,6 +46,20 @@ describe("authStore", () => {
     expect(localStorage.getItem(STORAGE_KEYS.workspaceId)).toBeNull();
   });
 
+  it("completes an SSO callback through the same local session setup", async () => {
+    vi.mocked(authApi.login).mockResolvedValue({ token: "sso-token", workspaceId: 3 });
+    vi.mocked(authApi.getUserInfo).mockResolvedValue({
+      username: "sso-user",
+      roles: { workspaces: { 3: "VIEWER" } },
+    });
+
+    await useAuthStore.getState().loginSso({ code: "code-1", state: "state-1" });
+
+    expect(authApi.login).toHaveBeenCalledWith({ code: "code-1", state: "state-1" });
+    expect(useAuthStore.getState().token).toBe("sso-token");
+    expect(useWorkspaceStore.getState().currentId).toBe(3);
+  });
+
   it("loadUserInfo fetches and persists the current user", async () => {
     vi.mocked(authApi.getUserInfo).mockResolvedValue({
       username: "user",
@@ -78,7 +92,7 @@ describe("authStore", () => {
     });
     vi.mocked(authApi.logout).mockResolvedValue({ redirectUrl: "" });
 
-    await useAuthStore.getState().logout();
+    await expect(useAuthStore.getState().logout()).resolves.toBeUndefined();
 
     expect(authApi.logout).toHaveBeenCalledWith("tok-1");
     expect(useAuthStore.getState().token).toBeNull();
@@ -91,6 +105,13 @@ describe("authStore", () => {
     expect(localStorage.getItem(STORAGE_KEYS.workspaceId)).toBeNull();
     expect(useWorkspaceStore.getState().currentId).toBeNull();
     expect(useWorkspaceStore.getState().workspaces).toEqual([]);
+  });
+
+  it("returns the identity-provider logout URL", async () => {
+    useAuthStore.setState({ token: "tok-1", user: null, isAuthenticated: true });
+    vi.mocked(authApi.logout).mockResolvedValue({ redirectUrl: "https://idp.example/logout" });
+
+    await expect(useAuthStore.getState().logout()).resolves.toBe("https://idp.example/logout");
   });
 
   it("logout still clears the local session and workspace even if the API call rejects", async () => {

@@ -16,4 +16,6 @@ export const STORAGE_KEYS = {
   queryHistory: "dtail.query.history",
   /** Schema version of the persisted auth (token+user). Bump to invalidate stale sessions. */
   authVersion: "dtail.auth.version",
+  /** Internal route restored after an external SSO round trip. */
+  authReturnTo: "dtail.auth.returnTo",
 } as const;
