@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { message } from "antd";
 import { format } from "sql-formatter";
@@ -8,36 +8,47 @@ import { execQuery } from "@/api/query";
 import { downloadCsv } from "@/utils/file";
 import type { QueryResult } from "@/types/query";
 import { useQueryHistory, type QueryHistoryEntry } from "./useQueryHistory";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/app/queryClient";
+import { queryKeys } from "@/api/queryKeys";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
+import type { DataSource } from "@/types/admin";
 
 export interface DsOption {
   label: string;
   value: string;
 }
 
+function datasourceOption(datasource: DataSource): DsOption {
+  return { label: `${datasource.name} (${datasource.type})`, value: datasource.id };
+}
+
 /** State + handlers backing the SQL query console page. */
 export function useQueryConsole() {
   const { t } = useTranslation();
   const editorRef = useRef<CodeEditorHandle>(null);
-  const [options, setOptions] = useState<DsOption[]>([]);
   const [datasourceId, setDatasourceId] = useState<string>();
   const [sql, setSql] = useState("SELECT * FROM orders LIMIT 100;");
-  const [running, setRunning] = useState(false);
-  const [result, setResult] = useState<QueryResult | null>(null);
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
   const history = useQueryHistory();
-
-  useEffect(() => {
-    getDataSources({ page: 1, pageSize: 100 })
-      .then((res) => {
-        const opts = res.data.map((d) => ({ label: `${d.name} (${d.type})`, value: d.id }));
-        setOptions(opts);
-        // Default to the first data source so the schema browser is populated on open.
-        setDatasourceId((cur) => cur ?? opts[0]?.value);
-      })
-      .catch((err) => console.error("[Query] load datasources failed", err));
-  }, []);
+  const datasourceQuery = useQuery(
+    {
+      queryKey: queryKeys.adminList(workspaceId, "query-datasources", { page: 1, pageSize: 100 }),
+      queryFn: () => getDataSources({ page: 1, pageSize: 100 }),
+      enabled: workspaceId != null,
+      staleTime: 60_000,
+    },
+    queryClient,
+  );
+  const options: DsOption[] = useMemo(
+    () => (datasourceQuery.data?.data ?? []).map(datasourceOption),
+    [datasourceQuery.data],
+  );
+  const selectedDatasourceId = datasourceId ?? options[0]?.value;
+  const execution = useMutation({ mutationFn: execQuery }, queryClient);
 
   const run = async () => {
-    if (!datasourceId) {
+    if (!selectedDatasourceId) {
       message.warning(t("query.selectDatasourceFirst"));
       return;
     }
@@ -47,15 +58,11 @@ export function useQueryConsole() {
       message.warning(t("query.sqlRequired"));
       return;
     }
-    setRunning(true);
     try {
-      const res = await execQuery({ datasourceId, sql: toRun });
-      setResult(res);
-      history.add(toRun, datasourceId, Date.now());
+      await execution.mutateAsync({ datasourceId: selectedDatasourceId, sql: toRun });
+      history.add(toRun, selectedDatasourceId, Date.now());
     } catch {
       // handled by the global interceptor toast
-    } finally {
-      setRunning(false);
     }
   };
 
@@ -70,7 +77,7 @@ export function useQueryConsole() {
 
   const clear = () => {
     setSql("");
-    setResult(null);
+    execution.reset();
   };
 
   const pickHistory = (entry: QueryHistoryEntry) => {
@@ -79,8 +86,8 @@ export function useQueryConsole() {
   };
 
   const exportCsv = () => {
-    if (!result?.success || result.rows.length === 0) return;
-    downloadCsv(`query-${Date.now()}.csv`, result.columns, result.rows);
+    if (!execution.data?.success || execution.data.rows.length === 0) return;
+    downloadCsv(`query-${Date.now()}.csv`, execution.data.columns, execution.data.rows);
   };
 
   const insertToken = (text: string) => editorRef.current?.insertText(text);
@@ -88,12 +95,12 @@ export function useQueryConsole() {
   return {
     editorRef,
     options,
-    datasourceId,
+    datasourceId: selectedDatasourceId,
     setDatasourceId,
     sql,
     setSql,
-    running,
-    result,
+    running: execution.isPending,
+    result: (execution.data as QueryResult | undefined) ?? null,
     history,
     run: () => void run(),
     formatSql,
