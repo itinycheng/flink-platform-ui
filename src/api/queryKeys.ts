@@ -6,6 +6,8 @@ export const queryKeys = {
     ["workspace", workspaceId, "options", resource, ...deps] as const,
   adminList: (workspaceId: number | null, resource: string, params: object) =>
     ["workspace", workspaceId, "admin", resource, params] as const,
+  resourcePath: (workspaceId: number | null, folderId?: number) =>
+    ["workspace", workspaceId, "resources", "path", folderId ?? "root"] as const,
   definitions: {
     all: (workspaceId: number | null) => ["workspace", workspaceId, "definitions"] as const,
     root: (workspaceId: number | null) => ["workspace", workspaceId, "definitions", "root"] as const,

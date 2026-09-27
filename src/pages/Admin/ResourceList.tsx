@@ -17,6 +17,10 @@ import { getFolderTree, getResources } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import { MAX_FILE_SIZE, validateFileSize } from "@/utils/file";
 import { formatFileSize, useResourceActions, useResourcePath } from "./ResourceList.hooks";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/app/queryClient";
+import { queryKeys } from "@/api/queryKeys";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 interface ResourceBreadcrumbProps {
   path: Resource[];
@@ -359,8 +363,18 @@ function ResourceToolbar({ uploadProgress, onUpload, onCreateFolder }: ResourceT
 
 export default function ResourceList() {
   const actions = useResourceActions();
-  const { actionRef, folder, uploadProgress, navigateFolder } = actions;
+  const { folder, uploadProgress, navigateFolder } = actions;
   const path = useResourcePath(folder);
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 10 });
+  const resourcesQuery = useQuery(
+    {
+      queryKey: queryKeys.adminList(workspaceId, "resources", { folder, ...pagination }),
+      queryFn: () => getResources({ pid: folder, ...pagination }),
+      enabled: workspaceId != null,
+    },
+    queryClient,
+  );
   const [renameTarget, setRenameTarget] = useState<Resource | null>(null);
   const [moveTarget, setMoveTarget] = useState<Resource | null>(null);
 
@@ -375,9 +389,10 @@ export default function ResourceList() {
     <>
       <ProTable<Resource, { folder?: number }>
         headerTitle={<ResourceBreadcrumb path={path} onNavigate={navigateFolder} />}
-        actionRef={actionRef}
         rowKey="id"
         columns={columns}
+        dataSource={resourcesQuery.data?.data ?? []}
+        loading={resourcesQuery.isFetching}
         search={false}
         params={{ folder }}
         toolBarRender={() => [
@@ -388,15 +403,13 @@ export default function ResourceList() {
             onCreateFolder={actions.handleCreateFolder}
           />,
         ]}
-        request={async (params) => {
-          const result = await getResources({
-            pid: params.folder ? Number(params.folder) : undefined,
-            page: params.current ?? 1,
-            pageSize: params.pageSize ?? 10,
-          });
-          return { data: result.data, total: result.total, success: true };
+        pagination={{
+          current: pagination.page,
+          pageSize: pagination.pageSize,
+          total: resourcesQuery.data?.total ?? 0,
+          showSizeChanger: true,
+          onChange: (page, pageSize) => setPagination({ page, pageSize }),
         }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
       />
       {renameTarget && (
         <RenameModal

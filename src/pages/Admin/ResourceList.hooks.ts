@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { message } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { ActionType } from "@ant-design/pro-components";
 import {
   uploadResource,
   deleteResource,
@@ -12,17 +11,21 @@ import {
   moveResource,
 } from "@/api/admin";
 import type { Resource } from "@/types/entities";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/app/queryClient";
+import { queryKeys } from "@/api/queryKeys";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { useInvalidateWorkspaceList } from "@/app/useWorkspacePageQuery";
 
 /** Folder navigation, upload, create-folder and delete actions for the resource browser. */
 export function useResourceActions() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>(null);
+  const invalidate = useInvalidateWorkspaceList("resources");
   const [searchParams, setSearchParams] = useSearchParams();
   const folder = searchParams.get("folder");
   const folderId = folder ? Number(folder) : undefined;
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
-  const reload = () => void actionRef.current?.reload();
   const navigateFolder = (id?: number) => setSearchParams(id != null ? { folder: String(id) } : {});
 
   const handleUpload = async (file: File) => {
@@ -30,7 +33,7 @@ export function useResourceActions() {
     try {
       await uploadResource(file, folderId, (percent) => setUploadProgress(percent));
       message.success(t("resource.uploadSuccess", { name: file.name }));
-      reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     } finally {
@@ -42,7 +45,7 @@ export function useResourceActions() {
     try {
       await createFolder(name, folderId);
       message.success(t("resource.folderCreated"));
-      reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
@@ -52,7 +55,7 @@ export function useResourceActions() {
     try {
       await deleteResource(id);
       message.success(t("common.deleteSuccess"));
-      reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
@@ -62,7 +65,7 @@ export function useResourceActions() {
     try {
       await renameResource(id, name);
       message.success(t("resource.renameSuccess"));
-      reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
@@ -72,14 +75,13 @@ export function useResourceActions() {
     try {
       await moveResource(id, targetPid);
       message.success(t("resource.moveSuccess"));
-      reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
   };
 
   return {
-    actionRef,
     folder: folderId,
     uploadProgress,
     navigateFolder,
@@ -93,29 +95,16 @@ export function useResourceActions() {
 
 /** Resolve the ancestor path (root → … → current) of `folderId` for the breadcrumb. */
 export function useResourcePath(folderId?: number): Resource[] {
-  const [path, setPath] = useState<Resource[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      if (folderId == null) {
-        setPath([]);
-        return;
-      }
-      try {
-        const result = await getResourcePath(folderId);
-        if (!cancelled) setPath(result);
-      } catch (err) {
-        console.error("[Resource] load path failed", err);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [folderId]);
-
-  return path;
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const { data = [] } = useQuery(
+    {
+      queryKey: queryKeys.resourcePath(workspaceId, folderId),
+      queryFn: () => (folderId == null ? Promise.resolve([]) : getResourcePath(folderId)),
+      enabled: workspaceId != null,
+    },
+    queryClient,
+  );
+  return data;
 }
 
 export function formatFileSize(bytes: number): string {

@@ -40,6 +40,7 @@ export function useInvalidateWorkspaceList(resource: string) {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "admin", resource] }),
         queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "options", resource] }),
+        queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, resource] }),
       ]);
     },
     [workspaceId, resource],
