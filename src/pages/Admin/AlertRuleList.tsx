@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } from "antd";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
+import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { AlertChannelType, AlertRule } from "@/types/alert";
 import { createAlertRule, deleteAlertRule, getAlertRules, updateAlertRule } from "@/api/alert";
@@ -9,6 +9,7 @@ import RowActions from "@/components/RowActions";
 import { JsonTextArea } from "@/components/form";
 import { ALERT_TYPES, enumOptions } from "@/constants/enums";
 import { enumColor } from "@/utils/statusColor";
+import { useInvalidateWorkspaceList, useWorkspacePageQuery } from "@/app/useWorkspacePageQuery";
 
 function AlertChannelTag({ type }: { type: AlertChannelType }) {
   const { t } = useTranslation();
@@ -105,7 +106,7 @@ function isFormValidationError(error: unknown): boolean {
 
 function useAlertRuleCrud() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>(null);
+  const invalidate = useInvalidateWorkspaceList("alert-rules");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -142,7 +143,7 @@ function useAlertRuleCrud() {
       setModalOpen(false);
       form.resetFields();
       setEditingRule(null);
-      void actionRef.current?.reload();
+      await invalidate();
     } catch (error) {
       if (isFormValidationError(error)) return;
     } finally {
@@ -160,14 +161,13 @@ function useAlertRuleCrud() {
     try {
       await deleteAlertRule(id);
       message.success(t("common.deleteSuccess"));
-      void actionRef.current?.reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
   };
 
   return {
-    actionRef,
     modalOpen,
     editingRule,
     confirmLoading,
@@ -183,6 +183,7 @@ function useAlertRuleCrud() {
 export default function AlertRuleList() {
   const { t } = useTranslation();
   const crud = useAlertRuleCrud();
+  const page = useWorkspacePageQuery("alert-rules", getAlertRules);
 
   const columns = useMemo<ProColumns<AlertRule>[]>(
     () => [
@@ -212,9 +213,10 @@ export default function AlertRuleList() {
     <div data-testid="alert-rule-list">
       <ProTable<AlertRule>
         headerTitle={t("alertRule.title")}
-        actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
+        dataSource={page.data}
+        loading={page.loading}
         search={false}
         toolBarRender={() => [
           <Button
@@ -227,11 +229,7 @@ export default function AlertRuleList() {
             {t("alertRule.addButton")}
           </Button>,
         ]}
-        request={async (params) => {
-          const result = await getAlertRules({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
-          return { data: result.data, total: result.total, success: true };
-        }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
+        pagination={{ ...page.pagination, total: page.total }}
       />
       <AlertRuleFormModal
         open={crud.modalOpen}

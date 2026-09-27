@@ -1,12 +1,13 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button, Form, Input, Modal, Select, Tag, message, type FormInstance } from "antd";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
+import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import { useTranslation } from "react-i18next";
 import type { CustomParam } from "@/types/admin";
 import { createParam, deleteParam, getParams, updateParam } from "@/api/admin";
 import RowActions from "@/components/RowActions";
 import { JOB_PARAM_TYPES, enumOptions } from "@/constants/enums";
+import { useInvalidateWorkspaceList, useWorkspacePageQuery } from "@/app/useWorkspacePageQuery";
 
 function ParamTypeTag({ type }: { type: CustomParam["type"] }) {
   const { t } = useTranslation();
@@ -98,7 +99,7 @@ function isFormValidationError(error: unknown): boolean {
 
 function useParamCrud() {
   const { t } = useTranslation();
-  const actionRef = useRef<ActionType>(null);
+  const invalidate = useInvalidateWorkspaceList("params");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingParam, setEditingParam] = useState<CustomParam | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -136,7 +137,7 @@ function useParamCrud() {
       setModalOpen(false);
       form.resetFields();
       setEditingParam(null);
-      void actionRef.current?.reload();
+      await invalidate();
     } catch (error) {
       if (isFormValidationError(error)) return;
     } finally {
@@ -154,14 +155,13 @@ function useParamCrud() {
     try {
       await deleteParam(id);
       message.success(t("common.deleteSuccess"));
-      void actionRef.current?.reload();
+      await invalidate();
     } catch {
       // handled by the global interceptor toast
     }
   };
 
   return {
-    actionRef,
     modalOpen,
     editingParam,
     confirmLoading,
@@ -177,6 +177,7 @@ function useParamCrud() {
 export default function CustomParamList() {
   const { t } = useTranslation();
   const crud = useParamCrud();
+  const page = useWorkspacePageQuery("params", getParams);
 
   const columns = useMemo<ProColumns<CustomParam>[]>(
     () => [
@@ -200,9 +201,10 @@ export default function CustomParamList() {
     <div data-testid="custom-param-list">
       <ProTable<CustomParam>
         headerTitle={t("param.title")}
-        actionRef={crud.actionRef}
         rowKey="id"
         columns={columns}
+        dataSource={page.data}
+        loading={page.loading}
         search={false}
         toolBarRender={() => [
           <Button
@@ -215,11 +217,7 @@ export default function CustomParamList() {
             {t("param.addButton")}
           </Button>,
         ]}
-        request={async (params) => {
-          const result = await getParams({ page: params.current ?? 1, pageSize: params.pageSize ?? 10 });
-          return { data: result.data, total: result.total, success: true };
-        }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
+        pagination={{ ...page.pagination, total: page.total }}
       />
       <ParamFormModal
         open={crud.modalOpen}
