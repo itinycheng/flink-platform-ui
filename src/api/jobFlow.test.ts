@@ -13,6 +13,7 @@ import {
   runFlowOnce,
   getFlowGraph,
   updateFlowGraph,
+  previewCron,
 } from "./jobFlow";
 
 const server = setupServer(...jobFlowHandlers, ...workflowHandlers);
@@ -73,5 +74,13 @@ describe("jobFlow API + mock", () => {
       nodes: [expect.objectContaining({ id: String(job.id), jobId: job.id, label: "extract", x: 10, y: 20 })],
       edges: [],
     });
+  });
+
+  it("uses the backend Quartz parser for schedule previews", async () => {
+    await expect(previewCron("0 0 0 * * ?")).resolves.toEqual([
+      "2026-09-28 00:00:00",
+      "2026-09-29 00:00:00",
+    ]);
+    await expect(previewCron("0 0 * * *")).rejects.toThrow("Invalid cron expression");
   });
 });

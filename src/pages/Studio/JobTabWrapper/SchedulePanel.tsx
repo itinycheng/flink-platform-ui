@@ -66,7 +66,7 @@ export default function SchedulePanel({ nodeId }: { nodeId: string }) {
       {ctx}
       <Form form={form} layout="vertical" size="small" style={{ padding: "0 4px" }}>
         <Form.Item name="cronExpr" label={t("sidePanel.cronExpression")}>
-          <Input placeholder="0 0 * * *" />
+          <Input placeholder="0 0 * * * ?" />
         </Form.Item>
         <CronPreview expression={cron ?? ""} />
         <Form.Item name={["config", "parallelism"]} label={t("sidePanel.parallelism")} initialValue={1}>

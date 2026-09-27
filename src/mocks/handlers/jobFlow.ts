@@ -117,4 +117,11 @@ export const jobFlowHandlers: RequestHandler[] = [
     (flow as { flow?: unknown }).flow = body.flow;
     return ok(flow.id);
   }),
+
+  mswHttp.get("/api/quartz/parseExpr", async ({ request }) => {
+    await delay(100);
+    const cron = new URL(request.url).searchParams.get("cron") ?? "";
+    if (cron.split(/\s+/).length < 6) return fail(1001, "Invalid cron expression");
+    return ok(["2026-09-28 00:00:00", "2026-09-29 00:00:00"]);
+  }),
 ];

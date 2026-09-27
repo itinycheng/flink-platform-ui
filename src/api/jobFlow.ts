@@ -126,3 +126,8 @@ export function stopSchedule(id: string | number): Promise<number> {
 export function runFlowOnce(id: string | number, config?: ExecutionConfig): Promise<number> {
   return http.post<number>(`/jobFlow/schedule/runOnce/${definitionRef(id)}`, config ?? {});
 }
+
+/** Preview the next trigger times using the backend's actual Quartz parser. */
+export function previewCron(cron: string): Promise<string[]> {
+  return http.get<string[]>("/quartz/parseExpr", { params: { cron }, suppressErrorToast: true });
+}
