@@ -1,17 +1,18 @@
-import { useRef, useState, useCallback, useMemo, type RefObject } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Button, Popconfirm, Space, Tag, message } from "antd";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { useSearchParams } from "react-router-dom";
-import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
+import { ProTable, type ProColumns } from "@ant-design/pro-components";
 import type { FlowRun, FlowRunListParams } from "@/types/run";
 import { getFlowRuns, killFlowRun } from "@/api/run";
 import { JOB_FLOW_TYPES, type JobFlowType, type JobType } from "@/constants/enums";
 import { getExecStatusOptions, formatDuration, execIsRunning, isFlowType } from "./runStatus";
 import { RunStatusTag } from "./RunStatusTag";
 import RunDetailDrawer from "./RunDetailDrawer";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { queryKeys } from "@/api/queryKeys";
 
 type RunType = JobType | JobFlowType;
 
@@ -37,7 +38,7 @@ const buildStatusEnum = (t: TFunction) =>
 const buildTypeEnum = (t: TFunction) =>
   Object.fromEntries([...JOB_FLOW_TYPES.map((v) => [v, { text: t(`enums.JobFlowType.${v}`) }])]);
 
-function useKillFlowRun(actionRef: RefObject<ActionType | null>) {
+function useKillFlowRun() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const workspaceId = useWorkspaceStore((state) => state.currentId);
@@ -46,10 +47,27 @@ function useKillFlowRun(actionRef: RefObject<ActionType | null>) {
     onSuccess: async () => {
       message.success(t("runs.killSent"));
       await queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "runs"] });
-      void actionRef.current?.reload();
     },
   });
   return useCallback((id: string) => killRun(id), [killRun]);
+}
+
+function useRunsPage(initialStatus?: string, initialType?: string) {
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const [params, setParams] = useState<FlowRunListParams>({
+    page: 1,
+    pageSize: 10,
+    status: initialStatus as FlowRunListParams["status"],
+    type: initialType,
+  });
+  const query = useQuery({
+    queryKey: queryKeys.runs.list(workspaceId, params),
+    queryFn: () => getFlowRuns(params),
+    enabled: workspaceId != null,
+    refetchInterval: (state) =>
+      state.state.data?.data.some((run) => execIsRunning(run.status)) ? 5_000 : 30_000,
+  });
+  return { params, setParams, query };
 }
 
 function useRunColumns(openDetail: (id: string) => void, onKill: (id: string) => void) {
@@ -111,16 +129,16 @@ function useRunColumns(openDetail: (id: string) => void, onKill: (id: string) =>
 export default function RunList() {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const actionRef = useRef<ActionType>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const runs = useRunsPage(searchParams.get("status") ?? undefined, searchParams.get("type") ?? undefined);
 
   const openDetail = useCallback((id: string) => {
     setDetailId(id);
     setDetailOpen(true);
   }, []);
 
-  const onKill = useKillFlowRun(actionRef);
+  const onKill = useKillFlowRun();
 
   const columns = useRunColumns(openDetail, onKill);
 
@@ -128,10 +146,11 @@ export default function RunList() {
     <div data-testid="run-list">
       <ProTable<FlowRun>
         headerTitle={t("runs.title")}
-        actionRef={actionRef}
         rowKey="id"
         columns={columns}
-        options={{ reload: true, density: false, setting: false }}
+        dataSource={runs.query.data?.data ?? []}
+        loading={runs.query.isFetching}
+        options={{ reload: false, density: false, setting: false }}
         form={{
           initialValues: {
             status: searchParams.get("status") ?? undefined,
@@ -139,15 +158,21 @@ export default function RunList() {
           },
         }}
         toolBarRender={() => [
-          <Button key="refresh" onClick={() => void actionRef.current?.reload()}>
+          <Button key="refresh" onClick={() => void runs.query.refetch()}>
             {t("common.refresh")}
           </Button>,
         ]}
-        request={async (params) => {
-          const result = await getFlowRuns(toParams(params));
-          return { data: result.data, total: result.total, success: true };
+        onSubmit={(values) => {
+          runs.setParams((current) => toParams({ ...values, current: 1, pageSize: current.pageSize }));
         }}
-        pagination={{ defaultPageSize: 10, showSizeChanger: true }}
+        onReset={() => runs.setParams({ page: 1, pageSize: runs.params.pageSize })}
+        pagination={{
+          current: runs.params.page,
+          pageSize: runs.params.pageSize,
+          total: runs.query.data?.total ?? 0,
+          showSizeChanger: true,
+          onChange: (page, pageSize) => runs.setParams((current) => ({ ...current, page, pageSize })),
+        }}
       />
       <RunDetailDrawer runId={detailId} open={detailOpen} onClose={() => setDetailOpen(false)} />
     </div>
