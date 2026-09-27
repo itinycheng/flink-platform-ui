@@ -40,7 +40,7 @@ export const authHandlers = [
   // GET /api/login/config
   http.get("/api/login/config", async () => {
     await delay(50);
-    return ok({ authType: "LOCAL", ssoLoginUrl: "" });
+    return ok({ authType: "local", ssoLoginUrl: "" });
   }),
 
   // GET /api/user/info

@@ -27,7 +27,10 @@ export function logout(token: string): Promise<{ redirectUrl?: string }> {
 }
 
 export function getLoginConfig(): Promise<{ authType: string; ssoLoginUrl?: string }> {
-  return http.get<{ authType: string; ssoLoginUrl?: string }>("/login/config");
+  return http.get<{ authType: string; ssoLoginUrl?: string }>("/login/config").then((config) => ({
+    ...config,
+    authType: config.authType.toUpperCase(),
+  }));
 }
 
 /** Backend shape for GET /user/info; `name` is mapped to `username` for AuthUser. */
