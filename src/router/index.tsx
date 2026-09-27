@@ -17,7 +17,6 @@ const DataSourceList = lazy(() => import("../pages/Admin/DataSourceList"));
 const CatalogList = lazy(() => import("../pages/Admin/CatalogList"));
 const WorkerList = lazy(() => import("../pages/Admin/WorkerList"));
 const TagList = lazy(() => import("../pages/Admin/TagList"));
-const SysConfigList = lazy(() => import("../pages/Admin/SysConfigList"));
 const AlertRuleList = lazy(() => import("../pages/Admin/AlertRuleList"));
 const WorkspaceList = lazy(() => import("../pages/Admin/WorkspaceList"));
 const AuditLogList = lazy(() => import("../pages/Admin/AuditLogList"));
@@ -70,7 +69,7 @@ export default function AppRouter() {
               <Route path="catalogs" element={<CatalogList />} />
               <Route path="workers" element={<WorkerList />} />
               <Route path="tags" element={<TagList />} />
-              <Route path="sys-configs" element={<SysConfigList />} />
+            <Route path="sys-configs" element={<Navigate to="/admin/resources" replace />} />
               <Route path="alert-rules" element={<AlertRuleList />} />
               <Route path="workspaces" element={<WorkspaceList />} />
             </Route>

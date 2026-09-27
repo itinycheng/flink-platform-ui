@@ -34,6 +34,7 @@ the legacy Vue UI.
 | SQL execution       | `/reactive/execJob`                                         |
 | Schema browser      | Empty until metadata endpoints exist                        |
 | Monitor page        | Redirected to existing alert-rule management                |
+| System config       | Hidden until its form matches legacy polymorphic `Config`    |
 
 ## Deferred backend migration
 
