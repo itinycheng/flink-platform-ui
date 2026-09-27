@@ -27,6 +27,9 @@ import {
   updateFlowGraph,
 } from "@/api/jobFlow";
 import type { FlowGraph } from "@/types/flow";
+import { queryClient } from "@/app/queryClient";
+import { queryKeys } from "@/api/queryKeys";
+import { STORAGE_KEYS } from "@/constants/storage";
 
 export interface OpenTab {
   key: string;
@@ -77,6 +80,15 @@ function persistedNodeId(node: JobTreeNode): string {
   return `${node.kind === "workflow" ? "flow" : "job"}:${node.refId}`;
 }
 
+function activeWorkspaceId(): number | null {
+  const value = Number(localStorage.getItem(STORAGE_KEYS.workspaceId));
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function invalidateDefinitions(): Promise<void> {
+  return queryClient.invalidateQueries({ queryKey: queryKeys.definitions.all(activeWorkspaceId()) });
+}
+
 export const useJobStore = create<WorkflowState>((set, get) => ({
   treeData: [],
   selectedNode: null,
@@ -90,7 +102,11 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   fetchTree: async () => {
     set({ treeLoading: true });
     try {
-      const groups = await getJobGroups();
+      const workspaceId = activeWorkspaceId();
+      const groups = await queryClient.fetchQuery({
+        queryKey: queryKeys.definitions.root(workspaceId),
+        queryFn: getJobGroups,
+      });
       set({ treeData: Array.isArray(groups) ? groups : [], loadedGroups: new Set(), searchExpandedKeys: null });
     } finally {
       set({ treeLoading: false });
@@ -106,7 +122,11 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     set({ loadingGroups: newLoading });
 
     try {
-      const children = await getJobsByGroup(groupId);
+      const workspaceId = activeWorkspaceId();
+      const children = await queryClient.fetchQuery({
+        queryKey: queryKeys.definitions.children(workspaceId, groupId),
+        queryFn: () => getJobsByGroup(groupId),
+      });
       const safeChildren = Array.isArray(children) ? children : [];
       const { treeData, loadingGroups: currentLoading, loadedGroups: currentLoaded } = get();
       const newTree = updateNodeById(treeData, groupId, (group) => ({ ...group, children: safeChildren }));
@@ -126,7 +146,11 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   searchTree: async (keyword, types, statuses) => {
     set({ treeLoading: true });
     try {
-      const results = await searchJobs({ keyword, types, statuses });
+      const workspaceId = activeWorkspaceId();
+      const results = await queryClient.fetchQuery({
+        queryKey: queryKeys.definitions.search(workspaceId, keyword, types, statuses ?? []),
+        queryFn: () => searchJobs({ keyword, types, statuses }),
+      });
       const list = Array.isArray(results) ? results : [];
       set({
         treeData: list,
@@ -184,6 +208,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
       const flow = await getJobFlow(node?.refId ?? nodeId);
       await updateJobFlow({ ...flow, status });
     }
+    await invalidateDefinitions();
     get().patchNode(nodeId, { lifecycleStatus: status });
   },
 
@@ -192,6 +217,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     // the same parent so the copy appears immediately.
     const src = findNodeById(get().treeData, nodeId);
     const newId = await copyJobFlow(src ? persistedNodeId(src) : nodeId);
+    await invalidateDefinitions();
     if (src) {
       get().addNode({ ...src, id: `flow:${newId}`, refId: newId, name: `${src.name}-copy`, children: undefined });
     }
@@ -200,6 +226,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   setNodeTags: async (nodeId, tags) => {
     const node = findNodeById(get().treeData, nodeId);
     await updateJobTags(node ? persistedNodeId(node) : nodeId, tags);
+    await invalidateDefinitions();
     get().patchNode(nodeId, { tags });
   },
 
@@ -225,6 +252,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
 
   createGroup: async (name, pid) => {
     const id = await createJobGroup({ name, pid });
+    await invalidateDefinitions();
     get().addNode({ id: String(id), name, kind: "group", pid, children: [] });
   },
 
@@ -234,6 +262,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     } else {
       await renameTreeNode({ id: persistedNodeId(node), name });
     }
+    await invalidateDefinitions();
     get().updateNodeName(node.id, name);
   },
 
@@ -243,6 +272,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     } else {
       await deleteTreeNode(persistedNodeId(node));
     }
+    await invalidateDefinitions();
     get().removeNode(node.id);
   },
 
@@ -281,7 +311,11 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     const node = findNodeById(get().treeData, nodeId);
     if (node && node.refId == null) return null;
     try {
-      return await getJobInfo(node?.refId ?? nodeId);
+      const id = String(node?.refId ?? nodeId);
+      return await queryClient.fetchQuery({
+        queryKey: queryKeys.definitions.job(activeWorkspaceId(), id),
+        queryFn: () => getJobInfo(id),
+      });
     } catch {
       return null;
     }
@@ -290,6 +324,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   saveJobInfo: async (nodeId, info) => {
     const node = findNodeById(get().treeData, nodeId);
     const saved = info.id ? await updateJobInfo(info) : await createJobInfo(info, node?.pid);
+    await invalidateDefinitions();
     get().patchNode(nodeId, { name: saved.name, refId: saved.id });
   },
 
@@ -297,7 +332,11 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     const node = findNodeById(get().treeData, nodeId);
     if (node && node.refId == null) return null;
     try {
-      return await getJobFlow(node?.refId ?? nodeId);
+      const id = String(node?.refId ?? nodeId);
+      return await queryClient.fetchQuery({
+        queryKey: queryKeys.definitions.flow(activeWorkspaceId(), id),
+        queryFn: () => getJobFlow(id),
+      });
     } catch {
       return null;
     }
@@ -311,10 +350,12 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     } else {
       id = await createJobFlow(flow, node?.pid);
     }
+    await invalidateDefinitions();
     get().patchNode(nodeId, { name: flow.name, refId: id });
   },
 
   saveFlowGraph: async (nodeId, flow) => {
     await updateFlowGraph(nodeId, flow);
+    await invalidateDefinitions();
   },
 }));
