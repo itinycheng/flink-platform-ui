@@ -72,8 +72,9 @@ export const EXECUTION_STATUSES = [
   "ERROR",
   "NOT_EXIST",
   "CREATED",
-  "KILLABLE",
+  "KILLING",
   "EXPECTED_FAILURE",
+  "WAITING",
 ] as const;
 export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
 

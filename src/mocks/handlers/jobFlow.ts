@@ -1,23 +1,15 @@
 import { http as mswHttp, delay, type RequestHandler } from "msw";
-import { ok } from "@/mocks/lib/response";
-import { recordPlacement } from "@/mocks/data/jobTree";
+import { fail, ok } from "@/mocks/lib/response";
+import { jobTreeStore, recordPlacement } from "@/mocks/data/jobTree";
 import type { JobFlow } from "@/types/entities";
+import { ipage, parsePageSize } from "@/mocks/lib/page";
 
 // In-memory store, mirrors the backend /jobFlow endpoints for mock-only dev.
 const store = new Map<number, JobFlow>();
 let seq = 2000;
 
-/**
- * Numeric id from a path param. Non-numeric tree ids (e.g. "wf-abc") hash to a
- * STABLE positive number so repeated GET/update of the same node hit the same
- * stored flow (edits round-trip). Real backend flow ids are numeric already.
- */
 function numId(idParam: string): number {
-  const n = Number(idParam);
-  if (Number.isFinite(n)) return n;
-  let hash = 0;
-  for (let i = 0; i < idParam.length; i++) hash = (hash * 31 + idParam.charCodeAt(i)) | 0;
-  return Math.abs(hash) + 1_000_000; // offset to avoid clashing with the ++seq range
+  return Number(idParam);
 }
 
 /** Get-or-synthesize a stored flow so subsequent updates/reopens see the same object. */
@@ -42,6 +34,20 @@ function defaultFlow(id: number): JobFlow {
 }
 
 export const jobFlowHandlers: RequestHandler[] = [
+  mswHttp.get("/api/jobFlow/page", async ({ request }) => {
+    await delay(100);
+    const url = new URL(request.url);
+    const { page, size } = parsePageSize(url);
+    const name = url.searchParams.get("name")?.toLowerCase();
+    const seeded = [...jobTreeStore.values()]
+      .filter((node) => node.kind === "workflow")
+      .map((node) => ({ ...ensureFlow(node.refId ?? numId(node.id)), name: node.name }));
+    const seededIds = new Set(seeded.map((flow) => flow.id));
+    const stored = [...store.values()].filter((flow) => !seededIds.has(flow.id));
+    const rows = [...seeded, ...stored].filter((flow) => !name || flow.name.toLowerCase().includes(name));
+    return ok(ipage(rows, page, size));
+  }),
+
   mswHttp.post("/api/jobFlow/create", async ({ request }) => {
     await delay(200);
     const { groupId, ...body } = (await request.json()) as JobFlow & { groupId?: string };
@@ -72,7 +78,8 @@ export const jobFlowHandlers: RequestHandler[] = [
 
   mswHttp.get("/api/jobFlow/get/:id", async ({ params }) => {
     await delay(150);
-    return ok(ensureFlow(numId(params.id as string)));
+    const id = numId(params.id as string);
+    return Number.isFinite(id) ? ok(ensureFlow(id)) : fail(1001, "工作流 ID 必须是数字");
   }),
 
   mswHttp.get("/api/jobFlow/copy/:id", async ({ params }) => {

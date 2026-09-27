@@ -2,7 +2,7 @@ import { http as mswHttp, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
 import { ok } from "@/mocks/lib/response";
 import type { Worker, Datasource, CatalogInfo } from "@/types/entities";
-import { DB_TYPES, CATALOG_TYPES, JOB_TYPE_DBTYPE, type JobType } from "@/constants/enums";
+import { DB_TYPES, CATALOG_TYPES, type DbType } from "@/constants/enums";
 
 const workers: Worker[] = [
   ...Array.from({ length: 5 }, (_, i) => ({
@@ -46,8 +46,7 @@ export const pickerHandlers: RequestHandler[] = [
   }),
   mswHttp.get("/api/datasource/list", async ({ request }) => {
     await delay(150);
-    const jobType = new URL(request.url).searchParams.get("jobType") as JobType | null;
-    const dbType = jobType ? JOB_TYPE_DBTYPE[jobType] : undefined;
+    const dbType = new URL(request.url).searchParams.get("dbType") as DbType | null;
     return ok(dbType ? datasources.filter((d) => d.type === dbType) : datasources);
   }),
   mswHttp.get("/api/catalog/list", async () => {

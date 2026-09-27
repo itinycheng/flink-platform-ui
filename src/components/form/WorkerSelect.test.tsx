@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import WorkerSelect from "./WorkerSelect";
 import * as picker from "@/api/picker";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 vi.mock("@/api/picker");
 
 beforeEach(() => {
+  useWorkspaceStore.setState({ currentId: 1 });
   vi.mocked(picker.listWorkers).mockResolvedValue([
     { id: 1, name: "alpha", ip: "10.0.0.1", port: "80", role: "ACTIVE" },
     { id: 2, name: "beta", ip: "10.0.0.2", port: "80", role: "ACTIVE" },

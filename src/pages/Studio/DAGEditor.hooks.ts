@@ -14,6 +14,7 @@ import {
 import type { TFunction } from "i18next";
 import { EDGE_STATUS_COLORS, getEdgeStyle, type EdgeStatus } from "@/components/FlowCanvas/constants";
 import { useJobStore } from "@/stores/jobStore";
+import { getFlowGraph } from "@/api/jobFlow";
 import { serializeFlow, deserializeFlow } from "./dagSerialize";
 
 interface UseFlowPersistenceOpts {
@@ -27,25 +28,29 @@ interface UseFlowPersistenceOpts {
 }
 
 /** Load a persisted FlowGraph onto the canvas on mount, and serialize+save it on demand. */
-export function useFlowPersistence({ workflowId, nodes, edges, setNodes, setEdges, messageApi, t }: UseFlowPersistenceOpts) {
+export function useFlowPersistence({
+  workflowId,
+  nodes,
+  edges,
+  setNodes,
+  setEdges,
+  messageApi,
+  t,
+}: UseFlowPersistenceOpts) {
   const saveFlowGraph = useJobStore((s) => s.saveFlowGraph);
-  const loadJobFlow = useJobStore((s) => s.loadJobFlow);
 
   useEffect(() => {
     let alive = true;
-    void loadJobFlow(workflowId).then((flow) => {
+    void getFlowGraph(workflowId).then((graph) => {
       if (!alive) return;
-      const graph = flow?.flow;
-      if (graph && "nodes" in graph) {
-        const restored = deserializeFlow(graph);
-        setNodes(restored.nodes);
-        setEdges(restored.edges);
-      }
+      const restored = deserializeFlow(graph);
+      setNodes(restored.nodes);
+      setEdges(restored.edges);
     });
     return () => {
       alive = false;
     };
-  }, [workflowId, loadJobFlow, setNodes, setEdges]);
+  }, [workflowId, setNodes, setEdges]);
 
   const handleSave = useCallback(async () => {
     try {

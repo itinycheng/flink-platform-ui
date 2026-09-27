@@ -4,6 +4,16 @@ import i18n from "@/i18n";
 import { API } from "@/config";
 import { STORAGE_KEYS } from "@/constants/storage";
 
+export const AUTH_EXPIRED_EVENT = "runnelo:auth-expired";
+const LEGACY_AUTH_ERROR_CODES = new Set([50008, 50012, 50014]);
+
+function expireSession(): void {
+  localStorage.removeItem(STORAGE_KEYS.token);
+  localStorage.removeItem(STORAGE_KEYS.user);
+  localStorage.removeItem(STORAGE_KEYS.workspaceId);
+  window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
+}
+
 declare module "axios" {
   export interface AxiosRequestConfig {
     /** Skip the global error toast for this request (caller handles it). */
@@ -16,12 +26,12 @@ const request = axios.create({
   timeout: API.timeout,
 });
 
-// Request interceptor: attach Authorization Bearer token from localStorage
+// Request interceptor: attach the headers understood by the deployed backend.
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = localStorage.getItem(STORAGE_KEYS.token);
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers["X-Token"] = token;
     }
     // Multi-tenant isolation: scope every request to the active workspace.
     const workspaceId = localStorage.getItem(STORAGE_KEYS.workspaceId);
@@ -51,7 +61,9 @@ request.interceptors.response.use(
     } catch (err) {
       // Business error (code!==0). Toast here (a rejection from the success
       // handler bypasses this same interceptor's error handler), then propagate.
-      if (!response.config?.suppressErrorToast) message.error((err as Error).message);
+      const apiError = err as Error & { code?: number };
+      if (apiError.code && LEGACY_AUTH_ERROR_CODES.has(apiError.code)) expireSession();
+      if (!response.config?.suppressErrorToast) message.error(apiError.message);
       return Promise.reject(err);
     }
   },
@@ -62,14 +74,9 @@ request.interceptors.response.use(
       const { status } = error.response;
 
       if (status === 401) {
-        // Clear token and redirect to login
-        localStorage.removeItem(STORAGE_KEYS.token);
-        localStorage.removeItem(STORAGE_KEYS.user);
-        // Avoid redirect loop if already on login page (redirect itself is unconditional;
-        // only the toast is gated by suppressErrorToast).
+        expireSession();
         if (window.location.pathname !== "/login") {
           if (!suppressErrorToast) message.error(i18n.t("http.authExpired"));
-          window.location.href = "/login";
         }
       } else if (!suppressErrorToast) {
         message.error(i18n.t(HTTP_STATUS_MESSAGE_KEYS[status] ?? "http.requestFailed", { status }));

@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { workflowHandlers } from "@/mocks/handlers/job";
+import { jobFlowHandlers } from "@/mocks/handlers/jobFlow";
 import { searchJobs } from "./job";
 
-const server = setupServer(...workflowHandlers);
+const server = setupServer(...workflowHandlers, ...jobFlowHandlers);
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterAll(() => server.close());
 

@@ -1,13 +1,7 @@
 import { create } from "zustand";
 import type { JobTreeNode, WorkflowLifecycleStatus } from "@/types/job";
 import type { JobInfo, JobFlow } from "@/types/entities";
-import {
-  findNodeById,
-  updateNodeById,
-  removeNodeById,
-  insertChild,
-  collectSubtreeIds,
-} from "@/utils/tree";
+import { findNodeById, updateNodeById, removeNodeById, insertChild, collectSubtreeIds } from "@/utils/tree";
 import {
   getJobGroups,
   getJobsByGroup,
@@ -77,6 +71,11 @@ export interface WorkflowState {
 // Re-exported so existing imports (`@/stores/jobStore`) keep working; the tree
 // helpers themselves now live in `@/utils/tree` and are depth-agnostic.
 export { findNodeById } from "@/utils/tree";
+
+function persistedNodeId(node: JobTreeNode): string {
+  if (node.refId == null) return node.id;
+  return `${node.kind === "workflow" ? "flow" : "job"}:${node.refId}`;
+}
 
 export const useJobStore = create<WorkflowState>((set, get) => ({
   treeData: [],
@@ -165,19 +164,25 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   },
 
   runOnce: async (nodeId) => {
-    const flowRunId = await runFlowOnce(nodeId);
+    const node = findNodeById(get().treeData, nodeId);
+    const flowRunId = await runFlowOnce(node ? persistedNodeId(node) : nodeId);
     // Reflect the triggered run immediately in the node's last-run indicator.
     get().patchNode(nodeId, { status: "running" });
     return String(flowRunId);
   },
 
   setLifecycleStatus: async (nodeId, status) => {
-    // The backend models flow lifecycle via start/stop scheduling; SCHEDULING
-    // starts the Quartz trigger, any other target stops it (returns to ONLINE).
-    if (status === "SCHEDULING") {
-      await startSchedule(nodeId);
+    const node = findNodeById(get().treeData, nodeId);
+    if (node?.kind === "task") {
+      const job = await getJobInfo(node.refId ?? nodeId);
+      await updateJobInfo({ ...job, status: status === "ONLINE" ? "ONLINE" : "OFFLINE" });
+    } else if (status === "SCHEDULING") {
+      await startSchedule(node ? persistedNodeId(node) : nodeId);
+    } else if (node?.lifecycleStatus === "SCHEDULING") {
+      await stopSchedule(persistedNodeId(node));
     } else {
-      await stopSchedule(nodeId);
+      const flow = await getJobFlow(node?.refId ?? nodeId);
+      await updateJobFlow({ ...flow, status });
     }
     get().patchNode(nodeId, { lifecycleStatus: status });
   },
@@ -185,15 +190,16 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   copyDefinition: async (nodeId) => {
     // /jobFlow/copy returns only the new id; clone the source tree node under
     // the same parent so the copy appears immediately.
-    const newId = await copyJobFlow(nodeId);
     const src = findNodeById(get().treeData, nodeId);
+    const newId = await copyJobFlow(src ? persistedNodeId(src) : nodeId);
     if (src) {
-      get().addNode({ ...src, id: String(newId), name: `${src.name}-copy`, children: undefined });
+      get().addNode({ ...src, id: `flow:${newId}`, refId: newId, name: `${src.name}-copy`, children: undefined });
     }
   },
 
   setNodeTags: async (nodeId, tags) => {
-    await updateJobTags(nodeId, tags);
+    const node = findNodeById(get().treeData, nodeId);
+    await updateJobTags(node ? persistedNodeId(node) : nodeId, tags);
     get().patchNode(nodeId, { tags });
   },
 
@@ -226,7 +232,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     if (node.kind === "group") {
       await renameJobGroup({ id: node.id, name });
     } else {
-      await renameTreeNode({ id: node.id, name });
+      await renameTreeNode({ id: persistedNodeId(node), name });
     }
     get().updateNodeName(node.id, name);
   },
@@ -235,7 +241,7 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     if (node.kind === "group") {
       await deleteJobGroup(node.id);
     } else {
-      await deleteTreeNode(node.id);
+      await deleteTreeNode(persistedNodeId(node));
     }
     get().removeNode(node.id);
   },
@@ -272,8 +278,10 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   },
 
   loadJobInfo: async (nodeId) => {
+    const node = findNodeById(get().treeData, nodeId);
+    if (node && node.refId == null) return null;
     try {
-      return await getJobInfo(nodeId);
+      return await getJobInfo(node?.refId ?? nodeId);
     } catch {
       return null;
     }
@@ -286,8 +294,10 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   },
 
   loadJobFlow: async (nodeId) => {
+    const node = findNodeById(get().treeData, nodeId);
+    if (node && node.refId == null) return null;
     try {
-      return await getJobFlow(nodeId);
+      return await getJobFlow(node?.refId ?? nodeId);
     } catch {
       return null;
     }

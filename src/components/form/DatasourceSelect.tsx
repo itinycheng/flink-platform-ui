@@ -15,7 +15,7 @@ interface Props {
 export default function DatasourceSelect({ value, onChange, jobType }: Props) {
   const { t } = useTranslation();
   const fetcher = useCallback(() => listDatasources(jobType), [jobType]);
-  const { data, loading } = useRemoteOptions(fetcher, [jobType]);
+  const { data, loading } = useRemoteOptions("datasources", fetcher, [jobType]);
   return (
     <Select
       allowClear

@@ -11,6 +11,12 @@ vi.mock("@/api/picker", () => ({
   listResourceFiles: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock("@/components/CodeEditor", () => ({
+  default: ({ value, onChange }: { value?: string; onChange?: (value: string) => void }) => (
+    <textarea aria-label="code-editor" value={value ?? ""} onChange={(event) => onChange?.(event.target.value)} />
+  ),
+}));
+
 describe("JobForm", () => {
   beforeEach(() => {
     useJobStore.setState({

@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import DatasourceSelect from "./DatasourceSelect";
 import * as picker from "@/api/picker";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 vi.mock("@/api/picker");
 
 beforeEach(() => {
+  useWorkspaceStore.setState({ currentId: 1 });
   vi.mocked(picker.listDatasources).mockResolvedValue([
     { id: 1, name: "mysql-a", type: "MYSQL", params: { url: "" } },
   ]);

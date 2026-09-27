@@ -10,7 +10,9 @@
  *
  * Imported once for its side effects from `main.tsx` before the app renders.
  */
-import * as monaco from "monaco-editor";
+import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
+import "monaco-editor/esm/vs/basic-languages/sql/sql.contribution.js";
+import "monaco-editor/esm/vs/basic-languages/shell/shell.contribution.js";
 import { loader } from "@monaco-editor/react";
 import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 

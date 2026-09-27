@@ -6,12 +6,13 @@ import { login as apiLogin, logout as apiLogout, getUserInfo } from "@/api/auth"
 import { computeEffectivePermissions } from "@/utils/permission";
 import { useWorkspaceStore } from "@/stores/workspaceStore";
 import { STORAGE_KEYS } from "@/constants/storage";
+import { queryClient } from "@/app/queryClient";
 
 // Bump whenever the shape or vocabulary of the persisted auth changes (e.g. a
 // permission-key rename). On mismatch we drop the stale token+user so the user
 // is sent to login and re-authenticates cleanly instead of dead-ending on 403.
 // v3: `user.roles` moved from string[] to the backend's UserRoles shape.
-const AUTH_SCHEMA_VERSION = "3";
+const AUTH_SCHEMA_VERSION = "4";
 
 function migrateAuthSchema(): void {
   if (localStorage.getItem(STORAGE_KEYS.authVersion) === AUTH_SCHEMA_VERSION) return;
@@ -41,6 +42,7 @@ function clearSession(): void {
   // inherits the previous user's stale workspaceId (and X-Workspace-Id header).
   localStorage.removeItem(STORAGE_KEYS.workspaceId);
   useWorkspaceStore.setState({ currentId: null, workspaces: [] });
+  queryClient.clear();
 }
 
 // Runs once at module load, before the store reads token/user from storage.
@@ -56,8 +58,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     localStorage.setItem(STORAGE_KEYS.token, token);
     if (workspaceId != null) {
       localStorage.setItem(STORAGE_KEYS.workspaceId, String(workspaceId));
-      // Set directly on the workspace store (not via setCurrent, which reloads
-      // the page) — login is about to navigate anyway.
+      // Set directly on the workspace store; login will navigate after the
+      // scoped user information has loaded.
       useWorkspaceStore.setState({ currentId: workspaceId });
     }
     set({ token, isAuthenticated: true });

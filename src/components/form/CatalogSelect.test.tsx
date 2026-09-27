@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import CatalogSelect from "./CatalogSelect";
 import * as picker from "@/api/picker";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 vi.mock("@/api/picker");
 
 beforeEach(() => {
+  useWorkspaceStore.setState({ currentId: 1 });
   vi.mocked(picker.listCatalogs).mockResolvedValue([{ id: 5, name: "cat_hive", type: "HIVE", createSql: "" }]);
 });
 

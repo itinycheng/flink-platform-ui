@@ -16,7 +16,7 @@ export const APP = {
 /** HTTP client configuration (see src/utils/request.ts). */
 export const API = {
   /** Base URL prepended to every request. */
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? "",
   /** Request timeout in milliseconds. */
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 30_000,
 } as const;

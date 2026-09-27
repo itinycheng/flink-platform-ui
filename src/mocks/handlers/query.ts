@@ -1,6 +1,6 @@
 import { http, delay, type RequestHandler } from "msw";
 import { faker } from "@faker-js/faker";
-import type { QueryRequest, QueryResult } from "@/types/query";
+import type { QueryResult } from "@/types/query";
 import { ok } from "@/mocks/lib/response";
 
 function buildResult(sql: string): QueryResult {
@@ -64,10 +64,27 @@ const TABLE_POOL = [
 ];
 
 export const queryHandlers: RequestHandler[] = [
-  http.post("/api/query/execute", async ({ request }) => {
-    const { sql } = (await request.json()) as QueryRequest;
+  http.get("/api/datasource/get/:id", async ({ params }) =>
+    ok({
+      id: String((params as { id: string }).id),
+      name: "mock-mysql",
+      type: "MYSQL",
+      params: { url: "jdbc:mysql://localhost/mock" },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }),
+  ),
+  http.post("/api/reactive/execJob", async ({ request }) => {
+    const { subject: sql } = (await request.json()) as { subject: string };
     await delay(600);
-    return ok(buildResult(sql));
+    const result = buildResult(sql);
+    return ok({
+      sync: true,
+      execId: `reactive-${faker.string.nanoid(8)}`,
+      meta: result.columns,
+      data: result.rows.map((row) => result.columns.map((column) => row[column])),
+      exception: result.success ? null : result.log,
+    });
   }),
 
   http.get("/api/query/databases", async ({ request }) => {

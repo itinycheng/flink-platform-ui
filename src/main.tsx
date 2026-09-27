@@ -2,7 +2,6 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./i18n";
 import "./global.css";
-import "./lib/monaco/setup";
 import App from "./App";
 import { APP, ENABLE_MOCK } from "./config";
 

@@ -19,6 +19,7 @@ export function serializeFlow(nodes: Node[], edges: Edge[]): FlowGraph {
     const data = nodeData(n);
     return {
       id: n.id,
+      jobId: typeof data.jobId === "number" ? data.jobId : undefined,
       taskType: str(data.taskType),
       label: str(data.label),
       description: str(data.description) || undefined,
@@ -48,6 +49,7 @@ export function deserializeFlow(graph: FlowGraph): { nodes: Node[]; edges: Edge[
     position: { x: n.x, y: n.y },
     data: {
       label: n.label,
+      jobId: n.jobId,
       taskType: n.taskType,
       description: n.description,
       priority: n.priority,

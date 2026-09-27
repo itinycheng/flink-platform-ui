@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ResourceSelect from "./ResourceSelect";
 import * as picker from "@/api/picker";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 vi.mock("@/api/picker");
 
 beforeEach(() => {
+  useWorkspaceStore.setState({ currentId: 1 });
   vi.mocked(picker.listResourceFiles).mockResolvedValue([{ id: 7, name: "udf.jar", type: "FILE" }]);
 });
 

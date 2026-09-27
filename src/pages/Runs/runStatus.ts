@@ -1,5 +1,11 @@
 import type { TFunction } from "i18next";
-import { EXECUTION_STATUSES, JOB_FLOW_TYPES, type ExecutionStatus, type JobFlowType, type JobType } from "@/constants/enums";
+import {
+  EXECUTION_STATUSES,
+  JOB_FLOW_TYPES,
+  type ExecutionStatus,
+  type JobFlowType,
+  type JobType,
+} from "@/constants/enums";
 import { statusColor } from "@/utils/statusColor";
 
 /** Format a duration given in seconds as a human-readable string. */
@@ -12,26 +18,24 @@ export function formatDuration(seconds: number): string {
 
 export type RunSemantic = "success" | "failed" | "running" | "killed" | "waiting";
 
+const EXECUTION_SEMANTICS: Record<ExecutionStatus, RunSemantic> = {
+  SUBMITTED: "waiting",
+  CREATED: "waiting",
+  WAITING: "waiting",
+  RUNNING: "running",
+  KILLING: "running",
+  SUCCESS: "success",
+  KILLED: "killed",
+  FAILURE: "failed",
+  ERROR: "failed",
+  ABNORMAL: "failed",
+  EXPECTED_FAILURE: "failed",
+  NOT_EXIST: "failed",
+};
+
 /** Map a backend `ExecutionStatus` to the app's semantic status bucket. */
 export function execStatusSemantic(s: ExecutionStatus): RunSemantic {
-  switch (s) {
-    case "SUBMITTED":
-    case "CREATED":
-      return "waiting";
-    case "RUNNING":
-    case "KILLABLE":
-      return "running";
-    case "SUCCESS":
-      return "success";
-    case "KILLED":
-      return "killed";
-    case "FAILURE":
-    case "ERROR":
-    case "ABNORMAL":
-    case "EXPECTED_FAILURE":
-    case "NOT_EXIST":
-      return "failed";
-  }
+  return EXECUTION_SEMANTICS[s];
 }
 
 export function getExecStatusColor(s: ExecutionStatus): string {
@@ -43,7 +47,7 @@ export function getExecStatusOptions(t: TFunction) {
 }
 
 export const execIsRunning = (s: ExecutionStatus): boolean =>
-  s === "SUBMITTED" || s === "RUNNING" || s === "KILLABLE" || s === "CREATED";
+  s === "SUBMITTED" || s === "RUNNING" || s === "KILLING" || s === "CREATED" || s === "WAITING";
 
 /** All statuses shown with the "failed" (red) tag — the full failure bucket, not just `FAILURE`. */
 export const FAILED_EXEC_STATUSES = EXECUTION_STATUSES.filter((s) => execStatusSemantic(s) === "failed");

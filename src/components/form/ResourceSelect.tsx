@@ -14,7 +14,7 @@ interface Props {
 export default function ResourceSelect({ value, onChange, ext = "jar" }: Props) {
   const { t } = useTranslation();
   const fetcher = useCallback(() => listResourceFiles(ext), [ext]);
-  const { data, loading } = useRemoteOptions(fetcher, [ext]);
+  const { data, loading } = useRemoteOptions("resources", fetcher, [ext]);
   return (
     <Select
       mode="multiple"

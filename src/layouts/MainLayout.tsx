@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import {
   DashboardOutlined,
   SettingOutlined,
-  MonitorOutlined,
   FolderOutlined,
   TeamOutlined,
   ToolOutlined,
@@ -14,7 +13,6 @@ import {
   TableOutlined,
   ClusterOutlined,
   TagsOutlined,
-  ControlOutlined,
   HistoryOutlined,
   PartitionOutlined,
   BellOutlined,
@@ -30,6 +28,7 @@ import { PAGE_PADDING } from "@/constants/layout";
 import { useAuthStore, useAuthPermissions } from "@/stores/authStore";
 import { hasPermission } from "@/utils/permission";
 import { getRoutePermission } from "@/router/routes";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 type TFunc = (key: string) => string;
 
@@ -74,7 +73,6 @@ function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
       },
       { path: "/query", name: t("menu.query"), icon: <ConsoleSqlOutlined /> },
       { path: "/runs", name: t("menu.runs"), icon: <HistoryOutlined /> },
-      { path: "/monitor", name: t("menu.monitor"), icon: <MonitorOutlined /> },
       {
         path: "/admin",
         name: t("menu.admin"),
@@ -86,7 +84,6 @@ function buildLayoutRoutes(t: TFunc): ProLayoutProps["route"] {
           { path: "/admin/workers", name: t("menu.workers"), icon: <ClusterOutlined /> },
           { path: "/admin/tags", name: t("menu.tags"), icon: <TagsOutlined /> },
           { path: "/admin/users", name: t("menu.users"), icon: <TeamOutlined /> },
-          { path: "/admin/sys-configs", name: t("menu.systemConfig"), icon: <ControlOutlined /> },
           { path: "/admin/alert-rules", name: t("menu.alertRules"), icon: <BellOutlined /> },
           { path: "/admin/workspaces", name: t("menu.workspaces"), icon: <AppstoreOutlined /> },
           { path: "/admin/params", name: t("menu.customParams"), icon: <ToolOutlined /> },
@@ -168,6 +165,7 @@ export default function MainLayout() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const loadUserInfo = useAuthStore((s) => s.loadUserInfo);
   const effectivePermissions = useAuthPermissions();
+  const currentWorkspaceId = useWorkspaceStore((state) => state.currentId);
 
   // A page refresh restores `token` from storage synchronously, but the
   // persisted `user` can be stale (server-side role change, or a workspace
@@ -235,7 +233,7 @@ export default function MainLayout() {
             padding: isFullBleed ? 0 : PAGE_PADDING,
           }}
         >
-          <Outlet />
+          <Outlet key={currentWorkspaceId ?? "no-workspace"} />
         </div>
       </ProLayout>
     </div>

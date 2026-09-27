@@ -15,31 +15,32 @@ npm run preview      # Preview production build
 ```
 
 To run a single test file:
+
 ```bash
 npx vitest run src/path/to/file.test.ts
 ```
 
 ## Architecture Overview
 
-**DTail** is a workflow/job management UI for Flink/Spark/SQL jobs. It uses React 19, Ant Design 6, React Router 7, and Zustand for state.
+**Runnelo** is a workflow/job management UI for Flink/Spark/SQL jobs. It uses React 19, Ant Design 6, React Router 7, and Zustand for client state.
 
 ### Routing & Auth
 
-- `src/router/index.tsx` — BrowserRouter with protected routes wrapped in `MainLayout` + `AuthGuard`
+- `src/router/index.tsx` — HashRouter with protected routes wrapped in `MainLayout` + `AuthGuard`; hash routing keeps refreshes compatible with the backend's unchanged static-resource handling
 - `AuthGuard` checks token from `authStore`; redirects to `/login` or `/403` based on auth/permissions
-- Routes: `/dashboard`, `/jobs`, `/manage/*` (resources, users, configs, params), `/monitor`
+- Routes: `/dashboard`, `/studio`, `/query`, `/runs`, `/admin/*`, `/audit-logs`
 
-### State Management (Zustand)
+### State Management
 
-All stores are in `src/stores/`:
+- TanStack Query owns remote/server state and cache keys include the active workspace.
+- Zustand stores in `src/stores/` own client/session state:
 - **`authStore`** — token + user, persisted to localStorage; login/logout via `api/auth.ts`
 - **`jobStore`** — job tree, open tabs, selected node; lazy-loads group children; manages workflow CRUD
-- **`langStore`** — active locale (en/zh), persisted
-- **`manageStore`** — resources, users, env configs, custom params
 
-### Jobs Module (`src/pages/Jobs/`)
+### Studio Module (`src/pages/Studio/`)
 
 The most complex module — a VS Code-like IDE layout:
+
 - **`index.tsx`** — Two-pane layout: left Sider + right tab area
 - **`Sider.tsx`** — Activity bar with 4 panels: Tree, Search, Errors, Trash (240px wide when active)
 - **`JobTree.tsx`** — Hierarchical tree of groups/jobs; lazy loads children; context menu actions
@@ -49,8 +50,9 @@ The most complex module — a VS Code-like IDE layout:
 
 ### API Layer
 
-- `src/api/request.ts` — Axios instance with `baseURL: /api`, 30s timeout; request interceptor adds Bearer token; response interceptor handles 401 (redirect to login), 403, 404, 500
-- Separate modules: `api/job.ts`, `api/auth.ts`, `api/dashboard.ts`, `api/manage.ts`, `api/monitor.ts`
+- `src/utils/request.ts` — Axios instance with a configurable base URL and 30s timeout; request interceptor adds the legacy `X-Token` and `X-Workspace-Id` headers.
+- `src/api/legacy/` isolates DTO/status/date conversion for the existing backend.
+- See `docs/backend-compatibility.md` before changing endpoints or DTOs.
 
 ### Configuration & Environments
 
@@ -68,7 +70,7 @@ MSW is started in dev when `ENABLE_MOCK` is true (`main.tsx`); it's gated on `im
 
 - `src/i18n.ts` — i18next setup; default lang: English
 - Translations in `src/locales/en.ts` and `src/locales/zh.ts`
-- Active language controlled by `langStore`; Ant Design locale also switches via `App.tsx`
+- Active language is controlled by i18next and persisted by `src/i18n.ts`; Ant Design locale also switches via `App.tsx`
 
 ### Path Aliases
 

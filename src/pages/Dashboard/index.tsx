@@ -1,12 +1,15 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
-import { Col, Flex, Row, Segmented, Statistic, Typography } from "antd";
+import { Col, Empty, Flex, Row, Segmented, Statistic, Typography } from "antd";
 import { AppstoreOutlined, CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from "@ant-design/icons";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { getStats, getTrend, type DashboardStats, type TrendDataPoint } from "@/api/dashboard";
 import { StatusDonut, RunListCard } from "./panels";
+import { useQuery } from "@tanstack/react-query";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { queryKeys } from "@/api/queryKeys";
 
 const TREND_SERIES = [
   { key: "success", color: "#52c41a" },
@@ -65,17 +68,18 @@ function TrendChart({ trend }: { trend: TrendDataPoint[] }) {
   const drill = (status: string) => {
     void navigate(`/runs?status=${status}`);
   };
-  return (
+  return trend.length === 0 ? (
+    <Flex align="center" justify="center" style={{ height: 300 }}>
+      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} />
+    </Flex>
+  ) : (
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={trend} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="var(--ant-color-border-secondary)" vertical={false} />
         <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="var(--ant-color-text-tertiary)" />
         <YAxis tick={{ fontSize: 12 }} stroke="var(--ant-color-text-tertiary)" allowDecimals={false} width={44} />
         <Tooltip />
-        <Legend
-          onClick={(e) => drill(String(e.dataKey))}
-          wrapperStyle={{ cursor: "pointer" }}
-        />
+        <Legend onClick={(e) => drill(String(e.dataKey))} wrapperStyle={{ cursor: "pointer" }} />
         {TREND_SERIES.map((s) => (
           <Line
             key={s.key}
@@ -132,21 +136,19 @@ function TaskTrendCard({ trend, timeRange, onTimeRangeChange }: TaskTrendCardPro
 export default function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [trend, setTrend] = useState<TrendDataPoint[]>([]);
   const [timeRange, setTimeRange] = useState<TimeRange>("7d");
-
-  useEffect(() => {
-    getStats()
-      .then(setStats)
-      .catch((err) => console.error("[Dashboard] getStats failed", err));
-  }, []);
-
-  useEffect(() => {
-    getTrend(timeRange)
-      .then(setTrend)
-      .catch((err) => console.error("[Dashboard] getTrend failed", err));
-  }, [timeRange]);
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const { data: stats = null } = useQuery<DashboardStats>({
+    queryKey: queryKeys.dashboard(workspaceId),
+    queryFn: getStats,
+    enabled: workspaceId != null,
+    refetchInterval: 30_000,
+  });
+  const { data: trend = [] } = useQuery<TrendDataPoint[]>({
+    queryKey: [...queryKeys.dashboard(workspaceId), "trend", timeRange],
+    queryFn: () => getTrend(timeRange),
+    enabled: workspaceId != null,
+  });
 
   const toRuns = (status?: string) => () => void navigate(status ? `/runs?status=${status}` : "/runs");
 
@@ -176,7 +178,7 @@ export default function Dashboard() {
           gradient={STAT_GRADIENTS.success}
           icon={<CheckCircleOutlined />}
           iconColor="#52c41a"
-          onClick={toRuns("success")}
+          onClick={toRuns("SUCCESS")}
         />
         <StatCard
           title={t("dashboard.failedTasks")}
@@ -184,7 +186,7 @@ export default function Dashboard() {
           gradient={STAT_GRADIENTS.failed}
           icon={<CloseCircleOutlined />}
           iconColor="#ff4d4f"
-          onClick={toRuns("failed")}
+          onClick={toRuns("FAILURE")}
         />
         <StatCard
           title={t("dashboard.runningTasks")}
@@ -192,7 +194,7 @@ export default function Dashboard() {
           gradient={STAT_GRADIENTS.running}
           icon={<SyncOutlined />}
           iconColor="#faad14"
-          onClick={toRuns("running")}
+          onClick={toRuns("RUNNING")}
         />
       </Row>
 

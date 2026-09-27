@@ -11,7 +11,7 @@ interface Props {
 
 export default function CatalogSelect({ value, onChange }: Props) {
   const { t } = useTranslation();
-  const { data, loading } = useRemoteOptions(listCatalogs, []);
+  const { data, loading } = useRemoteOptions("catalogs", listCatalogs, []);
   return (
     <Select
       mode="multiple"

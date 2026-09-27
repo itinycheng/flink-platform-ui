@@ -3,6 +3,7 @@ import { setupServer } from "msw/node";
 import { http as mswHttp, HttpResponse } from "msw";
 import { message } from "antd";
 import { unwrapEnvelope, http } from "./request";
+import { STORAGE_KEYS } from "@/constants/storage";
 
 describe("unwrapEnvelope", () => {
   it("unwraps a success envelope to its data", () => {
@@ -28,6 +29,13 @@ describe("unwrapEnvelope", () => {
 const server = setupServer(
   mswHttp.get("/api/ok", () => HttpResponse.json({ code: 0, desc: "success", data: { v: 1 } })),
   mswHttp.get("/api/biz", () => HttpResponse.json({ code: 1, desc: "boom", data: null })),
+  mswHttp.get("/api/headers", ({ request }) =>
+    HttpResponse.json({
+      code: 0,
+      desc: "success",
+      data: { token: request.headers.get("X-Token"), workspace: request.headers.get("X-Workspace-Id") },
+    }),
+  ),
 );
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterAll(() => server.close());
@@ -47,5 +55,10 @@ describe("http interceptor envelope handling", () => {
     await expect(http.get("/biz", { suppressErrorToast: true })).rejects.toThrow("boom");
     expect(spy).not.toHaveBeenCalled();
     spy.mockRestore();
+  });
+  it("uses the legacy backend authentication and workspace headers", async () => {
+    localStorage.setItem(STORAGE_KEYS.token, "token-1");
+    localStorage.setItem(STORAGE_KEYS.workspaceId, "7");
+    await expect(http.get("/headers")).resolves.toEqual({ token: "token-1", workspace: "7" });
   });
 });

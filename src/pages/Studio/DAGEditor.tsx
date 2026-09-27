@@ -8,8 +8,13 @@ import { useJobStore } from "@/stores/jobStore";
 import { FlowCanvas } from "@/components/FlowCanvas";
 import { appendStatusEdge } from "@/components/FlowCanvas/constants";
 import { type DAGEditorProps, getInitialEdges, getInitialNodes } from "./DAGEditor.constants";
-import { useBottomPanel, useContextMenu, useDragAndDrop, useFlowPersistence, useNodeEditModal } from "./DAGEditor.hooks";
-import { TaskSidebar } from "./DAGEditor.sidebar";
+import {
+  useBottomPanel,
+  useContextMenu,
+  useDragAndDrop,
+  useFlowPersistence,
+  useNodeEditModal,
+} from "./DAGEditor.hooks";
 import { BottomPanel, DAGToolbar } from "./DAGEditor.panels";
 import { NodeEditModal } from "./DAGEditor.modal";
 
@@ -50,7 +55,6 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
       {contextHolder}
       {bottom.isResizing && <div style={{ position: "fixed", inset: 0, zIndex: 9999, cursor: "row-resize" }} />}
       <Flex style={{ flex: 1, minHeight: 0 }}>
-        <TaskSidebar />
         <Flex vertical style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
           <FlowCanvas
             flowRef={flowRef}

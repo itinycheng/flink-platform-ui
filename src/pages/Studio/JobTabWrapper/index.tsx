@@ -62,7 +62,7 @@ export default function JobTabWrapper({ node }: { node: JobTreeNode }) {
   // so both carry flow-level Schedule/Params/Alerts — the drawer applies to all
   // definition nodes, not just workflows.
   const isWorkflow = node.kind === "workflow";
-  const hasFlowConfig = node.kind !== "group";
+  const hasFlowConfig = isWorkflow;
 
   const toggle = (key: PanelKey) => {
     setActivePanel((prev) => (prev === key ? null : key));

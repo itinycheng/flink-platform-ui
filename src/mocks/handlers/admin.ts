@@ -173,6 +173,15 @@ export const adminHandlers: RequestHandler[] = [
     return ok(1);
   }),
 
+  http.post("/api/user/update/roles", async ({ request }) => {
+    await delay(100);
+    const body = (await request.json()) as Pick<ManagedUser, "id" | "roles">;
+    const user = mockUsers.find((item) => item.id === body.id);
+    if (!user) return ok(0);
+    user.roles = body.roles;
+    return ok(1);
+  }),
+
   // ---- Custom Params ----
 
   http.get("/api/jobParam/page", async ({ request }) => {

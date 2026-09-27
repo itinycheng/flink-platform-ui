@@ -4,6 +4,7 @@ import type { FlowRun, FlowRunDetail, FlowRunGraph, JobRun } from "@/types/run";
 import { EXECUTION_STATUSES, JOB_TYPES, type ExecutionStatus, type JobType } from "@/constants/enums";
 import { ok, fail } from "@/mocks/lib/response";
 import { ipage, parsePageSize } from "@/mocks/lib/page";
+import type { LegacyFlowRunDto, LegacyJobRunDto } from "@/api/legacy/contracts";
 
 const sampleParams = () =>
   JSON.stringify(
@@ -16,7 +17,7 @@ function logLines(n: number): string {
   return Array.from({ length: n }, () => `[${faker.date.recent().toISOString()}] ${faker.lorem.sentence()}`).join("\n");
 }
 
-const INFLIGHT_EXEC_STATUSES: ExecutionStatus[] = ["SUBMITTED", "RUNNING", "KILLABLE", "CREATED"];
+const INFLIGHT_EXEC_STATUSES: ExecutionStatus[] = ["SUBMITTED", "RUNNING", "KILLING", "CREATED", "WAITING"];
 const JAR_LIKE_TYPES: JobType[] = ["FLINK_SQL", "FLINK_JAR", "COMMON_JAR"];
 
 function timesForExec(status: ExecutionStatus): { startTime: string; endTime?: string; duration: number } {
@@ -38,6 +39,7 @@ function makeJobRun(flowRunId: string, type: JobType): JobRun {
   const status = faker.helpers.arrayElement(EXECUTION_STATUSES);
   return {
     id: `jr-${faker.string.nanoid(6)}`,
+    jobId: String(faker.number.int({ min: 1, max: 9999 })),
     flowRunId,
     name: `${faker.word.verb()}-${faker.word.noun()}`,
     type,
@@ -45,6 +47,60 @@ function makeJobRun(flowRunId: string, type: JobType): JobRun {
     ...timesForExec(status),
     params: sampleParams(),
     trackingUrl: trackingForJobType(type),
+  };
+}
+
+function toLegacyJobRun(run: JobRun): LegacyJobRunDto {
+  return {
+    id: run.id,
+    jobId: run.jobId,
+    flowRunId: run.flowRunId,
+    name: run.name,
+    type: run.type,
+    status: run.status,
+    submitTime: run.startTime,
+    endTime: run.endTime,
+    duration: run.duration,
+    params: run.params,
+    backInfo: {
+      trackingUrl: run.trackingUrl,
+      stdMsg: logLines(20),
+    },
+  };
+}
+
+function toLegacyFlowRun(run: FlowRunDetail): LegacyFlowRunDto {
+  const vertexIds = new Map(run.nodes.map((node, index) => [node.id, index + 1]));
+  return {
+    id: run.id,
+    flowId: run.flowId,
+    name: run.name,
+    userId: 1,
+    type: run.type === "JOB_FLOW" ? "JOB_FLOW" : "JOB_LIST",
+    status: run.status,
+    startTime: run.startTime,
+    endTime: run.endTime,
+    duration: run.duration,
+    tags: run.tags,
+    flow: {
+      vertices: run.nodes.map((node, index) => ({
+        id: index + 1,
+        jobId: Number(node.jobId),
+        jobRunId: Number(node.id),
+        jobRunStatus: node.status,
+      })),
+      edges: run.graph.edges.flatMap((edge) => {
+        const fromVId = vertexIds.get(edge.source);
+        const toVId = vertexIds.get(edge.target);
+        return fromVId && toVId ? [{ fromVId, toVId, expectStatus: "SUCCESS" }] : [];
+      }),
+      nodeLayouts: Object.fromEntries(
+        run.graph.nodes.map((node, index) => [
+          String(index + 1),
+          { id: node.id, type: node.type, x: node.x, y: node.y },
+        ]),
+      ),
+    },
   };
 }
 
@@ -98,11 +154,6 @@ const mockFlowRuns: FlowRunDetail[] = [
   ),
 ].sort((a, b) => b.startTime.localeCompare(a.startTime));
 
-/** Trim a detail record down to the list shape (no graph/nodes). */
-function toFlowListItem({ graph: _g, nodes: _n, ...rest }: FlowRunDetail): FlowRun {
-  return rest;
-}
-
 /** `statuses` (CSV bucket match) takes precedence over the single `status` literal when both are present. */
 function matchesStatus(r: FlowRun, status?: string | null, statuses?: string | null): boolean {
   if (statuses) return statuses.split(",").filter(Boolean).includes(r.status);
@@ -140,34 +191,48 @@ export const runHandlers: RequestHandler[] = [
     const filters = {
       name: p.get("name")?.toLowerCase(),
       status: p.get("status"),
-      statuses: p.get("statuses"),
-      type: p.get("type"),
-      flowId: p.get("flowId"),
-      from: p.get("startFrom"),
-      to: p.get("startTo"),
+      statuses: null,
+      type: null,
+      flowId: null,
+      from: p.get("startTime"),
+      to: p.get("endTime"),
     };
     const filtered = mockFlowRuns.filter((r) => matchesFlowRunFilters(r, filters));
-    return ok(ipage(filtered.map(toFlowListItem), page, size));
+    return ok(ipage(filtered.map(toLegacyFlowRun), page, size));
   }),
 
   http.get("/api/jobFlowRun/get/:id", async ({ params }) => {
     await delay(200);
     const r = mockFlowRuns.find((x) => x.id === (params as { id: string }).id);
-    return r ? ok(r) : fail(1404, "运行不存在");
+    return r ? ok(toLegacyFlowRun(r)) : fail(1404, "运行不存在");
   }),
 
-  http.post("/api/jobFlowRun/kill/:id", async ({ params }) => {
+  http.get("/api/jobFlowRun/kill/:id", async ({ params }) => {
     await delay(200);
     const r = mockFlowRuns.find((x) => x.id === (params as { id: string }).id);
     if (!r) return fail(1404, "运行不存在");
     r.status = "KILLED";
     r.endTime = new Date().toISOString();
     r.duration = Math.max(1, Math.round((Date.now() - new Date(r.startTime).getTime()) / 1000));
-    return ok(toFlowListItem(r));
+    return ok(r.id);
   }),
 
-  http.get("/api/jobRun/log/:id", async ({ params }) => {
+  http.get("/api/jobRun/page", async ({ request }) => {
     await delay(150);
-    return ok({ id: (params as { id: string }).id, content: logLines(20) });
+    const url = new URL(request.url);
+    const { page, size } = parsePageSize(url);
+    const flowRunId = url.searchParams.get("flowRunId");
+    const jobs = mockFlowRuns
+      .filter((run) => !flowRunId || run.id === flowRunId)
+      .flatMap((run) => run.nodes)
+      .map(toLegacyJobRun);
+    return ok(ipage(jobs, page, size));
+  }),
+
+  http.get("/api/jobRun/get/:id", async ({ params }) => {
+    await delay(150);
+    const id = (params as { id: string }).id;
+    const job = mockFlowRuns.flatMap((run) => run.nodes).find((node) => node.id === id);
+    return job ? ok(toLegacyJobRun(job)) : fail(1404, "任务实例不存在");
   }),
 ];

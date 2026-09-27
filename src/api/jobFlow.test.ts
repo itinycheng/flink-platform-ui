@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { jobFlowHandlers } from "@/mocks/handlers/jobFlow";
+import { workflowHandlers } from "@/mocks/handlers/job";
+import { createJobInfo } from "./job";
 import {
   createJobFlow,
   getJobFlow,
@@ -9,9 +11,11 @@ import {
   startSchedule,
   stopSchedule,
   runFlowOnce,
+  getFlowGraph,
+  updateFlowGraph,
 } from "./jobFlow";
 
-const server = setupServer(...jobFlowHandlers);
+const server = setupServer(...jobFlowHandlers, ...workflowHandlers);
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterAll(() => server.close());
 
@@ -39,18 +43,8 @@ describe("jobFlow API + mock", () => {
     expect(typeof (await runFlowOnce(id))).toBe("number");
   });
 
-  it("synthesizes a default JobFlow for non-numeric seeded tree ids", async () => {
-    const flow = await getJobFlow("wf-abc123");
-    expect(flow.type).toBe("JOB_FLOW");
-    expect(flow.status).toBe("ONLINE");
-  });
-
-  it("gives a non-numeric id a stable flow so edits round-trip", async () => {
-    const a = await getJobFlow("wf-stable");
-    const b = await getJobFlow("wf-stable");
-    expect(a.id).toBe(b.id); // deterministic id, same stored object
-    await updateJobFlow({ ...a, name: "renamed-flow" });
-    expect((await getJobFlow("wf-stable")).name).toBe("renamed-flow");
+  it("rejects non-numeric ids like the legacy Long path variable", async () => {
+    await expect(getJobFlow("wf-abc123")).rejects.toThrow("工作流 ID 必须是数字");
   });
 
   it("copies a JobFlow under a new id", async () => {
@@ -58,5 +52,26 @@ describe("jobFlow API + mock", () => {
     const copyId = await copyJobFlow(id);
     expect(typeof copyId).toBe("number");
     expect(copyId).not.toBe(id);
+  });
+
+  it("round-trips the UI graph through the legacy vertices/edges contract", async () => {
+    const job = await createJobInfo({
+      name: "extract",
+      type: "MYSQL_SQL",
+      execMode: "BATCH",
+      routeUrl: [1],
+      subject: "select 1",
+      config: { type: "MYSQL_SQL", retryTimes: 0, retryInterval: "5s", dsId: 1 },
+    });
+    const flowId = await createJobFlow({ name: "legacy-flow", type: "JOB_FLOW" });
+    await updateFlowGraph(flowId, {
+      nodes: [{ id: String(job.id), jobId: job.id, taskType: job.type, label: job.name, x: 10, y: 20 }],
+      edges: [],
+    });
+
+    await expect(getFlowGraph(flowId)).resolves.toEqual({
+      nodes: [expect.objectContaining({ id: String(job.id), jobId: job.id, label: "extract", x: 10, y: 20 })],
+      edges: [],
+    });
   });
 });

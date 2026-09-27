@@ -36,7 +36,7 @@ describe("backend enum constants", () => {
   it("has the expected member counts", () => {
     expect(DEPLOY_MODES).toHaveLength(4);
     expect(DB_TYPES).toHaveLength(3);
-    expect(EXECUTION_STATUSES).toHaveLength(11);
+    expect(EXECUTION_STATUSES).toHaveLength(12);
   });
 
   it("enumOptions maps values to i18n-labelled options", () => {

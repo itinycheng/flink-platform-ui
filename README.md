@@ -1,13 +1,13 @@
-# DTail UI
+# Runnelo UI
 
 Task scheduling platform frontend built with React 19 + TypeScript + Vite.
 
 ## Tech Stack
 
 - React 19 + TypeScript
-- Vite 6
+- Vite 8
 - Ant Design 6 + ProComponents
-- Zustand (state management)
+- TanStack Query (server state) + Zustand (client state)
 - React Router 7
 - i18next (i18n, English / Chinese)
 - XYFlow (DAG editor)
@@ -17,9 +17,9 @@ Task scheduling platform frontend built with React 19 + TypeScript + Vite.
 ## Modules
 
 - **Dashboard** — overview and metrics
-- **Jobs** — workflow and task management with SQL / Shell / Spark / Flink task types and a built-in DAG editor
-- **Manage** — resources, users, environment configs, custom parameters
-- **Monitor** — alerting policies and metrics panel
+- **Studio** — workflow and task management with SQL / Shell / Spark / Flink task types and a built-in DAG editor
+- **Admin** — resources, users, environment configs, custom parameters and alert rules
+- **Runs** — workflow execution history, details and logs
 
 ## Getting Started
 
@@ -64,3 +64,6 @@ src/
 ├── types/        # TypeScript type definitions
 └── utils/        # Utility functions
 ```
+
+The current backend compatibility contract is documented in
+[`docs/backend-compatibility.md`](docs/backend-compatibility.md).

@@ -46,15 +46,15 @@ function matchesAuditFilters(
 }
 
 export const auditHandlers: RequestHandler[] = [
-  // GET /api/auditLog/page — read-only, filterable audit records (newest first)
-  http.get("/api/auditLog/page", async ({ request }) => {
+  // GET /api/audit-logs — mirrors the deployed backend contract.
+  http.get("/api/audit-logs", async ({ request }) => {
     await delay(200);
     const url = new URL(request.url);
     const { page, size } = parsePageSize(url);
-    const operator = url.searchParams.get("operator")?.toLowerCase() ?? "";
-    const action = url.searchParams.get("action") ?? "";
-    const moduleName = url.searchParams.get("module") ?? "";
-    const result = url.searchParams.get("result") ?? "";
+    const operator = url.searchParams.get("operatorId")?.toLowerCase() ?? "";
+    const action = url.searchParams.get("operation") ?? "";
+    const moduleName = url.searchParams.get("entityType")?.toLowerCase() ?? "";
+    const result = "";
     const startTime = url.searchParams.get("startTime") ?? "";
     const endTime = url.searchParams.get("endTime") ?? "";
 
@@ -71,6 +71,20 @@ export const auditHandlers: RequestHandler[] = [
       )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
-    return ok(ipage(filtered, page, size));
+    return ok(
+      ipage(
+        filtered.map((log) => ({
+          id: log.id,
+          entityId: log.target,
+          entityType: log.module.toUpperCase(),
+          operation: log.action,
+          snapshot: log.detail,
+          operatorId: log.operator,
+          operateTime: log.createdAt,
+        })),
+        page,
+        size,
+      ),
+    );
   }),
 ];

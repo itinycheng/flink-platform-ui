@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { Empty, Flex, Spin, Tag, Typography } from "antd";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { useTranslation } from "react-i18next";
@@ -9,6 +9,9 @@ import { JOB_FLOW_TYPES, type ExecutionStatus } from "@/constants/enums";
 import type { DashboardStats } from "@/api/dashboard";
 import { RunStatusTag } from "@/pages/Runs/RunStatusTag";
 import { formatDuration, FAILED_EXEC_STATUSES, RUNNING_EXEC_STATUSES } from "@/pages/Runs/runStatus";
+import { useQuery } from "@tanstack/react-query";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { queryKeys } from "@/api/queryKeys";
 
 const cardStyle: CSSProperties = {
   padding: 20,
@@ -72,7 +75,9 @@ export function StatusDonut({ stats }: { stats: DashboardStats | null }) {
               innerRadius={72}
               outerRadius={100}
               paddingAngle={2}
-              onClick={(d: { payload?: DonutSlice }) => d.payload?.status && navigate(`/runs?status=${d.payload.status}`)}
+              onClick={(d: { payload?: DonutSlice }) =>
+                d.payload?.status && navigate(`/runs?status=${d.payload.status}`)
+              }
             >
               {data.map((d) => (
                 <Cell key={d.name} fill={d.color} cursor={d.status ? "pointer" : "default"} />
@@ -117,27 +122,15 @@ interface RunListCardProps {
 export function RunListCard({ status, title, emptyText }: RunListCardProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [items, setItems] = useState<FlowRun[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const res = await getFlowRuns({ page: 1, pageSize: 6, statuses: STATUS_BUCKETS[status] });
-        if (!cancelled) setItems(res.data);
-      } catch {
-        if (!cancelled) setItems([]);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [status]);
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const params = { page: 1, pageSize: 6, statuses: STATUS_BUCKETS[status] };
+  const { data, isPending: loading } = useQuery({
+    queryKey: queryKeys.runs.list(workspaceId, params),
+    queryFn: () => getFlowRuns(params),
+    enabled: workspaceId != null,
+    refetchInterval: status === "RUNNING" ? 5_000 : 30_000,
+  });
+  const items: FlowRun[] = data?.data ?? [];
 
   return (
     <div style={cardStyle}>

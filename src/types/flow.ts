@@ -8,6 +8,8 @@
 export interface FlowNode {
   /** Canvas node id (stable across save/reload). */
   id: string;
+  /** Existing backend JobInfo id when adapting the legacy DAG contract. */
+  jobId?: number;
   /** Backend JobType for task nodes (e.g. "MYSQL_SQL", "SHELL", "FLINK_SQL"). */
   taskType: string;
   label: string;

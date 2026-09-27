@@ -14,15 +14,20 @@ import {
 } from "@ant-design/icons";
 import type { TFunction } from "i18next";
 import type { JobTreeNode } from "@/types/job";
+import { LEGACY_DEFINITIONS_ROOT_ID } from "@/api/job";
 
 type MenuItem = Required<MenuProps>["items"][number];
 
 function groupMenu(node: JobTreeNode, t: TFunction): MenuItem[] {
+  if (node.id === LEGACY_DEFINITIONS_ROOT_ID) {
+    return [{ key: "addTask", icon: <PlusOutlined />, label: t("workflow.addTask") }];
+  }
   const items: MenuItem[] = [
     { key: "addWorkflow", icon: <PlusOutlined />, label: t("workflow.addWorkflow") },
     { key: "addTask", icon: <PlusOutlined />, label: t("workflow.addTask") },
   ];
-  if (node.pid === "") items.push({ key: "addSubgroup", icon: <FolderAddOutlined />, label: t("workflow.addSubgroup") });
+  if (node.pid === "")
+    items.push({ key: "addSubgroup", icon: <FolderAddOutlined />, label: t("workflow.addSubgroup") });
   items.push(
     { type: "divider" },
     { key: "rename", icon: <EditOutlined />, label: t("workflow.editName") },
@@ -34,6 +39,17 @@ function groupMenu(node: JobTreeNode, t: TFunction): MenuItem[] {
 /** Lifecycle menu for a definition node (Task or Workflow), driven by its status. */
 function definitionMenu(node: JobTreeNode, t: TFunction): MenuItem[] {
   const s = node.lifecycleStatus ?? "OFFLINE";
+  if (node.kind === "task") {
+    const items: MenuItem[] = [];
+    if (s === "OFFLINE") items.push({ key: "online", icon: <CloudUploadOutlined />, label: t("definitions.online") });
+    if (s === "ONLINE")
+      items.push({ key: "offline", icon: <CloudDownloadOutlined />, label: t("definitions.offline") });
+    items.push(
+      { type: "divider" },
+      { key: "delete", icon: <DeleteOutlined />, label: t("common.delete"), danger: true },
+    );
+    return items;
+  }
   const items: MenuItem[] = [
     { key: "runOnce", icon: <PlayCircleOutlined />, label: t("definitions.runOnce") },
     { type: "divider" },
@@ -55,7 +71,10 @@ function definitionMenu(node: JobTreeNode, t: TFunction): MenuItem[] {
   );
   // A scheduling definition must be stopped before it can be deleted.
   if (s !== "SCHEDULING") {
-    items.push({ type: "divider" }, { key: "delete", icon: <DeleteOutlined />, label: t("common.delete"), danger: true });
+    items.push(
+      { type: "divider" },
+      { key: "delete", icon: <DeleteOutlined />, label: t("common.delete"), danger: true },
+    );
   }
   return items;
 }

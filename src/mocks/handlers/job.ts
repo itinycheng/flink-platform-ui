@@ -14,6 +14,7 @@ import {
 } from "@/mocks/data/jobTree";
 import type { JobInfo } from "@/types/entities";
 import type { JobType } from "@/constants/enums";
+import { ipage, parsePageSize } from "@/mocks/lib/page";
 
 // ---- Seed data generated with faker ----
 // Tree seeding (job_group + job_tree stores) now lives in `@/mocks/data/jobTree`.
@@ -44,6 +45,24 @@ function defaultJobInfo(id: number): JobInfo {
 }
 
 export const workflowHandlers: RequestHandler[] = [
+  // Legacy backend page used by the Runnelo compatibility tree.
+  http.get("/api/jobInfo/page", async ({ request }) => {
+    await delay(100);
+    const url = new URL(request.url);
+    const { page, size } = parsePageSize(url);
+    const name = url.searchParams.get("name")?.toLowerCase();
+    const seeded = [...jobTreeStore.values()]
+      .filter((node) => node.kind === "task")
+      .map((node, index) => ({
+        ...defaultJobInfo(node.refId ?? 10_000 + index),
+        name: node.name,
+        type: node.jobType ?? "MYSQL_SQL",
+      }));
+    const stored = [...jobInfoStore.values()];
+    const rows = [...seeded, ...stored].filter((job) => !name || job.name.toLowerCase().includes(name));
+    return ok(ipage(rows, page, size));
+  }),
+
   // GET /api/jobTree/roots — top-level groups only (no children)
   http.get("/api/jobTree/roots", async () => {
     await delay(200);
@@ -126,8 +145,7 @@ export const workflowHandlers: RequestHandler[] = [
 
   // ---- JobInfo (backend-shaped task entity) ----
 
-  // GET /api/jobInfo/get/:id — tolerates numeric ids (stored) and non-numeric
-  // seeded tree-node ids like `task-xxx` (synthesizes a default so they open).
+  // GET /api/jobInfo/get/:id — the deployed controller accepts a numeric Long.
   http.get("/api/jobInfo/get/:id", async ({ params }) => {
     await delay(150);
     const { id } = params as { id: string };
@@ -135,7 +153,14 @@ export const workflowHandlers: RequestHandler[] = [
     if (Number.isFinite(numericId) && jobInfoStore.has(numericId)) {
       return ok(jobInfoStore.get(numericId));
     }
-    return ok(defaultJobInfo(Number.isFinite(numericId) ? numericId : ++jobInfoSeq));
+    if (!Number.isFinite(numericId)) return fail(1001, "任务 ID 必须是数字");
+    return ok(defaultJobInfo(numericId));
+  }),
+
+  http.post("/api/jobInfo/getByIds", async ({ request }) => {
+    await delay(100);
+    const ids = (await request.json()) as number[];
+    return ok(ids.map((id) => jobInfoStore.get(id) ?? defaultJobInfo(id)));
   }),
 
   // POST /api/jobInfo/create
@@ -171,5 +196,10 @@ export const workflowHandlers: RequestHandler[] = [
     const merged: JobInfo = { ...jobInfoStore.get(body.id), ...body };
     jobInfoStore.set(body.id, merged);
     return ok(merged);
+  }),
+
+  http.get("/api/jobInfo/delete/:id", async ({ params }) => {
+    await delay(100);
+    return ok(jobInfoStore.delete(Number((params as { id: string }).id)));
   }),
 ];

@@ -36,9 +36,7 @@ describe("jobInfo API + mock", () => {
     expect(updated.name).toBe("j2-renamed");
   });
 
-  it("synthesizes a default JobInfo when the id is a non-numeric seeded tree-node id", async () => {
-    const fetched = await getJobInfo("task-abc123");
-    expect(fetched.type).toBe("MYSQL_SQL");
-    expect(fetched.status).toBe("ONLINE");
+  it("rejects non-numeric ids like the legacy Long path variable", async () => {
+    await expect(getJobInfo("task-abc123")).rejects.toThrow("任务 ID 必须是数字");
   });
 });

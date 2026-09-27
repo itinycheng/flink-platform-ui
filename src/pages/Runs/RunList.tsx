@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useMemo } from "react";
+import { useRef, useState, useCallback, useMemo, type RefObject } from "react";
 import { Button, Popconfirm, Space, Tag, message } from "antd";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -6,10 +6,12 @@ import { useSearchParams } from "react-router-dom";
 import { ProTable, type ActionType, type ProColumns } from "@ant-design/pro-components";
 import type { FlowRun, FlowRunListParams } from "@/types/run";
 import { getFlowRuns, killFlowRun } from "@/api/run";
-import { JOB_TYPES, JOB_FLOW_TYPES, type JobType, type JobFlowType } from "@/constants/enums";
+import { JOB_FLOW_TYPES, type JobFlowType, type JobType } from "@/constants/enums";
 import { getExecStatusOptions, formatDuration, execIsRunning, isFlowType } from "./runStatus";
 import { RunStatusTag } from "./RunStatusTag";
 import RunDetailDrawer from "./RunDetailDrawer";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
 type RunType = JobType | JobFlowType;
 
@@ -33,10 +35,78 @@ const buildStatusEnum = (t: TFunction) =>
   Object.fromEntries(getExecStatusOptions(t).map((o) => [o.value, { text: o.label }]));
 
 const buildTypeEnum = (t: TFunction) =>
-  Object.fromEntries([
-    ...JOB_TYPES.map((v) => [v, { text: t(`enums.JobType.${v}`) }]),
-    ...JOB_FLOW_TYPES.map((v) => [v, { text: t(`enums.JobFlowType.${v}`) }]),
-  ]);
+  Object.fromEntries([...JOB_FLOW_TYPES.map((v) => [v, { text: t(`enums.JobFlowType.${v}`) }])]);
+
+function useKillFlowRun(actionRef: RefObject<ActionType | null>) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const { mutate: killRun } = useMutation({
+    mutationFn: killFlowRun,
+    onSuccess: async () => {
+      message.success(t("runs.killSent"));
+      await queryClient.invalidateQueries({ queryKey: ["workspace", workspaceId, "runs"] });
+      void actionRef.current?.reload();
+    },
+  });
+  return useCallback((id: string) => killRun(id), [killRun]);
+}
+
+function useRunColumns(openDetail: (id: string) => void, onKill: (id: string) => void) {
+  const { t } = useTranslation();
+  return useMemo<ProColumns<FlowRun>[]>(
+    () => [
+      { title: t("common.name"), dataIndex: "name", ellipsis: true },
+      {
+        title: t("runs.type"),
+        dataIndex: "type",
+        width: 110,
+        valueType: "select",
+        valueEnum: buildTypeEnum(t),
+        render: (_, row) => <Tag color={isFlowType(row.type) ? "purple" : "default"}>{typeLabel(row.type, t)}</Tag>,
+      },
+      {
+        title: t("common.status"),
+        dataIndex: "status",
+        width: 110,
+        valueType: "select",
+        valueEnum: buildStatusEnum(t),
+        render: (_, row) => <RunStatusTag status={row.status} />,
+      },
+      { title: t("runs.startTime"), dataIndex: "startTime", valueType: "dateTime", search: false, width: 170 },
+      {
+        title: t("runs.duration"),
+        dataIndex: "duration",
+        search: false,
+        width: 100,
+        render: (_, row) => formatDuration(row.duration),
+      },
+      { title: t("runs.owner"), dataIndex: "submitter", search: false, width: 140 },
+      { title: t("runs.startTime"), dataIndex: "startRange", valueType: "dateTimeRange", hideInTable: true },
+      {
+        title: t("common.operation"),
+        valueType: "option",
+        width: 130,
+        render: (_, record) => (
+          <Space>
+            <a onClick={() => openDetail(record.id)}>{t("runs.detail")}</a>
+            {execIsRunning(record.status) && (
+              <Popconfirm
+                title={t("runs.killConfirm")}
+                onConfirm={() => onKill(record.id)}
+                okText={t("common.ok")}
+                cancelText={t("common.cancel")}
+              >
+                <a style={{ color: "var(--ant-color-error)" }}>{t("runs.kill")}</a>
+              </Popconfirm>
+            )}
+          </Space>
+        ),
+      },
+    ],
+    [t, openDetail, onKill],
+  );
+}
 
 export default function RunList() {
   const { t } = useTranslation();
@@ -50,53 +120,9 @@ export default function RunList() {
     setDetailOpen(true);
   }, []);
 
-  const onKill = useCallback(
-    async (id: string) => {
-      try {
-        await killFlowRun(id);
-        message.success(t("runs.killSent"));
-        void actionRef.current?.reload();
-      } catch {
-        // handled by the global interceptor toast
-      }
-    },
-    [t],
-  );
+  const onKill = useKillFlowRun(actionRef);
 
-  const columns = useMemo<ProColumns<FlowRun>[]>(
-    () => [
-      { title: t("common.name"), dataIndex: "name", ellipsis: true },
-      {
-        title: t("runs.type"),
-        dataIndex: "type",
-        width: 110,
-        valueType: "select",
-        valueEnum: buildTypeEnum(t),
-        render: (_, r) => <Tag color={isFlowType(r.type) ? "purple" : "default"}>{typeLabel(r.type, t)}</Tag>,
-      },
-      { title: t("common.status"), dataIndex: "status", width: 110, valueType: "select", valueEnum: buildStatusEnum(t), render: (_, r) => <RunStatusTag status={r.status} /> },
-      { title: t("runs.startTime"), dataIndex: "startTime", valueType: "dateTime", search: false, width: 170 },
-      { title: t("runs.duration"), dataIndex: "duration", search: false, width: 100, render: (_, r) => formatDuration(r.duration) },
-      { title: t("runs.owner"), dataIndex: "submitter", search: false, width: 140 },
-      { title: t("runs.startTime"), dataIndex: "startRange", valueType: "dateTimeRange", hideInTable: true },
-      {
-        title: t("common.operation"),
-        valueType: "option",
-        width: 130,
-        render: (_, record) => (
-          <Space>
-            <a onClick={() => openDetail(record.id)}>{t("runs.detail")}</a>
-            {execIsRunning(record.status) && (
-              <Popconfirm title={t("runs.killConfirm")} onConfirm={() => void onKill(record.id)} okText={t("common.ok")} cancelText={t("common.cancel")}>
-                <a style={{ color: "var(--ant-color-error)" }}>{t("runs.kill")}</a>
-              </Popconfirm>
-            )}
-          </Space>
-        ),
-      },
-    ],
-    [t, openDetail, onKill],
-  );
+  const columns = useRunColumns(openDetail, onKill);
 
   return (
     <div data-testid="run-list">
@@ -106,8 +132,17 @@ export default function RunList() {
         rowKey="id"
         columns={columns}
         options={{ reload: true, density: false, setting: false }}
-        form={{ initialValues: { status: searchParams.get("status") ?? undefined, type: searchParams.get("type") ?? undefined } }}
-        toolBarRender={() => [<Button key="refresh" onClick={() => void actionRef.current?.reload()}>{t("common.refresh")}</Button>]}
+        form={{
+          initialValues: {
+            status: searchParams.get("status") ?? undefined,
+            type: searchParams.get("type") ?? undefined,
+          },
+        }}
+        toolBarRender={() => [
+          <Button key="refresh" onClick={() => void actionRef.current?.reload()}>
+            {t("common.refresh")}
+          </Button>,
+        ]}
         request={async (params) => {
           const result = await getFlowRuns(toParams(params));
           return { data: result.data, total: result.total, success: true };

@@ -11,7 +11,7 @@ interface Props {
 
 export default function WorkerSelect({ value, onChange }: Props) {
   const { t } = useTranslation();
-  const { data, loading } = useRemoteOptions(listWorkers, []);
+  const { data, loading } = useRemoteOptions("workers", listWorkers, []);
   return (
     <Select
       mode="multiple"

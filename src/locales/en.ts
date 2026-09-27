@@ -858,8 +858,9 @@ const en = {
       ERROR: "Error",
       NOT_EXIST: "Not exist",
       CREATED: "Created",
-      KILLABLE: "Killable",
+      KILLING: "Killing",
       EXPECTED_FAILURE: "Expected failure",
+      WAITING: "Waiting",
     },
     ExecutionStrategy: {
       ONLY_CUR_JOB: "Only current job",

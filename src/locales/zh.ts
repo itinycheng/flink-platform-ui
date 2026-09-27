@@ -856,8 +856,9 @@ const zh = {
       ERROR: "错误",
       NOT_EXIST: "不存在",
       CREATED: "已创建",
-      KILLABLE: "可终止",
+      KILLING: "终止中",
       EXPECTED_FAILURE: "预期失败",
+      WAITING: "等待中",
     },
     ExecutionStrategy: {
       ONLY_CUR_JOB: "仅当前任务",

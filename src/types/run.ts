@@ -45,6 +45,8 @@ export interface FlowRunGraph {
 /** A single node's execution inside a flow run, from `/jobRun/*` (node-level). */
 export interface JobRun {
   id: string;
+  /** Backend job definition id; distinct from this execution's id. */
+  jobId: string;
   flowRunId: string;
   name: string;
   type: JobType;

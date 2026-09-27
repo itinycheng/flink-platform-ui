@@ -4,7 +4,7 @@
  * the same string literals in separate files).
  */
 export const STORAGE_KEYS = {
-  /** Auth bearer token. */
+  /** Session token sent through the legacy X-Token header. */
   token: "token",
   /** Serialized current user. */
   user: "user",
@@ -13,7 +13,7 @@ export const STORAGE_KEYS = {
   /** Active UI language (en | zh). */
   lang: "lang",
   /** Recent query-console statements. */
-  queryHistory: "dtail.query.history",
+  queryHistory: "runnelo.query.history",
   /** Schema version of the persisted auth (token+user). Bump to invalidate stale sessions. */
-  authVersion: "dtail.auth.version",
+  authVersion: "runnelo.auth.version",
 } as const;

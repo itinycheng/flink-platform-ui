@@ -2,6 +2,7 @@ import { http } from "@/utils/request";
 import type { AuthUser } from "@/types/auth";
 import type { UserRoles } from "@/types/entities";
 import type { UserStatus } from "@/constants/enums";
+import { adaptUserRoles } from "@/api/legacy/contracts";
 
 export interface LoginRequest {
   username: string;
@@ -32,7 +33,7 @@ export function getLoginConfig(): Promise<{ authType: string; ssoLoginUrl?: stri
 /** Backend shape for GET /user/info; `name` is mapped to `username` for AuthUser. */
 interface UserInfoResponse {
   name: string;
-  roles: UserRoles;
+  roles: UserRoles | string[];
   status?: UserStatus;
   avatar?: string;
 }
@@ -41,7 +42,7 @@ interface UserInfoResponse {
 export function getUserInfo(): Promise<AuthUser> {
   return http.get<UserInfoResponse>("/user/info").then((u) => ({
     username: u.name,
-    roles: u.roles,
+    roles: adaptUserRoles(u.roles),
     status: u.status,
     avatar: u.avatar,
   }));

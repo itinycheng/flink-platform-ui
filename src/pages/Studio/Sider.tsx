@@ -1,14 +1,5 @@
 import JobTree from "@/pages/Studio/JobTree";
-import { GroupEditModal } from "@/pages/Studio/GroupEditModal";
-import { useJobStore } from "@/stores/jobStore";
-import {
-  SearchOutlined,
-  ApartmentOutlined,
-  WarningOutlined,
-  DeleteOutlined,
-  FolderAddOutlined,
-  FilterOutlined,
-} from "@ant-design/icons";
+import { SearchOutlined, ApartmentOutlined, WarningOutlined, DeleteOutlined, FilterOutlined } from "@ant-design/icons";
 import { Badge, Button, Divider, Flex, Input, Popover, Tag, Tooltip, Typography } from "antd";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -329,36 +320,15 @@ function TreeFilterBar({ onChange }: { onChange: (filter: FilterState) => void }
 
 /** Tree panel — job tree with add group button and a collapsible inline filter */
 function TreePanel() {
-  const { t } = useTranslation();
-  const createGroup = useJobStore((s) => s.createGroup);
-  const treeData = useJobStore((s) => s.treeData);
   const [filter, setFilter] = useState<FilterState>({ keyword: "", types: [], statuses: [] });
-  const [addOpen, setAddOpen] = useState(false);
-
-  const handleCreateGroup = (name: string) => {
-    void createGroup(name, "");
-    setAddOpen(false);
-  };
 
   return (
     <Flex vertical style={{ height: "100%", padding: "4px 4px 0" }}>
       <TreeFilterBar onChange={setFilter} />
-      <Flex gap={4} style={{ flexShrink: 0, padding: "6px 4px" }}>
-        <Button type="dashed" size="small" icon={<FolderAddOutlined />} onClick={() => setAddOpen(true)} block>
-          {t("workflow.addGroup")}
-        </Button>
-      </Flex>
       <Divider style={{ margin: "2px 0 6px" }} />
       <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
         <JobTree searchKeyword={filter.keyword} typeFilter={filter.types} statusFilter={filter.statuses} />
       </div>
-      <GroupEditModal
-        open={addOpen}
-        mode="create"
-        siblingNames={treeData.filter((n) => n.kind === "group").map((n) => n.name)}
-        onOk={handleCreateGroup}
-        onCancel={() => setAddOpen(false)}
-      />
     </Flex>
   );
 }

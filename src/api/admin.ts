@@ -1,8 +1,19 @@
 import { http } from "@/utils/request";
-import type { ManagedUser, CustomParam, DataSource, Catalog, Worker, Tag, SysConfig, AuditLog, AuditResult } from "@/types/admin";
+import type {
+  ManagedUser,
+  CustomParam,
+  DataSource,
+  Catalog,
+  Worker,
+  Tag,
+  SysConfig,
+  AuditLog,
+  AuditResult,
+} from "@/types/admin";
 import type { Resource } from "@/types/entities";
 import type { PaginatedResponse, PaginationParams, IPage } from "@/types/common";
 import { ipageToPaginated, toPageParams } from "@/types/common";
+import { formatLegacyDateTime } from "@/api/legacy/date";
 
 // ---- Resource Management ---- (backend: /resource/*)
 
@@ -22,11 +33,7 @@ export function createFolder(name: string, pid?: number): Promise<number> {
   return http.post<number>("/resource/create", { name, type: "DIR", pid });
 }
 
-export function uploadResource(
-  file: File,
-  pid?: number,
-  onProgress?: (percent: number) => void,
-): Promise<Resource> {
+export function uploadResource(file: File, pid?: number, onProgress?: (percent: number) => void): Promise<Resource> {
   const formData = new FormData();
   formData.append("file", file);
   if (pid !== undefined) formData.append("pid", String(pid));
@@ -74,7 +81,11 @@ export function createUser(data: Omit<ManagedUser, "id" | "createdAt">): Promise
 }
 
 export function updateUser(id: string, data: Partial<Omit<ManagedUser, "id" | "createdAt">>): Promise<number> {
-  return http.post<number>("/user/update", { ...data, id });
+  const { roles, ...profile } = data;
+  return http.post<number>("/user/update", { ...profile, id }).then(async (updatedId) => {
+    if (roles) await http.post<number>("/user/update/roles", { id, roles });
+    return updatedId;
+  });
 }
 
 // ---- Job Parameters ---- (backend: /jobParam/*)
@@ -218,8 +229,40 @@ export interface AuditLogQuery extends PaginationParams {
   endTime?: string;
 }
 
+interface LegacyAuditLogDto {
+  id: number | string;
+  entityId?: number | string;
+  entityType?: string;
+  operation?: string;
+  snapshot?: string;
+  operatorId?: number | string;
+  operateTime?: string;
+}
+
+function adaptAuditLog(row: LegacyAuditLogDto): AuditLog {
+  return {
+    id: String(row.id),
+    operator: row.operatorId == null ? "system" : String(row.operatorId),
+    action: row.operation ?? "-",
+    module: row.entityType?.toLowerCase() ?? "-",
+    target: row.entityId == null ? undefined : String(row.entityId),
+    result: "success",
+    detail: row.snapshot,
+    createdAt: row.operateTime ?? "",
+  };
+}
+
 export function getAuditLogs(params?: AuditLogQuery): Promise<PaginatedResponse<AuditLog>> {
   return http
-    .get<IPage<AuditLog>>("/auditLog/page", { params: { ...params, ...toPageParams(params) } })
-    .then(ipageToPaginated);
+    .get<IPage<LegacyAuditLogDto>>("/audit-logs", {
+      params: {
+        ...toPageParams(params),
+        operatorId: params?.operator && /^\d+$/.test(params.operator) ? params.operator : undefined,
+        operation: params?.action,
+        entityType: params?.module?.toUpperCase(),
+        startTime: formatLegacyDateTime(params?.startTime),
+        endTime: formatLegacyDateTime(params?.endTime),
+      },
+    })
+    .then((page) => ipageToPaginated({ ...page, records: page.records.map(adaptAuditLog) }));
 }

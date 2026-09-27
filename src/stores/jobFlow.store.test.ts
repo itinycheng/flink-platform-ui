@@ -38,6 +38,9 @@ describe("jobStore JobFlow actions", () => {
   it("setLifecycleStatus maps SCHEDULING->start, others->stop", async () => {
     vi.mocked(api.startSchedule).mockResolvedValue(1 as never);
     vi.mocked(api.stopSchedule).mockResolvedValue(1 as never);
+    useJobStore.setState({
+      treeData: [{ id: "5", name: "f", kind: "workflow", pid: "", lifecycleStatus: "ONLINE" }],
+    });
     await useJobStore.getState().setLifecycleStatus("5", "SCHEDULING");
     expect(api.startSchedule).toHaveBeenCalledWith("5");
     await useJobStore.getState().setLifecycleStatus("5", "ONLINE");

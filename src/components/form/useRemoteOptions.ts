@@ -1,28 +1,23 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/app/queryClient";
+import { queryKeys } from "@/api/queryKeys";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
-/** Fetch a list on mount and whenever `deps` change; drop results after unmount. */
-export function useRemoteOptions<T>(fetcher: () => Promise<T[]>, deps: unknown[]): { data: T[]; loading: boolean } {
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    setLoading(true);
-    fetcher()
-      .then((res) => {
-        if (alive) setData(res);
-      })
-      .catch(() => {
-        if (alive) setData([]);
-      })
-      .finally(() => {
-        if (alive) setLoading(false);
-      });
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
-
-  return { data, loading };
+/** Workspace-scoped, cached options shared by all forms using the same resource. */
+export function useRemoteOptions<T>(
+  resource: string,
+  fetcher: () => Promise<T[]>,
+  deps: readonly unknown[],
+): { data: T[]; loading: boolean } {
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const { data = [], isPending } = useQuery(
+    {
+      queryKey: queryKeys.options(workspaceId, resource, deps),
+      queryFn: fetcher,
+      enabled: workspaceId != null,
+      staleTime: 60_000,
+    },
+    queryClient,
+  );
+  return { data, loading: isPending };
 }

@@ -1,11 +1,27 @@
-import { useEffect, useState } from "react";
-import { Descriptions, Drawer, Empty, Flex, Modal, Spin, Table, Tabs, Tag, Typography, type TableColumnsType } from "antd";
+import { useState } from "react";
+import {
+  Descriptions,
+  Drawer,
+  Empty,
+  Flex,
+  Modal,
+  Spin,
+  Table,
+  Tabs,
+  Tag,
+  Typography,
+  type TableColumnsType,
+} from "antd";
 import { useTranslation } from "react-i18next";
 import { getFlowRunDetail, getJobRunLog } from "@/api/run";
 import type { FlowRunDetail, JobRun } from "@/types/run";
 import { RunStatusTag } from "./RunStatusTag";
 import { formatDuration, isFlowType } from "./runStatus";
 import { RunFlowGraph } from "./RunFlowGraph";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/api/queryKeys";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
+import { execIsRunning } from "./runStatus";
 
 const preStyle: React.CSSProperties = {
   whiteSpace: "pre-wrap",
@@ -21,28 +37,19 @@ const preStyle: React.CSSProperties = {
 
 function LogView({ jobRunId }: { jobRunId: string }) {
   const { t } = useTranslation();
-  const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const l = await getJobRunLog(jobRunId);
-        if (!cancelled) setContent(l.content);
-      } catch {
-        if (!cancelled) setContent(t("runs.logLoadFailed"));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [jobRunId, t]);
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const {
+    data,
+    isPending: loading,
+    isError,
+  } = useQuery({
+    queryKey: queryKeys.runs.log(workspaceId, jobRunId),
+    queryFn: () => getJobRunLog(jobRunId),
+    enabled: workspaceId != null,
+    refetchInterval: 5_000,
+  });
   if (loading) return <Spin />;
-  return <pre style={preStyle}>{content}</pre>;
+  return <pre style={preStyle}>{isError ? t("runs.logLoadFailed") : data?.content}</pre>;
 }
 
 function RunMeta({ run }: { run: FlowRunDetail }) {
@@ -80,7 +87,12 @@ function FlowDetail({ run }: { run: FlowRunDetail }) {
       width: 90,
       render: (v: string) => <Tag>{t(`enums.JobType.${v}`)}</Tag>,
     },
-    { title: t("common.status"), dataIndex: "status", width: 100, render: (_, r) => <RunStatusTag status={r.status} /> },
+    {
+      title: t("common.status"),
+      dataIndex: "status",
+      width: 100,
+      render: (_, r) => <RunStatusTag status={r.status} />,
+    },
     { title: t("runs.duration"), dataIndex: "duration", width: 100, render: (_, r) => formatDuration(r.duration) },
     { title: "", width: 60, render: (_, r) => <a onClick={() => setNode(r)}>{t("runs.viewLog")}</a> },
   ];
@@ -129,27 +141,13 @@ interface RunDetailDrawerProps {
 
 export default function RunDetailDrawer({ runId, open, onClose }: RunDetailDrawerProps) {
   const { t } = useTranslation();
-  const [detail, setDetail] = useState<FlowRunDetail | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!open || !runId) return;
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      setDetail(null);
-      try {
-        const d = await getFlowRunDetail(runId);
-        if (!cancelled) setDetail(d);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [open, runId]);
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const { data: detail, isPending: loading } = useQuery({
+    queryKey: queryKeys.runs.detail(workspaceId, runId),
+    queryFn: () => getFlowRunDetail(runId!),
+    enabled: open && !!runId && workspaceId != null,
+    refetchInterval: (query) => (query.state.data && execIsRunning(query.state.data.status) ? 3_000 : false),
+  });
 
   return (
     <Drawer
