@@ -2,10 +2,11 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { setupServer } from "msw/node";
 import { pickerHandlers } from "@/mocks/handlers/picker";
 import { resourceHandlers } from "@/mocks/handlers/resource";
-import { listWorkers, listDatasources, listCatalogs, listResourceFiles } from "./picker";
+import { jobFlowHandlers } from "@/mocks/handlers/jobFlow";
+import { listWorkers, listDatasources, listCatalogs, listResourceFiles, listFlows } from "./picker";
 
 // `/resource/list` is served by the unified resource mock; register both.
-const server = setupServer(...pickerHandlers, ...resourceHandlers);
+const server = setupServer(...pickerHandlers, ...resourceHandlers, ...jobFlowHandlers);
 beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
@@ -45,5 +46,11 @@ describe("picker API + mocks", () => {
     const jars = await listResourceFiles("jar");
     expect(jars.length).toBeGreaterThan(0);
     expect(jars.every((r) => r.type === "FILE" && r.name.endsWith("jar"))).toBe(true);
+  });
+
+  it("listFlows returns selectable non-deleted workflows", async () => {
+    const flows = await listFlows();
+    expect(flows.length).toBeGreaterThan(0);
+    expect(flows[0]).toEqual(expect.objectContaining({ id: expect.any(Number), name: expect.any(String) }));
   });
 });

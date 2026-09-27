@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { setupServer } from "msw/node";
 import { jobFlowHandlers } from "@/mocks/handlers/jobFlow";
 import { workflowHandlers } from "@/mocks/handlers/job";
-import { createJobInfo } from "./job";
+import { createJobInfo, listJobsForFlow } from "./job";
 import {
   createJobFlow,
   getJobFlow,
@@ -26,7 +26,7 @@ describe("jobFlow API + mock", () => {
     expect(typeof id).toBe("number");
     const flow = await getJobFlow(id);
     expect(flow.name).toBe("f1");
-    expect(flow.status).toBe("ONLINE");
+    expect(flow.status).toBe("OFFLINE");
   });
 
   it("start/stop schedule flips status", async () => {
@@ -56,15 +56,17 @@ describe("jobFlow API + mock", () => {
   });
 
   it("round-trips the UI graph through the legacy vertices/edges contract", async () => {
+    const flowId = await createJobFlow({ name: "legacy-flow", type: "JOB_FLOW" });
     const job = await createJobInfo({
       name: "extract",
+      flowId,
       type: "MYSQL_SQL",
       execMode: "BATCH",
       routeUrl: [1],
       subject: "select 1",
       config: { type: "MYSQL_SQL", retryTimes: 0, retryInterval: "5s", dsId: 1 },
     });
-    const flowId = await createJobFlow({ name: "legacy-flow", type: "JOB_FLOW" });
+    await expect(listJobsForFlow(flowId)).resolves.toContainEqual(expect.objectContaining({ id: job.id, flowId }));
     await updateFlowGraph(flowId, {
       nodes: [{ id: String(job.id), jobId: job.id, taskType: job.type, label: job.name, x: 10, y: 20 }],
       edges: [],

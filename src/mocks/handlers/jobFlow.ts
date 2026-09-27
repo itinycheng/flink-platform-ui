@@ -33,26 +33,39 @@ function defaultFlow(id: number): JobFlow {
   };
 }
 
+function allFlows(): JobFlow[] {
+  const seeded = [...jobTreeStore.values()]
+    .filter((node) => node.kind === "workflow")
+    .map((node) => ({ ...ensureFlow(node.refId ?? numId(node.id)), name: node.name }));
+  const seededIds = new Set(seeded.map((flow) => flow.id));
+  return [...seeded, ...[...store.values()].filter((flow) => !seededIds.has(flow.id))];
+}
+
 export const jobFlowHandlers: RequestHandler[] = [
   mswHttp.get("/api/jobFlow/page", async ({ request }) => {
     await delay(100);
     const url = new URL(request.url);
     const { page, size } = parsePageSize(url);
     const name = url.searchParams.get("name")?.toLowerCase();
-    const seeded = [...jobTreeStore.values()]
-      .filter((node) => node.kind === "workflow")
-      .map((node) => ({ ...ensureFlow(node.refId ?? numId(node.id)), name: node.name }));
-    const seededIds = new Set(seeded.map((flow) => flow.id));
-    const stored = [...store.values()].filter((flow) => !seededIds.has(flow.id));
-    const rows = [...seeded, ...stored].filter((flow) => !name || flow.name.toLowerCase().includes(name));
+    const rows = allFlows().filter((flow) => !name || flow.name.toLowerCase().includes(name));
     return ok(ipage(rows, page, size));
+  }),
+
+  mswHttp.get("/api/jobFlow/idNameMapList", async ({ request }) => {
+    await delay(100);
+    const name = new URL(request.url).searchParams.get("name")?.toLowerCase();
+    return ok(
+      allFlows()
+        .filter((flow) => flow.status !== "DELETE" && (!name || flow.name.toLowerCase().includes(name)))
+        .map(({ id, name: flowName }) => ({ id, name: flowName })),
+    );
   }),
 
   mswHttp.post("/api/jobFlow/create", async ({ request }) => {
     await delay(200);
     const { groupId, ...body } = (await request.json()) as JobFlow & { groupId?: string };
     const id = ++seq;
-    store.set(id, { ...body, id, status: "ONLINE" });
+    store.set(id, { ...body, id, status: "OFFLINE" });
     if (groupId) {
       recordPlacement({
         id: String(id),

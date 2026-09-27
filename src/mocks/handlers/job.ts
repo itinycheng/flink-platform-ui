@@ -44,6 +44,20 @@ function defaultJobInfo(id: number): JobInfo {
   };
 }
 
+function seededJobInfos(): JobInfo[] {
+  const flowIds = [...jobTreeStore.values()]
+    .filter((node) => node.kind === "workflow" && node.refId != null)
+    .map((node) => node.refId!);
+  return [...jobTreeStore.values()]
+    .filter((node) => node.kind === "task")
+    .map((node, index) => ({
+      ...defaultJobInfo(node.refId ?? 10_000 + index),
+      name: node.name,
+      type: node.jobType ?? "MYSQL_SQL",
+      flowId: flowIds.length ? flowIds[index % flowIds.length] : undefined,
+    }));
+}
+
 export const workflowHandlers: RequestHandler[] = [
   // Legacy backend page used by the Runnelo compatibility tree.
   http.get("/api/jobInfo/page", async ({ request }) => {
@@ -51,16 +65,15 @@ export const workflowHandlers: RequestHandler[] = [
     const url = new URL(request.url);
     const { page, size } = parsePageSize(url);
     const name = url.searchParams.get("name")?.toLowerCase();
-    const seeded = [...jobTreeStore.values()]
-      .filter((node) => node.kind === "task")
-      .map((node, index) => ({
-        ...defaultJobInfo(node.refId ?? 10_000 + index),
-        name: node.name,
-        type: node.jobType ?? "MYSQL_SQL",
-      }));
     const stored = [...jobInfoStore.values()];
-    const rows = [...seeded, ...stored].filter((job) => !name || job.name.toLowerCase().includes(name));
+    const rows = [...seededJobInfos(), ...stored].filter((job) => !name || job.name.toLowerCase().includes(name));
     return ok(ipage(rows, page, size));
+  }),
+
+  http.get("/api/jobInfo/list", async ({ request }) => {
+    await delay(100);
+    const flowId = Number(new URL(request.url).searchParams.get("flowId"));
+    return ok([...seededJobInfos(), ...jobInfoStore.values()].filter((job) => job.flowId === flowId));
   }),
 
   // GET /api/jobTree/roots — top-level groups only (no children)
