@@ -20,7 +20,10 @@ type MenuItem = Required<MenuProps>["items"][number];
 
 function groupMenu(node: JobTreeNode, t: TFunction): MenuItem[] {
   if (node.id === LEGACY_DEFINITIONS_ROOT_ID) {
-    return [{ key: "addTask", icon: <PlusOutlined />, label: t("workflow.addTask") }];
+    return [
+      { key: "addWorkflow", icon: <PlusOutlined />, label: t("workflow.addWorkflow") },
+      { key: "addTask", icon: <PlusOutlined />, label: t("workflow.addTask") },
+    ];
   }
   const items: MenuItem[] = [
     { key: "addWorkflow", icon: <PlusOutlined />, label: t("workflow.addWorkflow") },

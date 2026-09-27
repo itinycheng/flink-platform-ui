@@ -19,6 +19,8 @@ export const queryKeys = {
       ["workspace", workspaceId, "definitions", "job", id] as const,
     flow: (workspaceId: number | null, id: string) =>
       ["workspace", workspaceId, "definitions", "flow", id] as const,
+    flowJobs: (workspaceId: number | null, flowId: string) =>
+      ["workspace", workspaceId, "definitions", "flow", flowId, "jobs"] as const,
     cronPreview: (workspaceId: number | null, expression: string) =>
       ["workspace", workspaceId, "definitions", "cron-preview", expression] as const,
   },

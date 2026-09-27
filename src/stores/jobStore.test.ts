@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useJobStore } from "./jobStore";
 import * as jobApi from "@/api/job";
+import * as jobFlowApi from "@/api/jobFlow";
 
 vi.mock("@/api/job");
+vi.mock("@/api/jobFlow");
 
 describe("jobStore jobInfo actions", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -24,7 +26,13 @@ describe("jobStore jobInfo actions", () => {
   it("saveJobInfo creates when no id, updates when id present, and sets refId on the node", async () => {
     vi.mocked(jobApi.createJobInfo).mockResolvedValue({ id: 9, name: "n" } as never);
     vi.mocked(jobApi.updateJobInfo).mockResolvedValue({ id: 9, name: "n" } as never);
-    useJobStore.setState({ treeData: [{ id: "tmp", name: "n", kind: "task", pid: "" }] });
+    const draftNode = { id: "tmp", name: "n", kind: "task" as const, pid: "" };
+    useJobStore.setState({
+      treeData: [draftNode],
+      selectedNode: draftNode,
+      openTabs: [{ key: "tmp", node: draftNode }],
+      activeTabKey: "tmp",
+    });
     await useJobStore.getState().saveJobInfo("tmp", {
       name: "n",
       type: "SHELL",
@@ -33,7 +41,10 @@ describe("jobStore jobInfo actions", () => {
       config: { type: "SHELL", retryTimes: 0, retryInterval: "5s", timeout: "60s" },
     } as never);
     expect(jobApi.createJobInfo).toHaveBeenCalled();
-    expect(useJobStore.getState().treeData.find((n) => n.id === "tmp")?.refId).toBe(9);
+    expect(useJobStore.getState().treeData.find((n) => n.id === "job:9")?.refId).toBe(9);
+    expect(useJobStore.getState().selectedNode?.id).toBe("job:9");
+    expect(useJobStore.getState().openTabs[0]?.key).toBe("job:9");
+    expect(useJobStore.getState().activeTabKey).toBe("job:9");
 
     await useJobStore.getState().saveJobInfo("9", {
       id: 9,
@@ -56,6 +67,28 @@ describe("jobStore group/leaf backend wiring", () => {
     await useJobStore.getState().createGroup("G", "");
     expect(jobApi.createJobGroup).toHaveBeenCalledWith({ name: "G", pid: "" });
     expect(useJobStore.getState().treeData.some((n) => n.id === "g-new" && n.kind === "group")).toBe(true);
+  });
+
+  it("createWorkflow persists a compatible legacy flow and opens it", async () => {
+    vi.mocked(jobFlowApi.createJobFlow).mockResolvedValue(17);
+    useJobStore.setState({
+      treeData: [{ id: "legacy:definitions", name: "Definitions", kind: "group", pid: "", children: [] }],
+      openTabs: [],
+      activeTabKey: null,
+      selectedNode: null,
+    });
+
+    await useJobStore.getState().createWorkflow("daily-etl", "legacy:definitions");
+
+    expect(jobFlowApi.createJobFlow).toHaveBeenCalledWith({
+      name: "daily-etl",
+      type: "JOB_FLOW",
+      config: { parallelism: 1 },
+      timeout: { enable: false },
+    });
+    const node = useJobStore.getState().selectedNode;
+    expect(node).toMatchObject({ id: "flow:17", refId: 17, name: "daily-etl", kind: "workflow" });
+    expect(useJobStore.getState().activeTabKey).toBe("flow:17");
   });
 
   it("deleteNode routes groups to deleteJobGroup and leaves to deleteTreeNode", async () => {

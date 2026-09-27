@@ -189,6 +189,9 @@ const en = {
   },
 
   dag: {
+    availableTasks: "Available tasks",
+    noAvailableTasks: "Create a task for this workflow first",
+    taskAlreadyAdded: "Already added to this workflow graph",
     start: "Start",
     end: "End",
     dataExtract: "Data Extract",
@@ -221,10 +224,7 @@ const en = {
     priorityMedium: "Medium",
     priorityHigh: "High",
     task: "Task {{n}}",
-    settings: "Settings",
-    settingsHint: "Settings panel coming soon",
     taskList: "Task List",
-    taskListHint: "Task list panel coming soon",
     noFormForType: "No form available for this task type",
   },
 
@@ -618,6 +618,7 @@ const en = {
 
   picker: {
     selectWorker: "Select worker(s)",
+    selectFlow: "Select a workflow",
     selectDatasource: "Select a datasource",
     selectCatalog: "Select catalog(s)",
     selectResource: "Select jar resource(s)",

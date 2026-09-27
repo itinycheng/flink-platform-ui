@@ -1,84 +1,95 @@
-import { Flex, Tooltip } from "antd";
-import { SIDEBAR_ICON_SIZE } from "./DAGEditor.constants";
-import { TaskIcon, getTaskIcon } from "@/components/TaskIcon";
-import { JOB_TYPES, type JobType } from "@/constants/enums";
-import React from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Empty, Flex, Spin, Tooltip, Typography } from "antd";
 import { useTranslation } from "react-i18next";
+import { queryClient } from "@/app/queryClient";
+import { queryKeys } from "@/api/queryKeys";
+import { listJobsForFlow } from "@/api/job";
+import { TaskIcon, getTaskIcon } from "@/components/TaskIcon";
+import { useWorkspaceStore } from "@/stores/workspaceStore";
 
-/** SVG task icon for the palette, colored via the shared registry. */
-function paletteIcon(type: string): React.ReactNode {
-  return <TaskIcon type={type} size={SIDEBAR_ICON_SIZE} />;
+interface Props {
+  workflowId: string;
+  usedJobIds: Set<number>;
 }
 
-interface SidebarTaskType {
-  type: JobType;
-  icon: React.ReactNode;
-  color?: string;
-}
-
-const SIDEBAR_TASK_TYPES: SidebarTaskType[] = JOB_TYPES.map((type) => ({
-  type,
-  icon: paletteIcon(type),
-  color: getTaskIcon(type).color,
-}));
-
-export function TaskSidebar() {
+export function TaskSidebar({ workflowId, usedJobIds }: Props) {
   const { t } = useTranslation();
+  const workspaceId = useWorkspaceStore((state) => state.currentId);
+  const { data = [], isPending } = useQuery(
+    {
+      queryKey: queryKeys.definitions.flowJobs(workspaceId, workflowId),
+      queryFn: () => listJobsForFlow(workflowId),
+      enabled: workspaceId != null,
+    },
+    queryClient,
+  );
+
   return (
     <Flex
       vertical
-      align="center"
       style={{
-        width: 48,
+        width: 220,
         flexShrink: 0,
-        background: "#fff",
+        background: "var(--ant-color-bg-container)",
         borderTop: "1px solid var(--ant-color-border-secondary)",
         borderRight: "1px solid var(--ant-color-border-secondary)",
         overflowY: "auto",
-        scrollbarWidth: "none",
-        padding: "5px 0",
-        gap: 4,
+        padding: 8,
+        gap: 6,
       }}
     >
-      {SIDEBAR_TASK_TYPES.map((item) => {
-        const label = t(`enums.JobType.${item.type}`);
-        return (
-          <Tooltip key={item.type} title={label} placement="right">
-            <Flex
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData("application/reactflow-type", item.type);
-                e.dataTransfer.setData("application/reactflow-label", label);
-                e.dataTransfer.effectAllowed = "move";
-              }}
-              align="center"
-              justify="center"
-              style={{
-                width: 36,
-                height: 36,
-                cursor: "grab",
-                fontSize: 18,
-                color: item.color,
-                background: "var(--ant-color-bg-container)",
-                border: "1px solid var(--ant-color-border-secondary)",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (item.color) {
-                  e.currentTarget.style.borderColor = item.color;
-                  e.currentTarget.style.boxShadow = `0 0 0 1px ${item.color}33`;
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--ant-color-border-secondary)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            >
-              {item.icon}
-            </Flex>
-          </Tooltip>
-        );
-      })}
+      <Typography.Text strong style={{ padding: "2px 4px" }}>
+        {t("dag.availableTasks")}
+      </Typography.Text>
+      <Spin spinning={isPending}>
+        {!isPending && data.length === 0 ? (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t("dag.noAvailableTasks")} />
+        ) : (
+          <Flex vertical gap={6}>
+            {data.map((job) => {
+              const used = job.id == null || usedJobIds.has(job.id);
+              const color = getTaskIcon(job.type).color;
+              const content = (
+                <Flex
+                  draggable={!used}
+                  onDragStart={(event) => {
+                    if (used || job.id == null) return;
+                    event.dataTransfer.setData("application/reactflow-job-id", String(job.id));
+                    event.dataTransfer.setData("application/reactflow-type", job.type);
+                    event.dataTransfer.setData("application/reactflow-label", job.name);
+                    event.dataTransfer.setData("application/reactflow-description", job.description ?? "");
+                    event.dataTransfer.effectAllowed = "move";
+                  }}
+                  align="center"
+                  gap={8}
+                  style={{
+                    minHeight: 38,
+                    padding: "6px 8px",
+                    cursor: used ? "not-allowed" : "grab",
+                    opacity: used ? 0.45 : 1,
+                    color,
+                    background: "var(--ant-color-fill-quaternary)",
+                    border: "1px solid var(--ant-color-border-secondary)",
+                    borderRadius: 4,
+                  }}
+                >
+                  <TaskIcon type={job.type} size={20} />
+                  <Typography.Text ellipsis style={{ flex: 1 }}>
+                    {job.name}
+                  </Typography.Text>
+                </Flex>
+              );
+              return used ? (
+                <Tooltip key={job.id ?? job.name} title={t("dag.taskAlreadyAdded")} placement="right">
+                  {content}
+                </Tooltip>
+              ) : (
+                <div key={job.id ?? job.name}>{content}</div>
+              );
+            })}
+          </Flex>
+        )}
+      </Spin>
     </Flex>
   );
 }

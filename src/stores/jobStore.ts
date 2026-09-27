@@ -55,6 +55,7 @@ export interface WorkflowState {
   patchNode: (nodeId: string, patch: Partial<JobTreeNode>) => void;
   removeNode: (nodeId: string) => void;
   createGroup: (name: string, pid: string) => Promise<void>;
+  createWorkflow: (name: string, pid: string) => Promise<void>;
   renameNode: (node: JobTreeNode, name: string) => Promise<void>;
   deleteNode: (node: JobTreeNode) => Promise<void>;
   runOnce: (nodeId: string) => Promise<string>;
@@ -65,7 +66,7 @@ export interface WorkflowState {
   closeTab: (key: string) => void;
   setActiveTab: (key: string) => void;
   loadJobInfo: (nodeId: string) => Promise<JobInfo | null>;
-  saveJobInfo: (nodeId: string, info: JobInfo) => Promise<void>;
+  saveJobInfo: (nodeId: string, info: JobInfo) => Promise<JobInfo>;
   loadJobFlow: (nodeId: string) => Promise<JobFlow | null>;
   saveJobFlow: (nodeId: string, flow: JobFlow) => Promise<void>;
   saveFlowGraph: (nodeId: string, flow: FlowGraph) => Promise<void>;
@@ -184,7 +185,13 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
   },
 
   patchNode: (nodeId, patch) => {
-    set({ treeData: updateNodeById(get().treeData, nodeId, (node) => ({ ...node, ...patch })) });
+    set((state) => ({
+      treeData: updateNodeById(state.treeData, nodeId, (node) => ({ ...node, ...patch })),
+      selectedNode: state.selectedNode?.id === nodeId ? { ...state.selectedNode, ...patch } : state.selectedNode,
+      openTabs: state.openTabs.map((tab) =>
+        tab.key === nodeId ? { ...tab, node: { ...tab.node, ...patch } } : tab,
+      ),
+    }));
   },
 
   runOnce: async (nodeId) => {
@@ -256,6 +263,29 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     get().addNode({ id: String(id), name, kind: "group", pid, children: [] });
   },
 
+  createWorkflow: async (name, pid) => {
+    const id = await createJobFlow({
+      name,
+      type: "JOB_FLOW",
+      config: { parallelism: 1 },
+      timeout: { enable: false },
+    });
+    await Promise.all([
+      invalidateDefinitions(),
+      queryClient.invalidateQueries({ queryKey: queryKeys.options(activeWorkspaceId(), "flows", []) }),
+    ]);
+    const node: JobTreeNode = {
+      id: `flow:${id}`,
+      refId: id,
+      name,
+      kind: "workflow",
+      pid,
+      lifecycleStatus: "OFFLINE",
+    };
+    get().addNode(node);
+    await get().selectNode(node);
+  },
+
   renameNode: async (node, name) => {
     if (node.kind === "group") {
       await renameJobGroup({ id: node.id, name });
@@ -325,7 +355,31 @@ export const useJobStore = create<WorkflowState>((set, get) => ({
     const node = findNodeById(get().treeData, nodeId);
     const saved = info.id ? await updateJobInfo(info) : await createJobInfo(info, node?.pid);
     await invalidateDefinitions();
-    get().patchNode(nodeId, { name: saved.name, refId: saved.id });
+    const patch: Partial<JobTreeNode> = {
+      name: saved.name,
+      refId: saved.id,
+      jobType: saved.type,
+      lifecycleStatus: saved.status,
+    };
+    if (info.id || saved.id == null) {
+      get().patchNode(nodeId, patch);
+      return saved;
+    }
+
+    const persistedId = `job:${saved.id}`;
+    set((state) => {
+      const current = findNodeById(state.treeData, nodeId);
+      const persistedNode = current ? { ...current, ...patch, id: persistedId } : null;
+      return {
+        treeData: persistedNode ? updateNodeById(state.treeData, nodeId, () => persistedNode) : state.treeData,
+        selectedNode: state.selectedNode?.id === nodeId ? persistedNode : state.selectedNode,
+        openTabs: state.openTabs.map((tab) =>
+          tab.key === nodeId && persistedNode ? { key: persistedId, node: persistedNode } : tab,
+        ),
+        activeTabKey: state.activeTabKey === nodeId ? persistedId : state.activeTabKey,
+      };
+    });
+    return saved;
   },
 
   loadJobFlow: async (nodeId) => {

@@ -189,6 +189,9 @@ const zh = {
   },
 
   dag: {
+    availableTasks: "可用任务",
+    noAvailableTasks: "请先为该工作流创建任务",
+    taskAlreadyAdded: "已加入当前工作流图",
     start: "开始",
     end: "结束",
     dataExtract: "数据抽取",
@@ -221,10 +224,7 @@ const zh = {
     priorityMedium: "中",
     priorityHigh: "高",
     task: "任务 {{n}}",
-    settings: "参数配置",
-    settingsHint: "参数配置面板即将上线",
     taskList: "任务列表",
-    taskListHint: "任务列表面板即将上线",
     noFormForType: "该任务类型暂无配置表单",
   },
 
@@ -616,6 +616,7 @@ const zh = {
 
   picker: {
     selectWorker: "选择 Worker",
+    selectFlow: "选择工作流",
     selectDatasource: "选择数据源",
     selectCatalog: "选择 Catalog",
     selectResource: "选择 Jar 资源",

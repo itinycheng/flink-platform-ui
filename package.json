@@ -24,7 +24,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:backend": "node scripts/backend-smoke.mjs"
+    "test:backend": "node scripts/backend-smoke.mjs",
+    "test:backend:mutation": "node scripts/backend-mutation-smoke.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^6.1.0",

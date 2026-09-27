@@ -9,6 +9,7 @@ vi.mock("@/api/picker", () => ({
   listDatasources: vi.fn().mockResolvedValue([{ id: 1, name: "ds", type: "MYSQL", params: { url: "" } }]),
   listCatalogs: vi.fn().mockResolvedValue([]),
   listResourceFiles: vi.fn().mockResolvedValue([]),
+  listFlows: vi.fn().mockResolvedValue([{ id: 3, name: "flow-a" }]),
 }));
 
 vi.mock("@/components/CodeEditor", () => ({
@@ -22,15 +23,17 @@ describe("JobForm", () => {
     useJobStore.setState({
       loadJobInfo: vi.fn().mockResolvedValue({
         id: 10,
+        flowId: 3,
         name: "job-a",
         type: "MYSQL_SQL",
         execMode: "BATCH",
+        deployMode: "RUN_LOCAL",
         routeUrl: [1],
         subject: "SELECT 1",
         status: "ONLINE",
         config: { type: "MYSQL_SQL", retryTimes: 0, retryInterval: "5s", dsId: 1 },
       } as never),
-      saveJobInfo: vi.fn().mockResolvedValue(undefined as never),
+      saveJobInfo: vi.fn().mockImplementation(async (_nodeId: string, info: object) => info),
     } as never);
   });
 
@@ -58,9 +61,11 @@ describe("JobForm", () => {
   it("validates required routeUrl before saving", async () => {
     (useJobStore.getState().loadJobInfo as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 11,
+      flowId: 3,
       name: "job-b",
       type: "SHELL",
       execMode: "BATCH",
+      deployMode: "RUN_LOCAL",
       routeUrl: [],
       subject: "echo hi",
       config: { type: "SHELL", retryTimes: 0, retryInterval: "5s", timeout: "60s" },
@@ -74,9 +79,11 @@ describe("JobForm", () => {
   it("resets config and execMode when the user switches type, dropping stale cross-type fields", async () => {
     (useJobStore.getState().loadJobInfo as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 12,
+      flowId: 3,
       name: "job-c",
       type: "MYSQL_SQL",
       execMode: "STREAMING",
+      deployMode: "RUN_LOCAL",
       routeUrl: [1],
       subject: "SELECT 1",
       config: { type: "MYSQL_SQL", retryTimes: 0, retryInterval: "5s", dsId: 5 },
@@ -127,6 +134,14 @@ describe("typeChangeFields", () => {
   it("clears execMode to BATCH for non-Flink types, preserves it for Flink types", () => {
     expect(typeChangeFields("SHELL", "STREAMING").find((f) => f.name === "execMode")?.value).toBe("BATCH");
     expect(typeChangeFields("FLINK_SQL", "STREAMING").find((f) => f.name === "execMode")?.value).toBe("STREAMING");
+  });
+
+  it("uses a valid deployment default for local and Flink task types", () => {
+    expect(typeChangeFields("SHELL").find((f) => f.name === "deployMode")?.value).toBe("RUN_LOCAL");
+    expect(typeChangeFields("FLINK_SQL").find((f) => f.name === "deployMode")?.value).toBe("FLINK_YARN_PER");
+    expect(typeChangeFields("FLINK_JAR", "BATCH", "FLINK_YARN_SESSION").find((f) => f.name === "deployMode")?.value).toBe(
+      "FLINK_YARN_SESSION",
+    );
   });
 
   it("always clears subject on a type change, even between two subject-bearing types", () => {

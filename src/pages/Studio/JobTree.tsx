@@ -17,6 +17,7 @@ import { performDelete } from "./performDelete";
 import { useDefinitionLifecycle } from "./useDefinitionLifecycle";
 import { TagEditModal } from "./TagEditModal";
 import { GroupEditModal } from "./GroupEditModal";
+import { WorkflowCreateModal } from "./WorkflowCreateModal";
 
 // ---------- constants & icons ----------
 
@@ -250,12 +251,25 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
   const { t } = useTranslation();
   const addNode = useJobStore((s) => s.addNode);
   const createGroup = useJobStore((s) => s.createGroup);
+  const createWorkflow = useJobStore((s) => s.createWorkflow);
   const deleteNode = useJobStore((s) => s.deleteNode);
+  const [workflowParentId, setWorkflowParentId] = useState<string | null>(null);
+  const [creatingWorkflow, setCreatingWorkflow] = useState(false);
 
-  const handleAddWorkflow = useCallback(
-    (parentId: string) =>
-      addNode({ id: generateId("wf"), name: t("workflow.newWorkflow"), kind: "workflow", pid: parentId }),
-    [addNode, t],
+  const handleAddWorkflow = useCallback((parentId: string) => setWorkflowParentId(parentId), []);
+  const handleCreateWorkflow = useCallback(
+    async (name: string) => {
+      if (!workflowParentId) return;
+      setCreatingWorkflow(true);
+      try {
+        await createWorkflow(name, workflowParentId);
+        setWorkflowParentId(null);
+        void messageApi.success(t("workflowForm.saveSuccess"));
+      } finally {
+        setCreatingWorkflow(false);
+      }
+    },
+    [createWorkflow, messageApi, t, workflowParentId],
   );
   const handleAddTask = useCallback(
     (parentId: string) =>
@@ -281,7 +295,16 @@ function useJobTreeActions({ messageApi }: { messageApi: MessageInstance }) {
     [deleteNode, messageApi, t],
   );
 
-  return { handleAddWorkflow, handleAddTask, handleAddSubgroup, handleDelete };
+  return {
+    handleAddWorkflow,
+    handleAddTask,
+    handleAddSubgroup,
+    handleDelete,
+    workflowParentId,
+    creatingWorkflow,
+    handleCreateWorkflow,
+    closeWorkflowCreate: () => setWorkflowParentId(null),
+  };
 }
 
 /** Builds the per-node menu and routes clicks to the right action/handler. */
@@ -456,6 +479,12 @@ export default function JobTree({
       )}
       <LifecycleModals lifecycle={lifecycle} />
       <GroupRenameModal node={renameNode} onClose={() => setRenameNode(null)} />
+      <WorkflowCreateModal
+        open={!!actions.workflowParentId}
+        confirmLoading={actions.creatingWorkflow}
+        onOk={actions.handleCreateWorkflow}
+        onCancel={actions.closeWorkflowCreate}
+      />
     </ConfigProvider>
   );
 }

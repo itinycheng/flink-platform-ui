@@ -1,12 +1,6 @@
 import React, { useEffect } from "react";
 import { Button, Flex, Form, Tooltip, Typography } from "antd";
-import {
-  ArrowLeftOutlined,
-  SaveOutlined,
-  CloseOutlined,
-  SettingOutlined,
-  UnorderedListOutlined,
-} from "@ant-design/icons";
+import { ArrowLeftOutlined, SaveOutlined, CloseOutlined, UnorderedListOutlined } from "@ant-design/icons";
 import type { MessageInstance } from "antd/es/message/interface";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -23,10 +17,11 @@ function CodeField({ value, onChange, language }: { value?: string; onChange?: (
 interface DAGToolbarProps {
   embedded: boolean;
   onSave: () => void;
-  messageApi: MessageInstance;
+  taskListOpen: boolean;
+  onToggleTaskList: () => void;
 }
 
-export function DAGToolbar({ embedded, onSave, messageApi }: DAGToolbarProps) {
+export function DAGToolbar({ embedded, onSave, taskListOpen, onToggleTaskList }: DAGToolbarProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
@@ -46,14 +41,11 @@ export function DAGToolbar({ embedded, onSave, messageApi }: DAGToolbarProps) {
       <Tooltip title={t("dag.saveFlow")}>
         <Button type="text" icon={<SaveOutlined style={{ color: "var(--ant-color-primary)" }} />} onClick={onSave} />
       </Tooltip>
-      <Tooltip title={t("dag.settings")}>
-        <Button type="text" icon={<SettingOutlined />} onClick={() => void messageApi.info(t("dag.settingsHint"))} />
-      </Tooltip>
       <Tooltip title={t("dag.taskList")}>
         <Button
-          type="text"
+          type={taskListOpen ? "primary" : "text"}
           icon={<UnorderedListOutlined />}
-          onClick={() => void messageApi.info(t("dag.taskListHint"))}
+          onClick={onToggleTaskList}
         />
       </Tooltip>
     </Flex>

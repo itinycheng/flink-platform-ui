@@ -21,7 +21,13 @@ export interface TypeChangeField {
  * nested objects and would therefore keep any `config.*` keys not explicitly
  * listed here, defeating the reset).
  */
-export function typeChangeFields(nextType: JobType, prevExecMode?: string): TypeChangeField[] {
+export function typeChangeFields(nextType: JobType, prevExecMode?: string, prevDeployMode?: string): TypeChangeField[] {
+  const isFlink = nextType === "FLINK_SQL" || nextType === "FLINK_JAR";
+  const deployMode = isFlink
+    ? prevDeployMode && prevDeployMode !== "RUN_LOCAL"
+      ? prevDeployMode
+      : "FLINK_YARN_PER"
+    : "RUN_LOCAL";
   return [
     {
       name: "config",
@@ -32,7 +38,8 @@ export function typeChangeFields(nextType: JobType, prevExecMode?: string): Type
         ...(nextType === "SHELL" ? { timeout: "60s" } : {}),
       },
     },
-    { name: "execMode", value: nextType === "FLINK_SQL" || nextType === "FLINK_JAR" ? prevExecMode : "BATCH" },
+    { name: "execMode", value: isFlink ? prevExecMode : "BATCH" },
+    { name: "deployMode", value: deployMode },
     { name: "subject", value: undefined },
   ];
 }

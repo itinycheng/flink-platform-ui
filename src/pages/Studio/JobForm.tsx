@@ -5,7 +5,7 @@ import { SaveOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 import { useJobStore } from "@/stores/jobStore";
 import { getTaskTypeDef, taskTypeOptions } from "@/pages/Studio/tasks/registry";
-import { WorkerSelect, KeyValueEditor } from "@/components/form";
+import { FlowSelect, WorkerSelect, KeyValueEditor } from "@/components/form";
 import CodeEditor from "@/components/CodeEditor";
 import { DEPLOY_MODES, EXECUTION_MODES, JOB_TYPE_CLASSIFICATION, enumOptions, type JobType } from "@/constants/enums";
 import type { JobInfo } from "@/types/entities";
@@ -30,7 +30,13 @@ function CodeField({
 }
 
 function resetForType(form: FormInstance, nextType: JobType) {
-  form.setFields(typeChangeFields(nextType, form.getFieldValue("execMode") as string | undefined));
+  form.setFields(
+    typeChangeFields(
+      nextType,
+      form.getFieldValue("execMode") as string | undefined,
+      form.getFieldValue("deployMode") as string | undefined,
+    ),
+  );
 }
 
 interface CommonFieldsProps {
@@ -40,11 +46,17 @@ interface CommonFieldsProps {
 
 function CommonFields({ form, isFlink }: CommonFieldsProps) {
   const { t } = useTranslation();
+  const deployModes = isFlink ? DEPLOY_MODES.filter((mode) => mode !== "RUN_LOCAL") : (["RUN_LOCAL"] as const);
   return (
     <>
       <Col {...FIELD_COL}>
         <Form.Item name="name" label={t("common.name")} rules={[{ required: true }]}>
           <Input />
+        </Form.Item>
+      </Col>
+      <Col {...FIELD_COL}>
+        <Form.Item name="flowId" label={t("taskForm.flowId")} rules={[{ required: true }]}>
+          <FlowSelect />
         </Form.Item>
       </Col>
       <Col {...FIELD_COL}>
@@ -58,8 +70,8 @@ function CommonFields({ form, isFlink }: CommonFieldsProps) {
         </Form.Item>
       </Col>
       <Col {...FIELD_COL}>
-        <Form.Item name="deployMode" label={t("taskForm.deployMode")}>
-          <Select allowClear options={enumOptions(DEPLOY_MODES, "DeployMode", t)} />
+        <Form.Item name="deployMode" label={t("taskForm.deployMode")} rules={[{ required: true }]}>
+          <Select options={enumOptions(deployModes, "DeployMode", t)} />
         </Form.Item>
       </Col>
       <Col {...FIELD_COL}>
@@ -178,7 +190,8 @@ export default function JobForm({ nodeId }: { nodeId: string }) {
         config: { ...values.config, type: values.type },
       };
       setSaving(true);
-      await saveJobInfo(nodeId, jobInfo);
+      const saved = await saveJobInfo(nodeId, jobInfo);
+      form.setFieldsValue({ id: saved.id, status: saved.status });
       void messageApi.success(t("common.saveSuccess"));
     } catch {
       /* validation errors are shown inline */

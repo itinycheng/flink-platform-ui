@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Flex, message } from "antd";
-import { useNodesState, useEdgesState, type Connection, type ReactFlowInstance } from "@xyflow/react";
+import { useNodesState, useEdgesState, type Connection, type Node, type ReactFlowInstance } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useTranslation } from "react-i18next";
 import { useJobStore } from "@/stores/jobStore";
@@ -17,6 +17,11 @@ import {
 } from "./DAGEditor.hooks";
 import { BottomPanel, DAGToolbar } from "./DAGEditor.panels";
 import { NodeEditModal } from "./DAGEditor.modal";
+import { TaskSidebar } from "./DAGEditor.sidebar";
+
+function usedJobIdsOf(nodes: Node[]): Set<number> {
+  return new Set(nodes.map((node) => node.data.jobId).filter((id): id is number => typeof id === "number"));
+}
 
 export default function DAGEditor({ embedded = false }: DAGEditorProps) {
   const { id: routeId } = useParams<{ id: string }>();
@@ -31,6 +36,7 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [taskListOpen, setTaskListOpen] = useState(true);
   const flowRef = useRef<HTMLDivElement>(null);
 
   const editModal = useNodeEditModal({ nodes, setNodes, messageApi });
@@ -43,7 +49,8 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
     onOpenNodeEdit: editModal.openEditModal,
   });
   const bottom = useBottomPanel({ flowRef });
-  const dnd = useDragAndDrop({ reactFlowInstance, workflowId, setNodes });
+  const dnd = useDragAndDrop({ reactFlowInstance, setNodes });
+  const usedJobIds = useMemo(() => usedJobIdsOf(nodes), [nodes]);
 
   // Loads a persisted FlowGraph onto the canvas on mount + serializes/saves on demand.
   const { handleSave } = useFlowPersistence({ workflowId, nodes, edges, setNodes, setEdges, messageApi, t });
@@ -55,6 +62,7 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
       {contextHolder}
       {bottom.isResizing && <div style={{ position: "fixed", inset: 0, zIndex: 9999, cursor: "row-resize" }} />}
       <Flex style={{ flex: 1, minHeight: 0 }}>
+        {taskListOpen && <TaskSidebar workflowId={workflowId} usedJobIds={usedJobIds} />}
         <Flex vertical style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
           <FlowCanvas
             flowRef={flowRef}
@@ -70,7 +78,7 @@ export default function DAGEditor({ embedded = false }: DAGEditorProps) {
             onInit={setReactFlowInstance}
             onDragOver={dnd.onDragOver}
             onDrop={dnd.onDrop}
-            toolbar={<DAGToolbar embedded={embedded} onSave={() => void handleSave()} messageApi={messageApi} />}
+            toolbar={<DAGToolbar embedded={embedded} onSave={() => void handleSave()} taskListOpen={taskListOpen} onToggleTaskList={() => setTaskListOpen((open) => !open)} />}
             contextMenu={ctx.contextMenu}
             nodeMenuItems={ctx.nodeMenuItems}
             edgeMenuItems={ctx.edgeMenuItems}

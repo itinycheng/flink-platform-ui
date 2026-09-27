@@ -167,3 +167,8 @@ export function updateJobInfo(data: JobInfo): Promise<JobInfo> {
 export function getJobInfosByIds(ids: number[]): Promise<JobInfo[]> {
   return ids.length ? http.post<JobInfo[]>("/jobInfo/getByIds", ids) : Promise.resolve([]);
 }
+
+/** All task definitions owned by a workflow, including tasks not yet placed in its DAG. */
+export function listJobsForFlow(flowId: string | number): Promise<JobInfo[]> {
+  return http.get<JobInfo[]>("/jobInfo/list", { params: { flowId: definitionRef(flowId) } });
+}

@@ -2,6 +2,11 @@ import { http } from "@/utils/request";
 import type { Worker, Datasource, CatalogInfo, Resource } from "@/types/entities";
 import { JOB_TYPE_DBTYPE, type JobType } from "@/constants/enums";
 
+export interface FlowOption {
+  id: number;
+  name: string;
+}
+
 /** Workers available as job route targets (excludes deleted). */
 export function listWorkers(): Promise<Worker[]> {
   return http.get<Worker[]>("/worker/list");
@@ -21,4 +26,11 @@ export function listCatalogs(): Promise<CatalogInfo[]> {
 /** FILE resources, optionally filtered by a filename suffix (e.g. "jar"). */
 export function listResourceFiles(ext?: string): Promise<Resource[]> {
   return http.get<Resource[]>("/resource/list", { params: { type: "FILE", ext } });
+}
+
+/** Lightweight workflow options used by task forms. */
+export function listFlows(): Promise<FlowOption[]> {
+  return http.get<FlowOption[]>("/jobFlow/idNameMapList", {
+    params: { status: "OFFLINE,ONLINE,SCHEDULING" },
+  });
 }

@@ -283,13 +283,10 @@ export function useNodeEditModal({ nodes, setNodes, messageApi }: UseNodeEditMod
 
 interface UseDragAndDropOpts {
   reactFlowInstance: ReactFlowInstance | null;
-  workflowId: string;
   setNodes: Dispatch<SetStateAction<Node[]>>;
 }
 
-export function useDragAndDrop({ reactFlowInstance, workflowId, setNodes }: UseDragAndDropOpts) {
-  const [nodeCount, setNodeCount] = useState(4);
-
+export function useDragAndDrop({ reactFlowInstance, setNodes }: UseDragAndDropOpts) {
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
@@ -298,26 +295,36 @@ export function useDragAndDrop({ reactFlowInstance, workflowId, setNodes }: UseD
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
+      const jobId = Number(event.dataTransfer.getData("application/reactflow-job-id"));
       const taskType = event.dataTransfer.getData("application/reactflow-type");
       const taskLabel = event.dataTransfer.getData("application/reactflow-label");
-      if (!taskType || !reactFlowInstance) return;
+      const description = event.dataTransfer.getData("application/reactflow-description");
+      if (!Number.isInteger(jobId) || jobId <= 0 || !taskType || !taskLabel || !reactFlowInstance) return;
       const position = reactFlowInstance.screenToFlowPosition({ x: event.clientX, y: event.clientY });
-      const newNode: Node = {
-        id: `${workflowId}-task${nodeCount + 1}`,
-        type: "taskNode",
-        data: {
-          label: `${taskLabel} ${nodeCount + 1}`,
-          nodeType: "task",
-          taskType,
-          description: "",
-          priority: "medium",
-        },
-        position,
-      };
-      setNodes((nds) => [...nds, newNode]);
-      setNodeCount((c) => c + 1);
+      setNodes((current) => {
+        if (current.some((node) => node.data.jobId === jobId)) return current;
+        const nextVertexId =
+          current.reduce((max, node) => {
+            const value = Number(node.id);
+            return Number.isInteger(value) ? Math.max(max, value) : max;
+          }, 0) + 1;
+        const newNode: Node = {
+          id: String(nextVertexId),
+          type: "taskNode",
+          data: {
+            jobId,
+            label: taskLabel,
+            nodeType: "task",
+            taskType,
+            description,
+            priority: "medium",
+          },
+          position,
+        };
+        return [...current, newNode];
+      });
     },
-    [reactFlowInstance, workflowId, nodeCount, setNodes],
+    [reactFlowInstance, setNodes],
   );
 
   return { onDragOver, onDrop };
